@@ -8,11 +8,28 @@ use Illuminate\Support\Facades\DB;
 class DashboardController extends Controller
 {
     /**
+     * Ensure table exists
+     */
+    private function ensureTableExists()
+    {
+        DB::statement("CREATE TABLE IF NOT EXISTS parking_spaces (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            sensor_id INT UNIQUE NOT NULL,
+            is_occupied BOOLEAN NOT NULL DEFAULT FALSE,
+            distance_cm INT,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB");
+    }
+
+    /**
      * Show the parking dashboard
      */
     public function index()
     {
         try {
+            $this->ensureTableExists();
+            
             // Get initial data for the dashboard
             $spaces = DB::table('parking_spaces')
                 ->orderBy('sensor_id')
@@ -29,7 +46,7 @@ class DashboardController extends Controller
             return view('dashboard.index', [
                 'spaces' => collect(),
                 'stats' => ['total' => 0, 'occupied' => 0, 'available' => 0],
-                'error' => 'Failed to load parking data'
+                'error' => 'Failed to load parking data: ' . $e->getMessage()
             ]);
         }
     }
@@ -40,13 +57,15 @@ class DashboardController extends Controller
     public function apiData()
     {
         try {
+            $this->ensureTableExists();
+            
             $spaces = DB::table('parking_spaces')
                 ->orderBy('sensor_id')
                 ->get();
 
             return response()->json($spaces);
         } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to fetch data'], 500);
+            return response()->json(['error' => 'Failed to fetch data: ' . $e->getMessage()], 500);
         }
     }
 }
