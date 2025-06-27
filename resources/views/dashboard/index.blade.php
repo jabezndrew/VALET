@@ -103,7 +103,7 @@
     
     async function fetchParkingData() {
         try {
-            const response = await fetch('{{ route("dashboard.api") }}');
+            const response = await fetch('/api/parking');
             const data = await response.json();
             
             updateDashboard(data);
