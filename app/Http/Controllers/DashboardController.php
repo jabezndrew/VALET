@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class DashboardController extends Controller
 {
@@ -33,7 +34,13 @@ class DashboardController extends Controller
             // Get initial data for the dashboard
             $spaces = DB::table('parking_spaces')
                 ->orderBy('sensor_id')
-                ->get();
+                ->get()
+                ->map(function ($space) {
+                    // Convert timestamps to Carbon objects
+                    $space->created_at = Carbon::parse($space->created_at);
+                    $space->updated_at = Carbon::parse($space->updated_at);
+                    return $space;
+                });
 
             $stats = [
                 'total' => $spaces->count(),
@@ -61,7 +68,13 @@ class DashboardController extends Controller
             
             $spaces = DB::table('parking_spaces')
                 ->orderBy('sensor_id')
-                ->get();
+                ->get()
+                ->map(function ($space) {
+                    // Convert timestamps to Carbon objects for JSON response
+                    $space->created_at = Carbon::parse($space->created_at)->toISOString();
+                    $space->updated_at = Carbon::parse($space->updated_at)->toISOString();
+                    return $space;
+                });
 
             return response()->json($spaces);
         } catch (\Exception $e) {
