@@ -89,16 +89,25 @@
         return Math.min((distance / 100) * 100, 100);
     }
     
+    // FIXED formatTimeAgo function
     function formatTimeAgo(timestamp) {
         const now = new Date();
         const updateTime = new Date(timestamp);
         const diffMs = now - updateTime;
         const diffMins = Math.floor(diffMs / 60000);
+        const diffHours = Math.floor(diffMs / 3600000);
+        const diffDays = Math.floor(diffMs / 86400000);
         
         if (diffMins < 1) return 'Just now';
         if (diffMins === 1) return '1 minute ago';
         if (diffMins < 60) return `${diffMins} minutes ago`;
-        return updateTime.toLocaleTimeString();
+        if (diffHours === 1) return '1 hour ago';
+        if (diffHours < 24) return `${diffHours} hours ago`;
+        if (diffDays === 1) return '1 day ago';
+        if (diffDays < 7) return `${diffDays} days ago`;
+        
+        // For very old data, show the actual date/time
+        return updateTime.toLocaleString();
     }
     
     async function fetchParkingData() {
