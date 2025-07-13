@@ -32,34 +32,27 @@
 
     <!-- Statistics Cards -->
     <div class="row mb-4">
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="status-card stat-card">
                 <div class="stat-number total">{{ $totalSpaces }}</div>
                 <h5><i class="fas fa-parking"></i> Total Spaces</h5>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="status-card stat-card">
                 <div class="stat-number available">{{ $availableSpaces }}</div>
                 <h5><i class="fas fa-check-circle"></i> Available</h5>
             </div>
         </div>
-        <div class="col-md-3">
+        <div class="col-md-4">
             <div class="status-card stat-card">
                 <div class="stat-number occupied">{{ $occupiedSpaces }}</div>
                 <h5><i class="fas fa-car"></i> Occupied</h5>
             </div>
         </div>
-        <div class="col-md-3">
-            <div class="status-card stat-card">
-                <div class="stat-number" style="color: #6f42c1;">{{ $occupancyRate }}%</div>
-                <h5><i class="fas fa-chart-pie"></i> Occupancy Rate</h5>
-            </div>
-        </div>
     </div>
 
     <!-- Floor Filter -->
-    @if(count($availableFloors) > 0)
     <div class="row mb-4">
         <div class="col-12">
             <div class="status-card">
@@ -67,55 +60,19 @@
                     <h5 class="mb-0"><i class="fas fa-filter"></i> Filter by Floor</h5>
                     <select wire:model.live="floorFilter" class="form-select" style="max-width: 200px;">
                         <option value="all">All Floors</option>
+                        <option value="1st Floor">1st Floor</option>
+                        <option value="2nd Floor">2nd Floor</option>
+                        <option value="3rd Floor">3rd Floor</option>
                         @foreach($availableFloors as $floor)
-                            <option value="{{ $floor }}">{{ $floor }}</option>
+                            @if(!in_array($floor, ['1st Floor', '2nd Floor', '3rd Floor']))
+                                <option value="{{ $floor }}">{{ $floor }}</option>
+                            @endif
                         @endforeach
                     </select>
                 </div>
             </div>
         </div>
     </div>
-    @endif
-
-    <!-- Floor Statistics -->
-    @if(count($floorStats) > 1)
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="status-card">
-                <h5><i class="fas fa-building"></i> Floor Overview</h5>
-                <div class="row">
-                    @foreach($floorStats as $floorStat)
-                    <div class="col-md-4 mb-3">
-                        <div class="card h-100">
-                            <div class="card-body text-center">
-                                <i class="{{ $this->getFloorIcon($floorStat['floor_level']) }} fa-2x mb-2"></i>
-                                <h6>{{ $floorStat['floor_level'] }}</h6>
-                                <div class="row">
-                                    <div class="col-4">
-                                        <small class="text-muted">Total</small>
-                                        <div class="fw-bold">{{ $floorStat['total'] }}</div>
-                                    </div>
-                                    <div class="col-4">
-                                        <small class="text-success">Available</small>
-                                        <div class="fw-bold text-success">{{ $floorStat['available'] }}</div>
-                                    </div>
-                                    <div class="col-4">
-                                        <small class="text-danger">Occupied</small>
-                                        <div class="fw-bold text-danger">{{ $floorStat['occupied'] }}</div>
-                                    </div>
-                                </div>
-                                <div class="mt-2">
-                                    <small>{{ $floorStat['occupancy_rate'] }}% Occupied</small>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    @endforeach
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
 
     <!-- Parking Spaces Grid -->
     @if(count($spaces) > 0)
@@ -141,31 +98,21 @@
                         <span>{{ $this->getStatusText((array)$space) }}</span>
                         <span class="fw-bold">{{ $space->distance_cm ?? 'N/A' }}cm</span>
                     </div>
-                    
-                    @if($space->distance_cm)
-                    <div class="distance-bar">
-                        <div class="distance-fill" 
-                             style="width: {{ $this->getDistancePercentage($space->distance_cm) }}%; 
-                                    background-color: {{ $this->getDistanceColor($space->distance_cm) }};">
-                        </div>
-                    </div>
-                    <small class="text-muted">Distance: {{ $this->getDistanceStatus($space->distance_cm) }}</small>
-                    @endif
                 </div>
                 
-                <div class="row text-center">
-                    <div class="col-6">
-                        <small class="text-muted">Last Updated</small>
-                        <div class="fw-bold">{{ $space->updated_at->format('H:i:s') }}</div>
-                    </div>
-                    <div class="col-6">
-                        <small class="text-muted">Created</small>
-                        <div class="fw-bold">{{ $space->created_at->format('M d') }}</div>
-                    </div>
+                <div class="text-center">
+                    <small class="text-muted">Last Updated</small>
+                    <div class="fw-bold">{{ $space->updated_at->format('H:i:s') }}</div>
                 </div>
             </div>
         </div>
         @endforeach
+    </div>
+    @elseif(in_array($floorFilter, ['1st Floor', '2nd Floor', '3rd Floor']))
+    <div class="no-data">
+        <i class="fas fa-tools"></i>
+        <h3>No Sensors Installed Yet</h3>
+        <p>{{ $floorFilter }} sensors are not yet installed. Please check back later.</p>
     </div>
     @else
     <div class="no-data">
@@ -186,7 +133,6 @@
 }
             </pre>
         </div>
-    </div>
     @endif
 
     <!-- Loading Indicator -->

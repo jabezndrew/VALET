@@ -13,7 +13,7 @@
     
     <style>
         body {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background-color: #B22020;
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
@@ -63,7 +63,7 @@
         }
         
         .parking-space-card.occupied {
-            border-left-color: #dc3545;
+            border-left-color: #B22020;
             transform: scale(1.02);
         }
         
@@ -81,7 +81,7 @@
         }
         
         .badge-occupied {
-            background-color: #dc3545;
+            background-color: #B22020;
             color: white;
         }
         
@@ -97,23 +97,8 @@
         }
         
         .stat-number.available { color: #28a745; }
-        .stat-number.occupied { color: #dc3545; }
-        .stat-number.total { color: #007bff; }
-        
-        .distance-bar {
-            width: 100%;
-            height: 10px;
-            background-color: #e9ecef;
-            border-radius: 5px;
-            overflow: hidden;
-            margin-top: 10px;
-        }
-        
-        .distance-fill {
-            height: 100%;
-            transition: all 0.3s ease;
-            border-radius: 5px;
-        }
+        .stat-number.occupied { color: #B22020; }
+        .stat-number.total { color: #B22020; }
         
         .refresh-status {
             position: fixed;
@@ -132,7 +117,7 @@
             animation: pulse-green 2s infinite;
         }
         .refresh-error { 
-            background-color: #dc3545; 
+            background-color: #B22020; 
         }
         
         @keyframes pulse-green {
@@ -148,12 +133,29 @@
         .no-data {
             text-align: center;
             padding: 60px 20px;
-            color: #6c757d;
+            color: white;
         }
         
         .no-data i {
             font-size: 4rem;
             margin-bottom: 20px;
+        }
+
+        /* Button styling */
+        .btn-outline-light:hover {
+            background-color: white;
+            color: #B22020;
+        }
+        
+        .btn-success {
+            background-color: #28a745;
+            border-color: #28a745;
+        }
+        
+        .btn-secondary {
+            background-color: white;
+            color: #B22020;
+            border-color: white;
         }
 
         /* Livewire loading states */
