@@ -1,20 +1,114 @@
 <?php
 
-namespace App\Http\Controllers\Api;
+namespace App\Livewire;
 
-use App\Http\Controllers\Controller;
-use Illuminate\Http\Request;
+use Livewire\Component;
 use Illuminate\Support\Facades\DB;
-use Illuminate\Http\JsonResponse;
+use Carbon\Carbon;
 
-class ParkingController extends Controller
+class ParkingDashboard extends Component
 {
-    /**
-     * Ensure table exists with floor_level column
-     */
+    public $spaces = [];
+    public $floorFilter = 'all';
+    public $availableFloors = [];
+    public $floorStats = [];
+    public $lastUpdate;
+    
+    // Statistics
+    public $totalSpaces = 0;
+    public $occupiedSpaces = 0;
+    public $availableSpaces = 0;
+
+    protected $listeners = ['refresh-parking-data' => 'loadParkingData'];
+
+    public function mount()
+    {
+        $this->loadParkingData();
+    }
+
+    public function loadParkingData()
+    {
+        try {
+            $this->ensureTableExists();
+            
+            // Get all parking spaces
+            $allSpaces = DB::table('parking_spaces')
+                ->orderBy('sensor_id')
+                ->get()
+                ->map(function ($space) {
+                    $space->created_at = Carbon::parse($space->created_at);
+                    $space->updated_at = Carbon::parse($space->updated_at);
+                    return $space;
+                });
+
+            // Update available floors
+            $this->availableFloors = $allSpaces->pluck('floor_level')->unique()->sort()->values()->toArray();
+
+            // Filter spaces based on selected floor
+            if ($this->floorFilter === 'all') {
+                $this->spaces = $allSpaces;
+            } else {
+                $this->spaces = $allSpaces->where('floor_level', $this->floorFilter)->values();
+            }
+
+            // Update statistics
+            $this->updateStatistics();
+            
+            // Update floor statistics
+            $this->updateFloorStats($allSpaces);
+            
+            $this->lastUpdate = now()->format('H:i:s');
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to load parking data: ' . $e->getMessage());
+        }
+    }
+
+    public function updatedFloorFilter()
+    {
+        $this->loadParkingData();
+    }
+
+    private function updateStatistics()
+    {
+        $this->totalSpaces = $this->spaces->count();
+        $this->occupiedSpaces = $this->spaces->where('is_occupied', true)->count();
+        $this->availableSpaces = $this->totalSpaces - $this->occupiedSpaces;
+    }
+
+    private function updateFloorStats($allSpaces)
+    {
+        $this->floorStats = $allSpaces->groupBy('floor_level')->map(function ($floorSpaces, $floorName) {
+            $total = $floorSpaces->count();
+            $occupied = $floorSpaces->where('is_occupied', true)->count();
+            $available = $total - $occupied;
+            $occupancyRate = $total > 0 ? round(($occupied / $total) * 100) : 0;
+
+            return [
+                'floor_level' => $floorName,
+                'total' => $total,
+                'occupied' => $occupied,
+                'available' => $available,
+                'occupancy_rate' => $occupancyRate
+            ];
+        })->values()->toArray();
+    }
+
+    public function getDistanceColor($distance)
+    {
+        if ($distance <= 5) return '#dc3545';
+        if ($distance <= 10) return '#ffc107';
+        if ($distance <= 20) return '#28a745';
+        return '#007bff';
+    }
+
+    public function getDistancePercentage($distance)
+    {
+        return min(($distance / 100) * 100, 100);
+    }
+
     private function ensureTableExists()
     {
-        // Create table if it doesn't exist
         DB::statement("CREATE TABLE IF NOT EXISTS parking_spaces (
             id INT AUTO_INCREMENT PRIMARY KEY,
             sensor_id INT UNIQUE NOT NULL,
@@ -32,135 +126,8 @@ class ParkingController extends Controller
         }
     }
 
-    /**
-     * Get all parking spaces
-     */
-    public function index(): JsonResponse
+    public function render()
     {
-        try {
-            $this->ensureTableExists();
-            
-            $spaces = DB::table('parking_spaces')
-                ->orderBy('sensor_id')
-                ->get();
-
-            return response()->json($spaces);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to fetch parking data', 'details' => $e->getMessage()], 500);
-        }
-    }
-
-    /**
-     * Store/Update parking space data from ESP32
-     */
-    public function store(Request $request): JsonResponse
-    {
-        try {
-            $this->ensureTableExists();
-            
-            // Validate incoming data with floor_level
-            $validated = $request->validate([
-                'sensor_id' => 'required|integer',
-                'is_occupied' => 'required|boolean',
-                'distance_cm' => 'required|integer|min:0',
-                'floor_level' => 'sometimes|string|max:255' // Optional, defaults to '4th Floor'
-            ]);
-
-            // Set default floor level if not provided
-            if (!isset($validated['floor_level'])) {
-                $validated['floor_level'] = '4th Floor';
-            }
-
-            // Insert or update parking space with floor level
-            DB::table('parking_spaces')->updateOrInsert(
-                ['sensor_id' => $validated['sensor_id']],
-                [
-                    'is_occupied' => $validated['is_occupied'],
-                    'distance_cm' => $validated['distance_cm'],
-                    'floor_level' => $validated['floor_level'],
-                    'updated_at' => now()
-                ]
-            );
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Parking data updated successfully',
-                'data' => [
-                    'sensor_id' => $validated['sensor_id'],
-                    'floor_level' => $validated['floor_level'],
-                    'is_occupied' => $validated['is_occupied'],
-                    'distance_cm' => $validated['distance_cm']
-                ]
-            ]);
-
-        } catch (\Illuminate\Validation\ValidationException $e) {
-            return response()->json([
-                'error' => 'Invalid data provided',
-                'details' => $e->errors()
-            ], 422);
-        } catch (\Exception $e) {
-            return response()->json([
-                'error' => 'Failed to update parking data',
-                'details' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Get statistics about parking spaces (with floor breakdown)
-     */
-    public function stats(): JsonResponse
-    {
-        try {
-            $this->ensureTableExists();
-            
-            $total = DB::table('parking_spaces')->count();
-            $occupied = DB::table('parking_spaces')->where('is_occupied', true)->count();
-            $available = $total - $occupied;
-
-            // Get stats by floor
-            $floorStats = DB::table('parking_spaces')
-                ->select('floor_level')
-                ->selectRaw('COUNT(*) as total')
-                ->selectRaw('SUM(CASE WHEN is_occupied = 1 THEN 1 ELSE 0 END) as occupied')
-                ->selectRaw('SUM(CASE WHEN is_occupied = 0 THEN 1 ELSE 0 END) as available')
-                ->groupBy('floor_level')
-                ->get();
-
-            return response()->json([
-                'overall' => [
-                    'total' => $total,
-                    'occupied' => $occupied,
-                    'available' => $available,
-                    'occupancy_rate' => $total > 0 ? round(($occupied / $total) * 100, 2) : 0
-                ],
-                'by_floor' => $floorStats
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to fetch statistics'], 500);
-        }
-    }
-
-    /**
-     * Get parking spaces for a specific floor
-     */
-    public function getByFloor($floorLevel): JsonResponse
-    {
-        try {
-            $this->ensureTableExists();
-            
-            $spaces = DB::table('parking_spaces')
-                ->where('floor_level', $floorLevel)
-                ->orderBy('sensor_id')
-                ->get();
-
-            return response()->json([
-                'floor_level' => $floorLevel,
-                'spaces' => $spaces,
-                'count' => $spaces->count()
-            ]);
-        } catch (\Exception $e) {
-            return response()->json(['error' => 'Failed to fetch floor data'], 500);
-        }
+        return view('livewire.parking-dashboard');
     }
 }
