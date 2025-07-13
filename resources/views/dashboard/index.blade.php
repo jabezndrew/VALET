@@ -13,6 +13,27 @@
         </p>
     </div>
 
+    <!-- Floor Filter -->
+    <div class="row mb-3">
+        <div class="col-md-6">
+            <div class="status-card">
+                <h6><i class="fas fa-filter"></i> Filter by Floor</h6>
+                <select id="floorFilter" class="form-select">
+                    <option value="all">All Floors</option>
+                    <!-- Options will be populated dynamically -->
+                </select>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div id="floorStatsContainer" class="status-card">
+                <h6><i class="fas fa-chart-bar"></i> Floor Statistics</h6>
+                <div id="floorStatsContent">
+                    <p class="text-muted">Loading floor statistics...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Statistics Cards -->
     <div class="row mb-4" id="statsSection">
         <div class="col-md-4">
@@ -65,6 +86,8 @@
 <script>
     let refreshInterval;
     let isRefreshing = true;
+    let allSpaces = [];
+    let currentFloorFilter = 'all';
     
     // CSRF Token for Laravel
     $.ajaxSetup({
@@ -89,7 +112,6 @@
         return Math.min((distance / 100) * 100, 100);
     }
     
-    // FIXED formatTimeAgo function
     function formatTimeAgo(timestamp) {
         const now = new Date();
         const updateTime = new Date(timestamp);
@@ -106,7 +128,6 @@
         if (diffDays === 1) return '1 day ago';
         if (diffDays < 7) return `${diffDays} days ago`;
         
-        // For very old data, show the actual date/time
         return updateTime.toLocaleString();
     }
     
@@ -115,7 +136,9 @@
             const response = await fetch('/api/parking');
             const data = await response.json();
             
+            allSpaces = data;
             updateDashboard(data);
+            updateFloorFilter(data);
             updateTimestamp();
             
             $('#refreshStatus')
@@ -131,9 +154,67 @@
                 .html('<i class="fas fa-exclamation-triangle"></i> Connection Error');
         }
     }
+
+    async function fetchFloorStats() {
+        try {
+            const response = await fetch('/api/parking/stats');
+            const data = await response.json();
+            updateFloorStats(data);
+        } catch (error) {
+            console.error('Error fetching floor stats:', error);
+        }
+    }
     
-    function updateDashboard(spaces) {
-        // Update statistics
+    function updateFloorFilter(spaces) {
+        const floors = [...new Set(spaces.map(space => space.floor_level))].sort();
+        const currentSelection = $('#floorFilter').val();
+        
+        $('#floorFilter').html('<option value="all">All Floors</option>');
+        floors.forEach(floor => {
+            $('#floorFilter').append(`<option value="${floor}">${floor}</option>`);
+        });
+        
+        // Restore previous selection if it still exists
+        if (floors.includes(currentSelection) || currentSelection === 'all') {
+            $('#floorFilter').val(currentSelection);
+        }
+    }
+    
+    function updateFloorStats(statsData) {
+        if (statsData.by_floor && statsData.by_floor.length > 0) {
+            let html = '';
+            statsData.by_floor.forEach(floor => {
+                const occupancyRate = floor.total > 0 ? Math.round((floor.occupied / floor.total) * 100) : 0;
+                html += `
+                    <div class="d-flex justify-content-between align-items-center mb-2">
+                        <strong>${floor.floor_level}:</strong>
+                        <div>
+                            <span class="text-success">${floor.available}</span> / 
+                            <span class="text-danger">${floor.occupied}</span> / 
+                            <span class="text-primary">${floor.total}</span>
+                            <small class="text-muted">(${occupancyRate}%)</small>
+                        </div>
+                    </div>
+                `;
+            });
+            $('#floorStatsContent').html(html);
+        }
+    }
+    
+    function filterSpacesByFloor() {
+        const selectedFloor = $('#floorFilter').val();
+        currentFloorFilter = selectedFloor;
+        
+        let filteredSpaces = allSpaces;
+        if (selectedFloor !== 'all') {
+            filteredSpaces = allSpaces.filter(space => space.floor_level === selectedFloor);
+        }
+        
+        updateDashboard(filteredSpaces);
+        updateStatistics(filteredSpaces);
+    }
+    
+    function updateStatistics(spaces) {
         const total = spaces.length;
         const occupied = spaces.filter(space => space.is_occupied == 1).length;
         const available = total - occupied;
@@ -141,14 +222,23 @@
         $('#availableCount').text(available);
         $('#occupiedCount').text(occupied);
         $('#totalCount').text(total);
+    }
+    
+    function updateDashboard(spaces) {
+        // Update statistics
+        updateStatistics(spaces);
         
         // Update parking spaces
         if (spaces.length === 0) {
+            const filterMessage = currentFloorFilter === 'all' 
+                ? 'No Parking Sensors Detected' 
+                : `No sensors found on ${currentFloorFilter}`;
+            
             $('#parkingSpaces').html(`
                 <div class="col-12">
                     <div class="status-card no-data">
                         <i class="fas fa-info-circle"></i>
-                        <h5>No Parking Sensors Detected</h5>
+                        <h5>${filterMessage}</h5>
                         <p>Waiting for ESP32 sensors to send data...</p>
                     </div>
                 </div>
@@ -165,14 +255,20 @@
             const icon = isOccupied ? 'fas fa-car' : 'fas fa-check-circle';
             const distanceColor = getDistanceColor(space.distance_cm);
             const distancePercentage = getDistancePercentage(space.distance_cm);
+            const floorLevel = space.floor_level || '4th Floor'; // Fallback for old data
             
             html += `
                 <div class="col-lg-6 col-xl-4">
                     <div class="parking-space-card ${statusClass}">
                         <div class="d-flex justify-content-between align-items-center mb-3">
-                            <h5 class="mb-0">
-                                <i class="fas fa-microchip"></i> Sensor ${space.sensor_id}
-                            </h5>
+                            <div>
+                                <h5 class="mb-0">
+                                    <i class="fas fa-microchip"></i> Sensor ${space.sensor_id}
+                                </h5>
+                                <small class="text-muted">
+                                    <i class="fas fa-building"></i> ${floorLevel}
+                                </small>
+                            </div>
                             <span class="status-badge ${badgeClass}">
                                 <i class="${icon}"></i> ${statusText}
                             </span>
@@ -227,11 +323,15 @@
     }
     
     function startAutoRefresh() {
-        refreshInterval = setInterval(fetchParkingData, 3000); // Every 3 seconds
+        refreshInterval = setInterval(() => {
+            fetchParkingData();
+            fetchFloorStats();
+        }, 3000); // Every 3 seconds
     }
     
     // Event listeners
     $('#refreshStatus').click(toggleAutoRefresh);
+    $('#floorFilter').change(filterSpacesByFloor);
     
     // Handle page visibility change
     document.addEventListener('visibilitychange', function() {
@@ -242,15 +342,17 @@
         }
     });
     
-    // Initialize
-    startAutoRefresh();
-    
     // Manual refresh button (optional)
     $(document).on('keydown', function(e) {
         if (e.key === 'F5' || (e.ctrlKey && e.key === 'r')) {
             e.preventDefault();
             fetchParkingData();
+            fetchFloorStats();
         }
     });
+    
+    // Initialize
+    startAutoRefresh();
+    fetchFloorStats();
 </script>
 @endpush
