@@ -23,7 +23,7 @@
         }
         
         .header-section {
-            text-align: center;
+            text-align: left;
             background-color: white;
             color: #B22020;
             margin-bottom: 30px;
@@ -31,10 +31,10 @@
             border-radius: 15px;
         }
         
-        .header-section h1 {
-            font-size: 3rem;
-            font-weight: bold;
-            margin-bottom: 10px;
+        .logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
         }
         
         .status-card {
