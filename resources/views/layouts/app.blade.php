@@ -35,17 +35,18 @@
             margin-bottom: 10px;
         }
         
+        .logo {
+            width: 80px;
+            height: 80px;
+            object-fit: contain;
+        }
+        
         .status-card {
             background: white;
             border-radius: 15px;
             padding: 20px;
             margin-bottom: 20px;
             box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            transition: transform 0.3s ease;
-        }
-        
-        .status-card:hover {
-            transform: translateY(-5px);
         }
         
         .parking-space-card {
@@ -141,23 +142,6 @@
             margin-bottom: 20px;
         }
 
-        /* Button styling */
-        .btn-outline-light:hover {
-            background-color: white;
-            color: #B22020;
-        }
-        
-        .btn-success {
-            background-color: #28a745;
-            border-color: #28a745;
-        }
-        
-        .btn-secondary {
-            background-color: white;
-            color: #B22020;
-            border-color: white;
-        }
-
         /* Livewire loading states */
         .loading {
             opacity: 0.6;
@@ -181,7 +165,7 @@
 <body>
     <!-- Refresh Status Indicator -->
     <div id="refreshStatus" class="refresh-status refresh-active">
-        <i class="fas fa-sync-alt"></i> Live Updates ON
+        <i class="fas fa-sync-alt"></i> Live Updates
     </div>
 
     <div class="dashboard-container">
@@ -209,7 +193,7 @@
         });
 
         document.addEventListener('livewire:navigated', () => {
-            document.querySelector('#refreshStatus').innerHTML = '<i class="fas fa-sync-alt"></i> Live Updates ON';
+            document.querySelector('#refreshStatus').innerHTML = '<i class="fas fa-sync-alt"></i> Live Updates';
         });
     </script>
     

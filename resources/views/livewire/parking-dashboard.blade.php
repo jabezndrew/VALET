@@ -1,17 +1,15 @@
 <div wire:poll.3s="loadParkingData">
     <!-- Header Section -->
     <div class="header-section">
-        <h1><i class="fas fa-car"></i> VALET Smart Parking</h1>
-        <p class="lead">University of San Jose-Recoletos - Quadricentennial Campus</p>
+        <div class="d-flex justify-content-center align-items-center mb-3">
+            <img src="{{ asset('resources/images/valet-logo.jpg') }}" alt="VALET Logo" class="logo me-3">
+            <div>
+                <h1><i class="fas fa-car"></i> VALET Smart Parking</h1>
+                <p class="lead">University of San Jose-Recoletos - Quadricentennial Campus</p>
+            </div>
+        </div>
         <div class="d-flex justify-content-center align-items-center mt-3">
             <span class="me-3">Last Updated: {{ $lastUpdate ?? 'Never' }}</span>
-            <button wire:click="refreshNow" class="btn btn-outline-light btn-sm me-2">
-                <i class="fas fa-sync-alt"></i> Refresh Now
-            </button>
-            <button wire:click="toggleAutoRefresh" class="btn {{ $isAutoRefreshEnabled ? 'btn-success' : 'btn-secondary' }} btn-sm">
-                <i class="fas fa-{{ $isAutoRefreshEnabled ? 'pause' : 'play' }}"></i>
-                Auto-Refresh {{ $isAutoRefreshEnabled ? 'ON' : 'OFF' }}
-            </button>
         </div>
     </div>
 
@@ -142,18 +140,3 @@
         </div>
     </div>
 </div>
-
-<script>
-    document.addEventListener('livewire:init', () => {
-        // Handle auto-refresh toggle
-        Livewire.on('enable-auto-refresh', () => {
-            document.querySelector('#refreshStatus').className = 'refresh-status refresh-active';
-            document.querySelector('#refreshStatus').innerHTML = '<i class="fas fa-sync-alt"></i> Live Updates ON';
-        });
-        
-        Livewire.on('disable-auto-refresh', () => {
-            document.querySelector('#refreshStatus').className = 'refresh-status refresh-error';
-            document.querySelector('#refreshStatus').innerHTML = '<i class="fas fa-pause"></i> Live Updates OFF';
-        });
-    });
-</script>
