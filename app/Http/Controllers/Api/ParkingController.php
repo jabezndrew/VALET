@@ -6,7 +6,7 @@ use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use Carbon\Carbon;
 
-class ParkingController extends Component
+class ParkingDashboard extends Component
 {
     public $spaces = [];
     public $floorFilter = 'all';
