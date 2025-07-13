@@ -3,15 +3,236 @@
 namespace App\Livewire;
 
 use Livewire\Component;
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
 
 class ParkingDashboard extends Component
 {
-    public $message = "✅ Livewire is working in Laravel 11+!";
-    public $count = 0;
+    public $spaces = [];
+    public $allSpaces = [];
+    public $floorFilter = 'all';
+    public $availableFloors = [];
+    public $floorStats = [];
+    public $lastUpdate;
+    
+    // Statistics
+    public $totalSpaces = 0;
+    public $occupiedSpaces = 0;
+    public $availableSpaces = 0;
+    public $occupancyRate = 0;
 
-    public function increment()
+    // Auto-refresh
+    public $isAutoRefreshEnabled = true;
+
+    protected $listeners = [
+        'refresh-parking-data' => 'loadParkingData'
+    ];
+
+    public function mount()
     {
-        $this->count++;
+        $this->loadParkingData();
+    }
+
+    public function loadParkingData()
+    {
+        try {
+            $this->ensureTableExists();
+            
+            // Get all parking spaces with proper Carbon parsing
+            $this->allSpaces = DB::table('parking_spaces')
+                ->orderBy('sensor_id')
+                ->get()
+                ->map(function ($space) {
+                    $space->created_at = Carbon::parse($space->created_at);
+                    $space->updated_at = Carbon::parse($space->updated_at);
+                    return $space;
+                })
+                ->toArray();
+
+            // Update available floors
+            $this->updateAvailableFloors();
+
+            // Filter spaces based on selected floor
+            $this->filterSpacesByFloor();
+
+            // Update statistics
+            $this->updateStatistics();
+            
+            // Update floor statistics
+            $this->updateFloorStats();
+            
+            $this->lastUpdate = now()->format('H:i:s');
+            
+        } catch (\Exception $e) {
+            session()->flash('error', 'Failed to load parking data: ' . $e->getMessage());
+            
+            // Fallback to empty data
+            $this->allSpaces = [];
+            $this->spaces = [];
+            $this->availableFloors = [];
+            $this->floorStats = [];
+            $this->resetStatistics();
+        }
+    }
+
+    public function updatedFloorFilter()
+    {
+        $this->filterSpacesByFloor();
+        $this->updateStatistics();
+    }
+
+    public function toggleAutoRefresh()
+    {
+        $this->isAutoRefreshEnabled = !$this->isAutoRefreshEnabled;
+        
+        if ($this->isAutoRefreshEnabled) {
+            $this->dispatch('enable-auto-refresh');
+            session()->flash('message', 'Auto-refresh enabled');
+        } else {
+            $this->dispatch('disable-auto-refresh');
+            session()->flash('message', 'Auto-refresh disabled');
+        }
+    }
+
+    public function refreshNow()
+    {
+        $this->loadParkingData();
+        session()->flash('message', 'Dashboard refreshed successfully');
+    }
+
+    private function updateAvailableFloors()
+    {
+        $floors = collect($this->allSpaces)->pluck('floor_level')->unique()->filter()->sort()->values();
+        $this->availableFloors = $floors->toArray();
+    }
+
+    private function filterSpacesByFloor()
+    {
+        if ($this->floorFilter === 'all') {
+            $this->spaces = $this->allSpaces;
+        } else {
+            $this->spaces = collect($this->allSpaces)
+                ->where('floor_level', $this->floorFilter)
+                ->values()
+                ->toArray();
+        }
+    }
+
+    private function updateStatistics()
+    {
+        $spaces = collect($this->spaces);
+        
+        $this->totalSpaces = $spaces->count();
+        $this->occupiedSpaces = $spaces->where('is_occupied', true)->count();
+        $this->availableSpaces = $this->totalSpaces - $this->occupiedSpaces;
+        $this->occupancyRate = $this->totalSpaces > 0 
+            ? round(($this->occupiedSpaces / $this->totalSpaces) * 100, 1) 
+            : 0;
+    }
+
+    private function updateFloorStats()
+    {
+        $allSpaces = collect($this->allSpaces);
+        
+        $this->floorStats = $allSpaces
+            ->groupBy('floor_level')
+            ->map(function ($floorSpaces, $floorName) {
+                $total = $floorSpaces->count();
+                $occupied = $floorSpaces->where('is_occupied', true)->count();
+                $available = $total - $occupied;
+                $occupancyRate = $total > 0 ? round(($occupied / $total) * 100, 1) : 0;
+
+                return [
+                    'floor_level' => $floorName,
+                    'total' => $total,
+                    'occupied' => $occupied,
+                    'available' => $available,
+                    'occupancy_rate' => $occupancyRate
+                ];
+            })
+            ->values()
+            ->toArray();
+    }
+
+    private function resetStatistics()
+    {
+        $this->totalSpaces = 0;
+        $this->occupiedSpaces = 0;
+        $this->availableSpaces = 0;
+        $this->occupancyRate = 0;
+    }
+
+    public function getDistanceColor($distance)
+    {
+        if ($distance <= 5) return '#dc3545';   // Red - Very close
+        if ($distance <= 10) return '#fd7e14';  // Orange - Close  
+        if ($distance <= 20) return '#ffc107';  // Yellow - Medium
+        if ($distance <= 50) return '#28a745';  // Green - Far
+        return '#007bff';                       // Blue - Very far
+    }
+
+    public function getDistancePercentage($distance)
+    {
+        // Convert distance to percentage for progress bar
+        // 0cm = 100%, 100cm+ = 0%
+        $maxDistance = 100;
+        $percentage = max(0, min(100, 100 - ($distance / $maxDistance * 100)));
+        return $percentage;
+    }
+
+    public function getDistanceStatus($distance)
+    {
+        if ($distance <= 5) return 'Very Close';
+        if ($distance <= 10) return 'Close';
+        if ($distance <= 20) return 'Medium';
+        if ($distance <= 50) return 'Far';
+        return 'Very Far';
+    }
+
+    public function getSpaceIcon($space)
+    {
+        if ($space['is_occupied']) {
+            return 'fas fa-car';
+        }
+        return 'fas fa-check-circle';
+    }
+
+    public function getStatusText($space)
+    {
+        if ($space['is_occupied']) {
+            return '🚗 Vehicle Present';
+        }
+        return '✅ Space Available';
+    }
+
+    public function getFloorIcon($floorLevel)
+    {
+        if (str_contains(strtolower($floorLevel), 'basement') || str_contains($floorLevel, 'B')) {
+            return 'fas fa-layer-group';
+        }
+        if (str_contains($floorLevel, '1st') || str_contains($floorLevel, 'Ground')) {
+            return 'fas fa-home';
+        }
+        return 'fas fa-building';
+    }
+
+    private function ensureTableExists()
+    {
+        DB::statement("CREATE TABLE IF NOT EXISTS parking_spaces (
+            id INT AUTO_INCREMENT PRIMARY KEY,
+            sensor_id INT UNIQUE NOT NULL,
+            is_occupied BOOLEAN NOT NULL DEFAULT FALSE,
+            distance_cm INT,
+            floor_level VARCHAR(255) DEFAULT '4th Floor',
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+        ) ENGINE=InnoDB");
+        
+        // Add floor_level column if it doesn't exist (for existing tables)
+        $columnExists = DB::select("SHOW COLUMNS FROM parking_spaces LIKE 'floor_level'");
+        if (empty($columnExists)) {
+            DB::statement("ALTER TABLE parking_spaces ADD COLUMN floor_level VARCHAR(255) DEFAULT '4th Floor' AFTER distance_cm");
+        }
     }
 
     public function render()
