@@ -128,6 +128,7 @@ class ParkingDashboard extends Component
 
     public function render()
     {
+       // $this->loadParkingData();
         return view('livewire.parking-dashboard');
     }
 }

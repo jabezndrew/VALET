@@ -130,4 +130,5 @@ class ParkingDashboard extends Component
     {
         return view('livewire.parking-dashboard');
     }
+    //haha
 }
