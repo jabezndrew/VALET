@@ -124,15 +124,21 @@
             color: white;
             font-weight: bold;
             z-index: 1000;
+            cursor: pointer;
         }
         
-        .refresh-active { background-color: #28a745; }
-        .refresh-error { background-color: #dc3545; }
+        .refresh-active { 
+            background-color: #28a745;
+            animation: pulse-green 2s infinite;
+        }
+        .refresh-error { 
+            background-color: #dc3545; 
+        }
         
-        @keyframes pulse {
-            0% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-            100% { transform: scale(1); }
+        @keyframes pulse-green {
+            0% { background-color: #28a745; }
+            50% { background-color: #34ce57; }
+            100% { background-color: #28a745; }
         }
         
         .updating {
@@ -149,14 +155,31 @@
             font-size: 4rem;
             margin-bottom: 20px;
         }
+
+        /* Livewire loading states */
+        .loading {
+            opacity: 0.6;
+            pointer-events: none;
+        }
+
+        .wire-loading {
+            display: inline-block;
+        }
+
+        .wire-loading.hide {
+            display: none;
+        }
     </style>
     
     @stack('styles')
+    
+    <!-- Livewire Styles -->
+    @livewireStyles
 </head>
 <body>
     <!-- Refresh Status Indicator -->
     <div id="refreshStatus" class="refresh-status refresh-active">
-        <i class="fas fa-sync-alt"></i> Auto-refresh ON
+        <i class="fas fa-sync-alt"></i> Live Updates ON
     </div>
 
     <div class="dashboard-container">
@@ -165,8 +188,28 @@
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- jQuery -->
-    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    
+    <!-- Livewire Scripts -->
+    @livewireScripts
+    
+    <script>
+        // Global Livewire configuration
+        document.addEventListener('livewire:init', () => {
+            // Auto-refresh every 3 seconds
+            setInterval(() => {
+                Livewire.dispatch('refresh-parking-data');
+            }, 3000);
+        });
+
+        // Loading state indicators
+        document.addEventListener('livewire:navigating', () => {
+            document.querySelector('#refreshStatus').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
+        });
+
+        document.addEventListener('livewire:navigated', () => {
+            document.querySelector('#refreshStatus').innerHTML = '<i class="fas fa-sync-alt"></i> Live Updates ON';
+        });
+    </script>
     
     @stack('scripts')
 </body>
