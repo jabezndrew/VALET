@@ -2,11 +2,7 @@
     <!-- Header Section -->
     <div class="header-section">
         <div class="d-flex justify-content-center align-items-center mb-3">
-            <img src="{{ asset('resources/images/valet-logo.jpg') }}" alt="VALET Logo" class="logo me-3">
-            <div>
-                <h1><i class="fas fa-car"></i> VALET Smart Parking</h1>
-                <p class="lead">University of San Jose-Recoletos - Quadricentennial Campus</p>
-            </div>
+            <h1>VALET</h1>
         </div>
         <div class="d-flex justify-content-center align-items-center mt-3">
             <span class="me-3">Last Updated: {{ $lastUpdate ?? 'Never' }}</span>
@@ -132,11 +128,4 @@
             </pre>
         </div>
     @endif
-
-    <!-- Loading Indicator -->
-    <div wire:loading class="position-fixed top-50 start-50 translate-middle">
-        <div class="spinner-border text-primary" role="status">
-            <span class="visually-hidden">Loading...</span>
-        </div>
-    </div>
 </div>

@@ -24,21 +24,17 @@
         
         .header-section {
             text-align: center;
-            color: white;
+            background-color: white;
+            color: #B22020;
             margin-bottom: 30px;
+            padding: 20px;
+            border-radius: 15px;
         }
         
         .header-section h1 {
             font-size: 3rem;
             font-weight: bold;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
             margin-bottom: 10px;
-        }
-        
-        .logo {
-            width: 80px;
-            height: 80px;
-            object-fit: contain;
         }
         
         .status-card {
@@ -101,36 +97,6 @@
         .stat-number.occupied { color: #B22020; }
         .stat-number.total { color: #B22020; }
         
-        .refresh-status {
-            position: fixed;
-            top: 20px;
-            right: 20px;
-            padding: 10px 20px;
-            border-radius: 25px;
-            color: white;
-            font-weight: bold;
-            z-index: 1000;
-            cursor: pointer;
-        }
-        
-        .refresh-active { 
-            background-color: #28a745;
-            animation: pulse-green 2s infinite;
-        }
-        .refresh-error { 
-            background-color: #B22020; 
-        }
-        
-        @keyframes pulse-green {
-            0% { background-color: #28a745; }
-            50% { background-color: #34ce57; }
-            100% { background-color: #28a745; }
-        }
-        
-        .updating {
-            animation: pulse 1s infinite;
-        }
-        
         .no-data {
             text-align: center;
             padding: 60px 20px;
@@ -141,20 +107,6 @@
             font-size: 4rem;
             margin-bottom: 20px;
         }
-
-        /* Livewire loading states */
-        .loading {
-            opacity: 0.6;
-            pointer-events: none;
-        }
-
-        .wire-loading {
-            display: inline-block;
-        }
-
-        .wire-loading.hide {
-            display: none;
-        }
     </style>
     
     @stack('styles')
@@ -163,11 +115,6 @@
     @livewireStyles
 </head>
 <body>
-    <!-- Refresh Status Indicator -->
-    <div id="refreshStatus" class="refresh-status refresh-active">
-        <i class="fas fa-sync-alt"></i> Live Updates
-    </div>
-
     <div class="dashboard-container">
         @yield('content')
     </div>
@@ -185,15 +132,6 @@
             setInterval(() => {
                 Livewire.dispatch('refresh-parking-data');
             }, 3000);
-        });
-
-        // Loading state indicators
-        document.addEventListener('livewire:navigating', () => {
-            document.querySelector('#refreshStatus').innerHTML = '<i class="fas fa-spinner fa-spin"></i> Updating...';
-        });
-
-        document.addEventListener('livewire:navigated', () => {
-            document.querySelector('#refreshStatus').innerHTML = '<i class="fas fa-sync-alt"></i> Live Updates';
         });
     </script>
     
