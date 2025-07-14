@@ -213,7 +213,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <div class="valet-logo-container">
-                        <img src="{{ asset('images/valet-logo.jpg') }}" alt="VALET" class="valet-logo">
+                        <img src="{{ asset('../../images/valet-logo.jpg') }}" alt="VALET" class="valet-logo">
                     </div>
                     <div class="ms-3">
                         <h3 class="text-white mb-0 fw-bold">VALET</h3>

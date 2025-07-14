@@ -6,7 +6,10 @@ Route::get('/', function () {
     return redirect('/dashboard');
 });
 
-// Livewire Dashboard Route
 Route::get('/dashboard', function () {
     return view('dashboard.livewire-index');
 })->name('dashboard');
+
+Route::get('/floor/{floor}', function ($floor) {
+    return view('dashboard.floor-detail', ['floor' => urldecode($floor)]);
+})->name('floor.detail');

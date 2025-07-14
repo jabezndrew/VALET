@@ -80,7 +80,11 @@ class ParkingDashboard extends Component
         $this->filterSpacesByFloor();
         $this->updateStatistics();
     }
-
+    public function selectFloor($floorLevel)
+    {
+        // Redirect to floor detail page
+        return redirect()->route('floor.detail', ['floor' => urlencode($floorLevel)]);
+    }
     public function toggleAutoRefresh()
     {
         $this->isAutoRefreshEnabled = !$this->isAutoRefreshEnabled;
