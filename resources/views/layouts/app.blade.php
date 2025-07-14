@@ -15,55 +15,44 @@
         body {
             background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            margin: 0;
-            padding: 0;
-        }
-        
-        .dashboard-container {
-            max-width: 400px;
-            margin: 0 auto;
-            background: white;
-            min-height: 100vh;
         }
         
         .valet-header {
             background-color: #B22020;
-            padding: 20px;
-            border-radius: 0 0 20px 20px;
+            padding: 20px 0;
         }
         
         .valet-logo-container {
-            width: 40px;
-            height: 40px;
+            width: 50px;
+            height: 50px;
             background: white;
-            border-radius: 8px;
+            border-radius: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
         }
         
         .valet-logo {
-            width: 30px;
-            height: 30px;
+            width: 35px;
+            height: 35px;
             object-fit: contain;
         }
         
         .campus-section {
             background: white;
-            padding: 20px;
-            border-radius: 15px;
-            margin: 20px;
-            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
         }
         
         .stat-circle {
-            width: 80px;
-            height: 80px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 10px;
+            margin: 0 auto 15px;
             position: relative;
         }
         
@@ -81,65 +70,71 @@
         
         .stat-circle .stat-number {
             background: white;
-            width: 60px;
-            height: 60px;
+            width: 90px;
+            height: 90px;
             border-radius: 50%;
             display: flex;
             align-items: center;
             justify-content: center;
             font-weight: bold;
-            font-size: 1.2rem;
+            font-size: 1.8rem;
         }
         
         .floor-section {
-            padding: 0 20px 20px;
+            margin-top: 30px;
         }
         
         .live-badge {
             background: #28a745;
             color: white;
-            padding: 4px 12px;
-            border-radius: 12px;
-            font-size: 0.75rem;
+            padding: 8px 16px;
+            border-radius: 15px;
+            font-size: 0.9rem;
             font-weight: bold;
         }
         
         .floor-card {
             background: white;
-            border-radius: 15px;
-            padding: 20px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            border-radius: 20px;
+            padding: 25px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
+            height: 100%;
+        }
+        
+        .floor-card:hover {
+            transform: translateY(-5px);
         }
         
         .available-badge {
             background: #28a745;
             color: white;
-            padding: 4px 12px;
+            padding: 6px 12px;
             border-radius: 12px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: bold;
         }
         
         .limited-badge {
             background: #fd7e14;
             color: white;
-            padding: 4px 12px;
+            padding: 6px 12px;
             border-radius: 12px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: bold;
         }
         
         .full-badge {
             background: #dc3545;
             color: white;
-            padding: 4px 12px;
+            padding: 6px 12px;
             border-radius: 12px;
-            font-size: 0.75rem;
+            font-size: 0.8rem;
             font-weight: bold;
         }
         
         .floor-number {
-            font-size: 1.5rem;
+            font-size: 2rem;
             font-weight: bold;
             margin-bottom: 5px;
         }
@@ -149,13 +144,60 @@
         .total-color { color: #007bff; }
         
         .progress {
-            height: 8px;
-            border-radius: 4px;
+            height: 10px;
+            border-radius: 5px;
             background-color: #e9ecef;
         }
         
         .progress-bar {
-            border-radius: 4px;
+            border-radius: 5px;
+        }
+
+        .selected-floor-section {
+            background: white;
+            padding: 30px;
+            border-radius: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+
+        .parking-space-card {
+            background: white;
+            border-radius: 15px;
+            padding: 20px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            border-left: 4px solid;
+            height: 100%;
+        }
+        
+        .parking-space-card.available {
+            border-left-color: #28a745;
+        }
+        
+        .parking-space-card.occupied {
+            border-left-color: #dc3545;
+        }
+
+        .status-badge-small {
+            padding: 4px 8px;
+            border-radius: 8px;
+            font-size: 0.7rem;
+            font-weight: bold;
+        }
+
+        .badge-available {
+            background: #28a745;
+            color: white;
+        }
+
+        .badge-occupied {
+            background: #dc3545;
+            color: white;
+        }
+
+        .distance-reading {
+            font-size: 1.2rem;
+            font-weight: bold;
+            color: #333;
         }
     </style>
     
@@ -165,9 +207,29 @@
     @livewireStyles
 </head>
 <body>
-    <div class="dashboard-container">
-        @yield('content')
+    <!-- Header Section - Applied to ALL pages -->
+    <div class="valet-header">
+        <div class="container">
+            <div class="d-flex justify-content-between align-items-center">
+                <div class="d-flex align-items-center">
+                    <div class="valet-logo-container">
+                        <img src="{{ asset('images/valet-logo.jpg') }}" alt="VALET" class="valet-logo">
+                    </div>
+                    <div class="ms-3">
+                        <h3 class="text-white mb-0 fw-bold">VALET</h3>
+                        <span class="text-white-50">Your Virtual Parking Buddy</span>
+                    </div>
+                </div>
+                <div class="d-flex">
+                    <i class="fas fa-bell text-white me-3" style="font-size: 1.5rem;"></i>
+                    <i class="fas fa-cog text-white" style="font-size: 1.5rem;"></i>
+                </div>
+            </div>
+        </div>
     </div>
+
+    <!-- Page Content -->
+    @yield('content')
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
