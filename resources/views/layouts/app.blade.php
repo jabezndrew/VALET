@@ -153,13 +153,6 @@
             border-radius: 5px;
         }
 
-        .selected-floor-section {
-            background: white;
-            padding: 30px;
-            border-radius: 20px;
-            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-        }
-
         .parking-space-card {
             background: white;
             border-radius: 15px;
@@ -192,12 +185,6 @@
         .badge-occupied {
             background: #dc3545;
             color: white;
-        }
-
-        .distance-reading {
-            font-size: 1.2rem;
-            font-weight: bold;
-            color: #333;
         }
 
         /* Modal Styles */
@@ -277,12 +264,6 @@
             border-radius: 6px;
             font-size: 0.65rem;
             font-weight: bold;
-        }
-
-        .distance-mini {
-            font-size: 1rem;
-            font-weight: bold;
-            color: #333;
         }
     </style>
     

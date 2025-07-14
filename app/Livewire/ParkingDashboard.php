@@ -96,6 +96,24 @@ class ParkingDashboard extends Component
         $this->selectedFloorStats = [];
     }
 
+    public function getSensorDisplayName($sensorId)
+    {
+        $mapping = [
+            1 => 'A1',
+            2 => 'A2', 
+            3 => 'A3',
+            4 => 'A4',
+            5 => 'B1'
+        ];
+        
+        return $mapping[$sensorId] ?? $sensorId;
+    }
+
+    public function getRelativeTime($timestamp)
+    {
+        return Carbon::parse($timestamp)->diffForHumans();
+    }
+
     private function loadSelectedFloorData()
     {
         try {
@@ -214,33 +232,6 @@ class ParkingDashboard extends Component
         $this->occupiedSpaces = 0;
         $this->availableSpaces = 0;
         $this->occupancyRate = 0;
-    }
-
-    public function getDistanceColor($distance)
-    {
-        if ($distance <= 5) return '#dc3545';   // Red - Very close
-        if ($distance <= 10) return '#fd7e14';  // Orange - Close  
-        if ($distance <= 20) return '#ffc107';  // Yellow - Medium
-        if ($distance <= 50) return '#28a745';  // Green - Far
-        return '#007bff';                       // Blue - Very far
-    }
-
-    public function getDistancePercentage($distance)
-    {
-        // Convert distance to percentage for progress bar
-        // 0cm = 100%, 100cm+ = 0%
-        $maxDistance = 100;
-        $percentage = max(0, min(100, 100 - ($distance / $maxDistance * 100)));
-        return $percentage;
-    }
-
-    public function getDistanceStatus($distance)
-    {
-        if ($distance <= 5) return 'Very Close';
-        if ($distance <= 10) return 'Close';
-        if ($distance <= 20) return 'Medium';
-        if ($distance <= 50) return 'Far';
-        return 'Very Far';
     }
 
     public function getSpaceIcon($space)

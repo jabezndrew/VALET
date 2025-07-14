@@ -211,15 +211,14 @@
                                 <div class="d-flex justify-content-between align-items-center mb-2">
                                     <h6 class="mb-0">
                                         <i class="{{ $this->getSpaceIcon((array)$space) }}"></i>
-                                        #{{ $space->sensor_id }}
+                                        {{ $this->getSensorDisplayName($space->sensor_id) }}
                                     </h6>
                                     <span class="status-badge-mini {{ $space->is_occupied ? 'badge-occupied' : 'badge-available' }}">
                                         {{ $space->is_occupied ? 'OCCUPIED' : 'AVAILABLE' }}
                                     </span>
                                 </div>
                                 <div class="text-center">
-                                    <div class="distance-mini">{{ $space->distance_cm ?? 'N/A' }}cm</div>
-                                    <small class="text-muted">{{ $space->updated_at->format('H:i:s') }}</small>
+                                    <small class="text-muted">{{ $this->getRelativeTime($space->updated_at) }}</small>
                                 </div>
                             </div>
                         </div>
