@@ -199,6 +199,91 @@
             font-weight: bold;
             color: #333;
         }
+
+        /* Modal Styles */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.5);
+            z-index: 9999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+
+        .modal-content {
+            background: white;
+            border-radius: 20px;
+            max-width: 900px;
+            width: 100%;
+            max-height: 90vh;
+            overflow-y: auto;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
+        }
+
+        .modal-header {
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            padding: 0;
+            color: #999;
+        }
+
+        .btn-close:hover {
+            color: #000;
+        }
+
+        .modal-body {
+            padding: 30px;
+        }
+
+        .modal-stat-number {
+            font-size: 1.8rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .modal-space-card {
+            background: #f8f9fa;
+            border-radius: 10px;
+            padding: 15px;
+            border-left: 4px solid;
+            height: 100%;
+        }
+
+        .modal-space-card.available {
+            border-left-color: #28a745;
+        }
+
+        .modal-space-card.occupied {
+            border-left-color: #dc3545;
+        }
+
+        .status-badge-mini {
+            padding: 2px 6px;
+            border-radius: 6px;
+            font-size: 0.65rem;
+            font-weight: bold;
+        }
+
+        .distance-mini {
+            font-size: 1rem;
+            font-weight: bold;
+            color: #333;
+        }
     </style>
     
     @stack('styles')
@@ -213,7 +298,7 @@
             <div class="d-flex justify-content-between align-items-center">
                 <div class="d-flex align-items-center">
                     <div class="valet-logo-container">
-                        <img src="{{ asset('../../images/valet-logo.jpg') }}" alt="VALET" class="valet-logo">
+                        <img src="/images/valet-logo.jpg" alt="VALET" class="valet-logo">
                     </div>
                     <div class="ms-3">
                         <h3 class="text-white mb-0 fw-bold">VALET</h3>

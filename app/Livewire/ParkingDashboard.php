@@ -24,6 +24,12 @@ class ParkingDashboard extends Component
     // Auto-refresh
     public $isAutoRefreshEnabled = true;
 
+    // Modal properties
+    public $showModal = false;
+    public $selectedFloor = '';
+    public $selectedFloorSpaces = [];
+    public $selectedFloorStats = [];
+
     protected $listeners = [
         'refresh-parking-data' => 'loadParkingData'
     ];
@@ -75,16 +81,60 @@ class ParkingDashboard extends Component
         }
     }
 
+    public function selectFloor($floorLevel)
+    {
+        $this->selectedFloor = $floorLevel;
+        $this->loadSelectedFloorData();
+        $this->showModal = true;
+    }
+
+    public function closeModal()
+    {
+        $this->showModal = false;
+        $this->selectedFloor = '';
+        $this->selectedFloorSpaces = [];
+        $this->selectedFloorStats = [];
+    }
+
+    private function loadSelectedFloorData()
+    {
+        try {
+            // Get spaces for this specific floor
+            $this->selectedFloorSpaces = DB::table('parking_spaces')
+                ->where('floor_level', $this->selectedFloor)
+                ->orderBy('sensor_id')
+                ->get()
+                ->map(function ($space) {
+                    $space->created_at = Carbon::parse($space->created_at);
+                    $space->updated_at = Carbon::parse($space->updated_at);
+                    return $space;
+                })
+                ->toArray();
+
+            // Calculate floor stats
+            $total = count($this->selectedFloorSpaces);
+            $occupied = collect($this->selectedFloorSpaces)->where('is_occupied', true)->count();
+            $available = $total - $occupied;
+
+            $this->selectedFloorStats = [
+                'total' => $total,
+                'occupied' => $occupied,
+                'available' => $available,
+                'occupancy_rate' => $total > 0 ? round(($occupied / $total) * 100, 1) : 0
+            ];
+
+        } catch (\Exception $e) {
+            $this->selectedFloorSpaces = [];
+            $this->selectedFloorStats = ['total' => 0, 'occupied' => 0, 'available' => 0, 'occupancy_rate' => 0];
+        }
+    }
+
     public function updatedFloorFilter()
     {
         $this->filterSpacesByFloor();
         $this->updateStatistics();
     }
-    public function selectFloor($floorLevel)
-    {
-        // Redirect to floor detail page
-        return redirect()->route('floor.detail', ['floor' => urlencode($floorLevel)]);
-    }
+
     public function toggleAutoRefresh()
     {
         $this->isAutoRefreshEnabled = !$this->isAutoRefreshEnabled;
