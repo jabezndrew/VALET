@@ -13,99 +13,149 @@
     
     <style>
         body {
-            background-color: #B22020;
-            min-height: 100vh;
+            background-color: #f8f9fa;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 0;
         }
         
         .dashboard-container {
-            padding: 20px;
+            max-width: 400px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
         }
         
-        .header-section {
-            text-align: left;
-            background-color: white;
-            color: #B22020;
-            margin-bottom: 30px;
+        .valet-header {
+            background-color: #B22020;
             padding: 20px;
-            border-radius: 15px;
+            border-radius: 0 0 20px 20px;
         }
         
-        .logo {
-            width: 80px;
-            height: 80px;
+        .valet-logo-container {
+            width: 40px;
+            height: 40px;
+            background: white;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .valet-logo {
+            width: 30px;
+            height: 30px;
             object-fit: contain;
         }
         
-        .status-card {
+        .campus-section {
+            background: white;
+            padding: 20px;
+            border-radius: 15px;
+            margin: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+        
+        .stat-circle {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 10px;
+            position: relative;
+        }
+        
+        .available-circle {
+            background: conic-gradient(#28a745 70%, #e9ecef 70%);
+        }
+        
+        .occupied-circle {
+            background: conic-gradient(#dc3545 33%, #e9ecef 33%);
+        }
+        
+        .total-circle {
+            background: conic-gradient(#007bff 100%, #e9ecef 100%);
+        }
+        
+        .stat-circle .stat-number {
+            background: white;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+        
+        .floor-section {
+            padding: 0 20px 20px;
+        }
+        
+        .live-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
+        
+        .floor-card {
             background: white;
             border-radius: 15px;
             padding: 20px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
         }
         
-        .parking-space-card {
-            background: white;
-            border-radius: 15px;
-            padding: 25px;
-            margin-bottom: 20px;
-            box-shadow: 0 8px 25px rgba(0,0,0,0.1);
-            transition: all 0.3s ease;
-            border-left: 6px solid;
-        }
-        
-        .parking-space-card.available {
-            border-left-color: #28a745;
-        }
-        
-        .parking-space-card.occupied {
-            border-left-color: #B22020;
-            transform: scale(1.02);
-        }
-        
-        .status-badge {
-            padding: 8px 16px;
-            border-radius: 25px;
+        .available-badge {
+            background: #28a745;
+            color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
             font-weight: bold;
-            font-size: 0.9rem;
-            text-transform: uppercase;
         }
         
-        .badge-available {
-            background-color: #28a745;
+        .limited-badge {
+            background: #fd7e14;
             color: white;
-        }
-        
-        .badge-occupied {
-            background-color: #B22020;
-            color: white;
-        }
-        
-        .stat-card {
-            text-align: center;
-            padding: 20px;
-        }
-        
-        .stat-number {
-            font-size: 2.5rem;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
             font-weight: bold;
-            margin-bottom: 10px;
         }
         
-        .stat-number.available { color: #28a745; }
-        .stat-number.occupied { color: #B22020; }
-        .stat-number.total { color: #B22020; }
-        
-        .no-data {
-            text-align: center;
-            padding: 60px 20px;
+        .full-badge {
+            background: #dc3545;
             color: white;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
         }
         
-        .no-data i {
-            font-size: 4rem;
-            margin-bottom: 20px;
+        .floor-number {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+        
+        .available-color { color: #28a745; }
+        .occupied-color { color: #dc3545; }
+        .total-color { color: #007bff; }
+        
+        .progress {
+            height: 8px;
+            border-radius: 4px;
+            background-color: #e9ecef;
+        }
+        
+        .progress-bar {
+            border-radius: 4px;
         }
     </style>
     
