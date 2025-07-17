@@ -29,7 +29,6 @@
             color: white;
             padding: 60px 40px;
             text-align: center;
-            position: relative;
         }
         
         .valet-logo-large {
@@ -41,8 +40,6 @@
             align-items: center;
             justify-content: center;
             margin: 0 auto 20px;
-            position: relative;
-            z-index: 2;
         }
         
         .login-right {
@@ -94,6 +91,11 @@
             background: #f8d7da;
             color: #721c24;
         }
+        
+        .form-check-input:checked {
+            background-color: #B22020;
+            border-color: #B22020;
+        }
     </style>
 
     <div class="login-container">
@@ -102,8 +104,7 @@
                 <div class="col-lg-6 col-md-6">
                     <div class="login-left">
                         <div class="valet-logo-large">
-                            <img src="/images/valet-logo.jpg" alt="VALET" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                            <i class="fas fa-car" style="display: none; font-size: 2rem; color: #B22020;"></i>
+                            <i class="fas fa-car" style="font-size: 2rem; color: #B22020;"></i>
                         </div>
                         
                         <h2 class="fw-bold mb-3">VALET</h2>
