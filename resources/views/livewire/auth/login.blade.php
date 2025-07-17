@@ -1,4 +1,105 @@
 <!-- resources/views/livewire/auth/login.blade.php -->
+@section('title', 'Login - VALET Smart Parking')
+
+@section('styles')
+<style>
+    body {
+        background: linear-gradient(135deg, #B22020, #8B1A1A);
+        min-height: 100vh;
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+    
+    .login-container {
+        min-height: 100vh;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        padding: 20px;
+    }
+    
+    .login-card {
+        background: white;
+        border-radius: 20px;
+        box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+        overflow: hidden;
+        max-width: 900px;
+        width: 100%;
+    }
+    
+    .login-left {
+        background: #B22020;
+        color: white;
+        padding: 60px 40px;
+        text-align: center;
+        position: relative;
+    }
+    
+    .valet-logo-large {
+        width: 80px;
+        height: 80px;
+        background: white;
+        border-radius: 20px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 0 auto 20px;
+        position: relative;
+        z-index: 2;
+    }
+    
+    .login-right {
+        padding: 60px 40px;
+    }
+    
+    .form-control {
+        border: 2px solid #e9ecef;
+        border-radius: 12px;
+        padding: 15px 20px;
+        font-size: 16px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-control:focus {
+        border-color: #B22020;
+        box-shadow: 0 0 0 0.2rem rgba(178, 32, 32, 0.25);
+    }
+    
+    .btn-login {
+        background: #B22020;
+        border: none;
+        border-radius: 12px;
+        padding: 15px 30px;
+        font-weight: bold;
+        color: white;
+        width: 100%;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-login:hover {
+        background: #8B1A1A;
+        transform: translateY(-2px);
+        box-shadow: 0 5px 15px rgba(178, 32, 32, 0.3);
+    }
+    
+    .parking-icon {
+        font-size: 2rem;
+        margin: 10px;
+        opacity: 0.8;
+    }
+    
+    .alert {
+        border-radius: 12px;
+        border: none;
+    }
+    
+    .alert-danger {
+        background: #f8d7da;
+        color: #721c24;
+    }
+</style>
+@endsection
+
+@section('content')
 <div class="login-container">
     <div class="login-card">
         <div class="row g-0">
@@ -66,7 +167,7 @@
                         
                         <div class="d-flex justify-content-between align-items-center mb-4">
                             <div class="form-check">
-                                <input class="form-check-input remember-check" 
+                                <input class="form-check-input" 
                                        type="checkbox" 
                                        id="remember" 
                                        wire:model="remember">
@@ -100,3 +201,4 @@
         </div>
     </div>
 </div>
+@endsection
