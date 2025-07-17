@@ -189,51 +189,6 @@
             color: white;
         }
         
-        /* User dropdown styles */
-        .user-dropdown {
-            background: rgba(255,255,255,0.1);
-            border: 1px solid rgba(255,255,255,0.2);
-            border-radius: 12px;
-            padding: 8px 16px;
-            color: white;
-            text-decoration: none;
-            transition: all 0.3s ease;
-        }
-        
-        .user-dropdown:hover {
-            background: rgba(255,255,255,0.2);
-            color: white;
-        }
-        
-        .user-dropdown:focus {
-            color: white;
-            outline: none;
-        }
-        
-        .role-badge {
-            font-size: 0.7rem;
-            padding: 2px 8px;
-            border-radius: 10px;
-            margin-left: 8px;
-        }
-        
-        .dropdown-menu {
-            border-radius: 12px;
-            border: none;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-            min-width: 200px;
-        }
-        
-        .dropdown-item {
-            padding: 10px 20px;
-            border-radius: 8px;
-            margin: 2px 8px;
-        }
-        
-        .dropdown-item:hover {
-            background: #f8f9fa;
-        }
-        
         .navbar-nav {
             gap: 15px;
         }
@@ -249,6 +204,88 @@
         .nav-link:hover, .nav-link.active {
             background: rgba(255,255,255,0.1);
             color: white !important;
+        }
+        
+        /* Simple User Dropdown */
+        .user-dropdown-wrapper {
+            position: relative;
+        }
+
+        .user-dropdown {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 12px;
+            padding: 8px 16px;
+            color: white;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .user-dropdown:hover {
+            background: rgba(255,255,255,0.2);
+        }
+
+        .user-dropdown-menu {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            min-width: 200px;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(-10px);
+            transition: all 0.3s ease;
+            z-index: 1000;
+            margin-top: 5px;
+        }
+
+        .user-dropdown-menu.show {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 10px 20px;
+            color: #333;
+            text-decoration: none;
+            border-radius: 8px;
+            margin: 2px 8px;
+            transition: background 0.3s ease;
+        }
+
+        .dropdown-item:hover {
+            background: #f8f9fa;
+            color: #333;
+        }
+
+        .logout-btn {
+            background: none;
+            border: none;
+            width: 100%;
+            text-align: left;
+            color: #dc3545;
+        }
+
+        .logout-btn:hover {
+            background: #f8f9fa;
+            color: #dc3545;
+        }
+
+        .dropdown-divider {
+            height: 1px;
+            background: #e9ecef;
+            margin: 8px 0;
+        }
+        
+        .role-badge {
+            font-size: 0.7rem;
+            padding: 2px 8px;
+            border-radius: 10px;
+            margin-left: 8px;
         }
         
         /* Alert styles */
@@ -277,12 +314,29 @@
             background: #d1ecf1;
             color: #0c5460;
         }
+        
+        /* Floor card no-data styles */
+        .floor-card.no-data {
+            opacity: 0.6;
+            border: 2px dashed #dee2e6;
+            background: #f8f9fa;
+            cursor: not-allowed !important;
+        }
+        
+        .no-data-badge {
+            background: #6c757d;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
     </style>
     
     @livewireStyles
 </head>
 <body>
-    <!-- Header Section - Applied to ALL pages -->
+    <!-- Header Section -->
     <div class="valet-header">
         <div class="container">
             <div class="d-flex justify-content-between align-items-center">
@@ -318,35 +372,31 @@
                         @endif
                     </nav>
                     
-                    <!-- User Dropdown -->
-                    <div class="dropdown">
-                        <button class="user-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+                    <!-- User Dropdown - SIMPLE VERSION -->
+                    <div class="user-dropdown-wrapper">
+                        <button class="user-dropdown" onclick="toggleUserDropdown()">
                             <i class="fas fa-user me-2"></i>
                             {{ auth()->user()->name }}
                             <span class="role-badge {{ auth()->user()->getRoleBadgeClass() }}">
                                 {{ auth()->user()->getRoleDisplayName() }}
                             </span>
+                            <i class="fas fa-chevron-down ms-2"></i>
                         </button>
-                        <ul class="dropdown-menu dropdown-menu-end">
-                            <li>
-                                <a class="dropdown-item" href="#">
-                                    <i class="fas fa-user me-2"></i> Profile
-                                </a>
-                            </li>
+                        
+                        <div class="user-dropdown-menu" id="userDropdownMenu">
+                            <a href="#" class="dropdown-item">
+                                <i class="fas fa-user me-2"></i> Profile
+                            </a>
                             @if(auth()->user()->canManageUsers())
-                            <li>
-                                <a class="dropdown-item" href="{{ route('admin.settings') }}" wire:navigate>
-                                    <i class="fas fa-cog me-2"></i> Settings
-                                </a>
-                            </li>
+                            <a href="{{ route('admin.settings') }}" class="dropdown-item" wire:navigate>
+                                <i class="fas fa-cog me-2"></i> Settings
+                            </a>
                             @endif
-                            <li><hr class="dropdown-divider"></li>
-                            <li>
-                                <button onclick="logout()" class="dropdown-item text-danger">
-                                    <i class="fas fa-sign-out-alt me-2"></i> Logout
-                                </button>
-                            </li>
-                        </ul>
+                            <div class="dropdown-divider"></div>
+                            <button onclick="logout()" class="dropdown-item logout-btn">
+                                <i class="fas fa-sign-out-alt me-2"></i> Logout
+                            </button>
+                        </div>
                     </div>
                 </div>
                 @else
@@ -407,58 +457,53 @@
     @livewireScripts
     
     <script>
-    // Initialize Bootstrap components
-    function initializeBootstrap() {
-        const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-        dropdowns.forEach(dropdown => {
-            // Dispose existing instance if it exists
-            const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
-            if (existingInstance) {
-                existingInstance.dispose();
-            }
-            // Create new instance
-            new bootstrap.Dropdown(dropdown);
-        });
-    }
+        // Simple dropdown toggle
+        function toggleUserDropdown() {
+            const menu = document.getElementById('userDropdownMenu');
+            menu.classList.toggle('show');
+        }
 
-    // Initialize on page load
-    document.addEventListener('DOMContentLoaded', function() {
-        initializeBootstrap();
-        
-        // Auto-hide alerts after 5 seconds
-        setTimeout(function() {
-            const alerts = document.querySelectorAll('.alert');
-            alerts.forEach(function(alert) {
-                const bsAlert = new bootstrap.Alert(alert);
-                bsAlert.close();
-            });
-        }, 5000);
-    });
-    
-    // Re-initialize after Livewire updates
-    document.addEventListener('livewire:updated', function() {
-        initializeBootstrap();
-    });
-    
-    // Global Livewire configuration
-    document.addEventListener('livewire:init', () => {
-        setInterval(() => {
-            Livewire.dispatch('refresh-parking-data');
-        }, 3000);
-    });
-    
-    // Logout function
-    function logout() {
-        fetch('/logout', {
-            method: 'POST',
-            headers: {
-                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                'Content-Type': 'application/json',
-            },
-        }).then(() => {
-            window.location.href = '/login';
+        // Close dropdown when clicking outside
+        document.addEventListener('click', function(event) {
+            const wrapper = document.querySelector('.user-dropdown-wrapper');
+            const menu = document.getElementById('userDropdownMenu');
+            
+            if (!wrapper.contains(event.target)) {
+                menu.classList.remove('show');
+            }
         });
-    }
-</script>
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            // Auto-hide alerts after 5 seconds
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
+        
+        // Global Livewire configuration
+        document.addEventListener('livewire:init', () => {
+            setInterval(() => {
+                Livewire.dispatch('refresh-parking-data');
+            }, 3000);
+        });
+        
+        // Logout function
+        function logout() {
+            fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                },
+            }).then(() => {
+                window.location.href = '/login';
+            });
+        }
+    </script>
 </body>
 </html>
