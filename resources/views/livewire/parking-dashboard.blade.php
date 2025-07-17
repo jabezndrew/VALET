@@ -1,6 +1,5 @@
 <!-- Replace entire resources/views/livewire/parking-dashboard.blade.php -->
 <div wire:poll.3s="loadParkingData">
-    <!-- Campus Dashboard -->
     <div class="container mt-4">
         <div class="campus-section">
             <h4 class="mb-4 fw-bold text-center">USJ-R Quadricentennial Campus</h4>
@@ -42,13 +41,16 @@
             </div>
 
             <div class="row">
-                <!-- Dynamic Floors from Database -->
                 @foreach($floorStats as $floorStat)
-                    <div class="col-lg-4 col-md-6 mb-4">
-                        <div class="floor-card" wire:click="goToFloor('{{ $floorStat['floor_level'] }}')" style="cursor: pointer;">
+                    <div class="col-lg-3 col-md-6 mb-4">
+                        <div class="floor-card {{ $floorStat['has_data'] ? '' : 'no-data' }}" 
+                             wire:click="goToFloor('{{ $floorStat['floor_level'] }}')" 
+                             style="cursor: pointer;">
                             <div class="d-flex justify-content-between align-items-center mb-3">
                                 <h5 class="mb-0 fw-bold">{{ $floorStat['floor_level'] }}</h5>
-                                @if($floorStat['available'] == 0)
+                                @if(!$floorStat['has_data'])
+                                    <span class="no-data-badge">NO DATA</span>
+                                @elseif($floorStat['available'] == 0)
                                     <span class="full-badge">FULL</span>
                                 @elseif($floorStat['available'] <= 5)
                                     <span class="limited-badge">LIMITED</span>
@@ -56,28 +58,37 @@
                                     <span class="available-badge">AVAILABLE</span>
                                 @endif
                             </div>
-                            <div class="row text-center mb-3">
-                                <div class="col-4">
-                                    <div class="floor-number available-color">{{ $floorStat['available'] }}</div>
-                                    <small class="text-muted">Available</small>
+                            
+                            @if($floorStat['has_data'])
+                                <div class="row text-center mb-3">
+                                    <div class="col-4">
+                                        <div class="floor-number available-color">{{ $floorStat['available'] }}</div>
+                                        <small class="text-muted">Available</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="floor-number occupied-color">{{ $floorStat['occupied'] }}</div>
+                                        <small class="text-muted">Occupied</small>
+                                    </div>
+                                    <div class="col-4">
+                                        <div class="floor-number total-color">{{ $floorStat['total'] }}</div>
+                                        <small class="text-muted">Total Spots</small>
+                                    </div>
                                 </div>
-                                <div class="col-4">
-                                    <div class="floor-number occupied-color">{{ $floorStat['occupied'] }}</div>
-                                    <small class="text-muted">Occupied</small>
+                                <div class="progress mb-2">
+                                    @php
+                                        $percentage = $floorStat['total'] > 0 ? ($floorStat['occupied'] / $floorStat['total']) * 100 : 0;
+                                        $progressClass = $percentage >= 90 ? 'bg-danger' : ($percentage >= 70 ? 'bg-warning' : 'bg-success');
+                                    @endphp
+                                    <div class="progress-bar {{ $progressClass }}" style="width: {{ $percentage }}%"></div>
                                 </div>
-                                <div class="col-4">
-                                    <div class="floor-number total-color">{{ $floorStat['total'] }}</div>
-                                    <small class="text-muted">Total Spots</small>
+                                <small class="text-muted">{{ round($percentage) }}% Full</small>
+                            @else
+                                <div class="text-center py-4">
+                                    <i class="fas fa-database text-muted mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+                                    <p class="text-muted mb-0">No data available yet</p>
+                                    <small class="text-muted">Sensors not configured</small>
                                 </div>
-                            </div>
-                            <div class="progress mb-2">
-                                @php
-                                    $percentage = $floorStat['total'] > 0 ? ($floorStat['occupied'] / $floorStat['total']) * 100 : 0;
-                                    $progressClass = $percentage >= 90 ? 'bg-danger' : ($percentage >= 70 ? 'bg-warning' : 'bg-success');
-                                @endphp
-                                <div class="progress-bar {{ $progressClass }}" style="width: {{ $percentage }}%"></div>
-                            </div>
-                            <small class="text-muted">{{ round($percentage) }}% Full</small>
+                            @endif
                         </div>
                     </div>
                 @endforeach

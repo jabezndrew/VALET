@@ -64,7 +64,7 @@ class ParkingDashboard extends Component
             // Update statistics
             $this->updateStatistics();
             
-            // Update floor statistics
+            // Update floor statistics (now includes all floors 1-4)
             $this->updateFloorStats();
             
             $this->lastUpdate = now()->format('H:i:s');
@@ -76,7 +76,7 @@ class ParkingDashboard extends Component
             $this->allSpaces = [];
             $this->spaces = [];
             $this->availableFloors = [];
-            $this->floorStats = [];
+            $this->floorStats = $this->getDefaultFloorStats();
             $this->resetStatistics();
         }
     }
@@ -90,6 +90,14 @@ class ParkingDashboard extends Component
 
     public function goToFloor($floorLevel)
     {
+        // Check if floor has data
+        $hasData = collect($this->allSpaces)->where('floor_level', $floorLevel)->count() > 0;
+        
+        if (!$hasData) {
+            session()->flash('message', 'No data available for ' . $floorLevel . ' yet.');
+            return;
+        }
+        
         $this->redirect('/floor/' . urlencode($floorLevel), navigate: true);
     }
 
@@ -211,24 +219,79 @@ class ParkingDashboard extends Component
     {
         $allSpaces = collect($this->allSpaces);
         
-        $this->floorStats = $allSpaces
-            ->groupBy('floor_level')
-            ->map(function ($floorSpaces, $floorName) {
-                $total = $floorSpaces->count();
+        // Define all floors that should be displayed
+        $allFloors = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
+        
+        $this->floorStats = [];
+        
+        foreach ($allFloors as $floorName) {
+            $floorSpaces = $allSpaces->where('floor_level', $floorName);
+            $total = $floorSpaces->count();
+            
+            if ($total > 0) {
+                // Floor has data
                 $occupied = $floorSpaces->where('is_occupied', true)->count();
                 $available = $total - $occupied;
-                $occupancyRate = $total > 0 ? round(($occupied / $total) * 100, 1) : 0;
-
-                return [
+                $occupancyRate = round(($occupied / $total) * 100, 1);
+                
+                $this->floorStats[] = [
                     'floor_level' => $floorName,
                     'total' => $total,
                     'occupied' => $occupied,
                     'available' => $available,
-                    'occupancy_rate' => $occupancyRate
+                    'occupancy_rate' => $occupancyRate,
+                    'has_data' => true
                 ];
-            })
-            ->values()
-            ->toArray();
+            } else {
+                // Floor has no data yet
+                $this->floorStats[] = [
+                    'floor_level' => $floorName,
+                    'total' => 0,
+                    'occupied' => 0,
+                    'available' => 0,
+                    'occupancy_rate' => 0,
+                    'has_data' => false
+                ];
+            }
+        }
+    }
+
+    private function getDefaultFloorStats()
+    {
+        return [
+            [
+                'floor_level' => '1st Floor',
+                'total' => 0,
+                'occupied' => 0,
+                'available' => 0,
+                'occupancy_rate' => 0,
+                'has_data' => false
+            ],
+            [
+                'floor_level' => '2nd Floor',
+                'total' => 0,
+                'occupied' => 0,
+                'available' => 0,
+                'occupancy_rate' => 0,
+                'has_data' => false
+            ],
+            [
+                'floor_level' => '3rd Floor',
+                'total' => 0,
+                'occupied' => 0,
+                'available' => 0,
+                'occupancy_rate' => 0,
+                'has_data' => false
+            ],
+            [
+                'floor_level' => '4th Floor',
+                'total' => 0,
+                'occupied' => 0,
+                'available' => 0,
+                'occupancy_rate' => 0,
+                'has_data' => false
+            ]
+        ];
     }
 
     private function resetStatistics()

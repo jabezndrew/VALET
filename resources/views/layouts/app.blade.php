@@ -205,6 +205,11 @@
             color: white;
         }
         
+        .user-dropdown:focus {
+            color: white;
+            outline: none;
+        }
+        
         .role-badge {
             font-size: 0.7rem;
             padding: 2px 8px;
@@ -216,6 +221,7 @@
             border-radius: 12px;
             border: none;
             box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            min-width: 200px;
         }
         
         .dropdown-item {
@@ -271,6 +277,20 @@
             background: #d1ecf1;
             color: #0c5460;
         }
+        .floor-card.no-data {
+            opacity: 0.6;
+            border: 2px dashed #dee2e6;
+            background: #f8f9fa;
+            cursor: not-allowed !important;
+        }
+        .no-data-badge {
+            background: #6c757d;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: bold;
+        }
     </style>
     
     @livewireStyles
@@ -314,13 +334,13 @@
                     
                     <!-- User Dropdown -->
                     <div class="dropdown">
-                        <a class="user-dropdown dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown" aria-expanded="false">
+                        <button class="user-dropdown dropdown-toggle" type="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-user me-2"></i>
                             {{ auth()->user()->name }}
                             <span class="role-badge {{ auth()->user()->getRoleBadgeClass() }}">
                                 {{ auth()->user()->getRoleDisplayName() }}
                             </span>
-                        </a>
+                        </button>
                         <ul class="dropdown-menu dropdown-menu-end">
                             <li>
                                 <a class="dropdown-item" href="#">
@@ -336,7 +356,7 @@
                             @endif
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <button onclick="logout()" class="dropdown-item text-danger" style="background: none; border: none; width: 100%; text-align: left;">
+                                <button onclick="logout()" class="dropdown-item text-danger">
                                     <i class="fas fa-sign-out-alt me-2"></i> Logout
                                 </button>
                             </li>
@@ -382,7 +402,7 @@
         @endif
         
         @if(session('info'))
-            <div class="alert alert-info alert-dismissible fade show" role="alert">
+            <div class="alert alert-info alert-dismissible fade show" role="alert>
                 <i class="fas fa-info-circle me-2"></i>
                 {{ session('info') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -401,16 +421,15 @@
     @livewireScripts
     
     <script>
-        // Global Livewire configuration
-        document.addEventListener('livewire:init', () => {
-            // Auto-refresh every 3 seconds
-            setInterval(() => {
-                Livewire.dispatch('refresh-parking-data');
-            }, 3000);
-        });
-        
-        // Auto-hide alerts after 5 seconds
+        // Ensure Bootstrap is loaded before initializing components
         document.addEventListener('DOMContentLoaded', function() {
+            // Initialize all Bootstrap components
+            const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+            dropdowns.forEach(dropdown => {
+                new bootstrap.Dropdown(dropdown);
+            });
+            
+            // Auto-hide alerts after 5 seconds
             setTimeout(function() {
                 const alerts = document.querySelectorAll('.alert');
                 alerts.forEach(function(alert) {
@@ -418,6 +437,14 @@
                     bsAlert.close();
                 });
             }, 5000);
+        });
+        
+        // Global Livewire configuration
+        document.addEventListener('livewire:init', () => {
+            // Auto-refresh every 3 seconds
+            setInterval(() => {
+                Livewire.dispatch('refresh-parking-data');
+            }, 3000);
         });
         
         // Logout function
