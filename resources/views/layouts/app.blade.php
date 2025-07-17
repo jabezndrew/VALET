@@ -188,11 +188,22 @@
         border-radius: 8px;
         padding: 8px 16px !important;
         transition: all 0.3s ease;
+        text-decoration: none;
     }
     
     .nav-link:hover, .nav-link.active {
         background: rgba(255,255,255,0.1);
         color: white !important;
+    }
+    
+    .nav-link.feedback-btn {
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    
+    .nav-link.feedback-btn:hover {
+        background: rgba(255,255,255,0.25);
+        transform: translateY(-1px);
     }
     
     /* Simple User Dropdown */
@@ -277,6 +288,15 @@
         margin-left: 8px;
     }
     
+    .dropdown-role-info {
+        padding: 8px 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        margin: 2px 8px;
+        font-size: 0.85rem;
+        color: #6c757d;
+    }
+    
     /* Alert styles */
     .alert {
         border-radius: 12px;
@@ -348,43 +368,41 @@
                 @auth
                 <div class="d-flex align-items-center">
                     <nav class="navbar-nav d-flex flex-row me-3">
-                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}" wire:navigate>
+                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
                             <i class="fas fa-home me-1"></i> Dashboard
                         </a>
                         
                         @if(auth()->user()->canViewCars())
-                        <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" href="{{ route('cars.index') }}" wire:navigate>
+                        <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" href="{{ route('cars.index') }}">
                             <i class="fas fa-car me-1"></i> Vehicles
                         </a>
                         @endif
                         
                         @if(auth()->user()->canManageUsers())
-                        <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.users') }}" wire:navigate>
+                        <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.users') }}">
                             <i class="fas fa-users me-1"></i> Users
                         </a>
                         @endif
+                        
+                        <!-- Feedback Button - Available to all authenticated users -->
+                        <a class="nav-link feedback-btn {{ request()->routeIs('feedback.*') ? 'active' : '' }}" href="{{ route('feedback.index') }}">
+                            <i class="fas fa-comment-dots me-1"></i> Feedback
+                        </a>
                     </nav>
                     
-                    <!-- User Dropdown - SIMPLE VERSION -->
+                    <!-- User Dropdown - SIMPLIFIED VERSION -->
                     <div class="user-dropdown-wrapper">
                         <button class="user-dropdown" onclick="toggleUserDropdown()">
                             <i class="fas fa-user me-2"></i>
                             {{ auth()->user()->name }}
-                            <span class="role-badge {{ auth()->user()->getRoleBadgeClass() }}">
-                                {{ auth()->user()->getRoleDisplayName() }}
-                            </span>
                             <i class="fas fa-chevron-down ms-2"></i>
                         </button>
                         
                         <div class="user-dropdown-menu" id="userDropdownMenu">
-                            <a href="#" class="dropdown-item">
-                                <i class="fas fa-user me-2"></i> Profile
-                            </a>
-                            @if(auth()->user()->canManageUsers())
-                            <a href="{{ route('admin.settings') }}" class="dropdown-item" wire:navigate>
-                                <i class="fas fa-cog me-2"></i> Settings
-                            </a>
-                            @endif
+                            <div class="dropdown-role-info">
+                                <i class="fas fa-id-badge me-2"></i>
+                                <strong>{{ auth()->user()->getRoleDisplayName() }}</strong>
+                            </div>
                             <div class="dropdown-divider"></div>
                             <button onclick="logout()" class="dropdown-item logout-btn">
                                 <i class="fas fa-sign-out-alt me-2"></i> Logout
@@ -394,7 +412,7 @@
                 </div>
                 @else
                 <div class="d-flex">
-                    <a href="{{ route('login') }}" class="btn btn-outline-light" wire:navigate>
+                    <a href="{{ route('login') }}" class="btn btn-outline-light">
                         <i class="fas fa-sign-in-alt me-2"></i> Login
                     </a>
                 </div>
