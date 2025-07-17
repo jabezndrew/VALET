@@ -7,6 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class FeedbackManager extends Component
 {
+    protected $layout = 'layouts.app';
     // Form properties
     public $type = '';
     public $subject = '';
@@ -173,22 +174,22 @@ class FeedbackManager extends Component
     }
 
     private function ensureFeedbackTableExists(): void
-    {
-        DB::statement("CREATE TABLE IF NOT EXISTS feedbacks (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            user_id INT NOT NULL,
-            type ENUM('bug', 'suggestion', 'complaint', 'compliment', 'general') NOT NULL,
-            subject VARCHAR(255) NOT NULL,
-            message TEXT NOT NULL,
-            parking_location VARCHAR(100) NULL,
-            status ENUM('new', 'in_progress', 'resolved', 'closed') DEFAULT 'new',
-            admin_response TEXT NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX idx_user_id (user_id),
-            INDEX idx_status (status),
-            INDEX idx_type (type),
-            FOREIGN KEY (user_id) REFERENCES sys_users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB");
-    }
+{
+    DB::statement("CREATE TABLE IF NOT EXISTS feedbacks (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        user_id BIGINT UNSIGNED NOT NULL,
+        type ENUM('bug', 'suggestion', 'complaint', 'compliment', 'general') NOT NULL,
+        subject VARCHAR(255) NOT NULL,
+        message TEXT NOT NULL,
+        parking_location VARCHAR(100) NULL,
+        status ENUM('new', 'in_progress', 'resolved', 'closed') DEFAULT 'new',
+        admin_response TEXT NULL,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_user_id (user_id),
+        INDEX idx_status (status),
+        INDEX idx_type (type),
+        FOREIGN KEY (user_id) REFERENCES sys_users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB");
+}
 }

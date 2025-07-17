@@ -9,7 +9,8 @@ use Illuminate\Validation\Rules\Password;
 
 class UserManager extends Component
 {
-    // Form properties
+    protected $layout = 'layouts.app';  
+    
     public $name = '';
     public $email = '';
     public $password = '';

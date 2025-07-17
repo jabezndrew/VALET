@@ -8,6 +8,7 @@ use App\Models\SysUser;
 
 class VehicleManager extends Component
 {
+    protected $layout = 'layouts.app'; 
     // Form properties
     public $plate_number = '';
     public $vehicle_make = '';
@@ -231,23 +232,23 @@ class VehicleManager extends Component
     }
 
     private function ensureVehicleTableExists()
-    {
-        DB::statement("CREATE TABLE IF NOT EXISTS vehicles (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            plate_number VARCHAR(20) UNIQUE NOT NULL,
-            vehicle_make VARCHAR(50) NOT NULL,
-            vehicle_model VARCHAR(50) NOT NULL,
-            vehicle_color VARCHAR(30) NOT NULL,
-            vehicle_type ENUM('car', 'motorcycle', 'suv', 'truck', 'van') DEFAULT 'car',
-            rfid_tag VARCHAR(50) UNIQUE NOT NULL,
-            owner_id INT NOT NULL,
-            is_active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX idx_plate_number (plate_number),
-            INDEX idx_rfid_tag (rfid_tag),
-            INDEX idx_owner_id (owner_id),
-            FOREIGN KEY (owner_id) REFERENCES sys_users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB");
-    }
+{
+    DB::statement("CREATE TABLE IF NOT EXISTS vehicles (
+        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+        plate_number VARCHAR(20) UNIQUE NOT NULL,
+        vehicle_make VARCHAR(50) NOT NULL,
+        vehicle_model VARCHAR(50) NOT NULL,
+        vehicle_color VARCHAR(30) NOT NULL,
+        vehicle_type ENUM('car', 'motorcycle', 'suv', 'truck', 'van') DEFAULT 'car',
+        rfid_tag VARCHAR(50) UNIQUE NOT NULL,
+        owner_id BIGINT UNSIGNED NOT NULL,
+        is_active BOOLEAN DEFAULT TRUE,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+        INDEX idx_plate_number (plate_number),
+        INDEX idx_rfid_tag (rfid_tag),
+        INDEX idx_owner_id (owner_id),
+        FOREIGN KEY (owner_id) REFERENCES sys_users(id) ON DELETE CASCADE
+    ) ENGINE=InnoDB");
+}
 }
