@@ -3,33 +3,42 @@
         <div class="campus-section">
             <h4 class="mb-4 fw-bold text-center">USJ-R Quadricentennial Campus</h4>
             
+            <!-- Overall Stats with DYNAMIC circular progress bars -->
             <div class="row text-center mb-4">
                 <div class="col-md-4">
-                    <div class="stat-circle available-circle">
+                    @php
+                        $availablePercent = $totalSpaces > 0 ? ($availableSpaces / $totalSpaces) * 100 : 0;
+                    @endphp
+                    <div class="stat-circle" style="background: conic-gradient(#28a745 {{ $availablePercent }}%, #e9ecef {{ $availablePercent }}%);">
                         <div class="stat-number">{{ $availableSpaces }}</div>
                     </div>
                     <h6 class="text-muted">Available</h6>
                 </div>
                 <div class="col-md-4">
-                    <div class="stat-circle occupied-circle">
+                    @php
+                        $occupiedPercent = $totalSpaces > 0 ? ($occupiedSpaces / $totalSpaces) * 100 : 0;
+                    @endphp
+                    <div class="stat-circle" style="background: conic-gradient(#dc3545 {{ $occupiedPercent }}%, #e9ecef {{ $occupiedPercent }}%);">
                         <div class="stat-number">{{ $occupiedSpaces }}</div>
                     </div>
                     <h6 class="text-muted">Occupied</h6>
                 </div>
                 <div class="col-md-4">
-                    <div class="stat-circle total-circle">
+                    <div class="stat-circle" style="background: conic-gradient(#007bff 100%, #e9ecef 100%);">
                         <div class="stat-number">{{ $totalSpaces }}</div>
                     </div>
                     <h6 class="text-muted">Total Spots</h6>
                 </div>
             </div>
 
+            <!-- Overall Occupancy -->
             <div class="text-center mb-4">
                 <span class="text-muted">Overall Occupancy</span>
                 <div class="h5 fw-bold">{{ round($totalSpaces > 0 ? ($occupiedSpaces / $totalSpaces) * 100 : 0) }}% Full</div>
             </div>
         </div>
 
+        <!-- Select Floor Section -->
         <div class="floor-section">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="mb-0 fw-bold">Select Floor</h4>
@@ -162,32 +171,3 @@
     <div class="modal-backdrop fade show"></div>
     @endif
 </div>
-
-<script>
-    document.addEventListener('livewire:init', () => {
-        Livewire.on('modal-closed', () => {
-            // Re-initialize dropdowns after modal closes
-            initializeDropdowns();
-        });
-    });
-
-    document.addEventListener('livewire:updated', () => {
-        // Re-initialize dropdowns after every Livewire update
-        initializeDropdowns();
-    });
-
-    function initializeDropdowns() {
-        setTimeout(() => {
-            const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-            dropdowns.forEach(dropdown => {
-                // Dispose existing instance if it exists
-                const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
-                if (existingInstance) {
-                    existingInstance.dispose();
-                }
-                // Create new instance
-                new bootstrap.Dropdown(dropdown);
-            });
-        }, 100);
-    }
-</script>
