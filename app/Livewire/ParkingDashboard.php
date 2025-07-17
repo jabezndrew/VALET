@@ -98,7 +98,8 @@ class ParkingDashboard extends Component
             return;
         }
         
-        $this->redirect('/floor/' . urlencode($floorLevel), navigate: true);
+        // Show modal instead of redirecting
+        $this->selectFloor($floorLevel);
     }
 
     public function closeModal()
@@ -304,15 +305,19 @@ class ParkingDashboard extends Component
 
     public function getSpaceIcon($space)
     {
-        if ($space['is_occupied']) {
-            return 'fas fa-car';
+        $isOccupied = is_object($space) ? $space->is_occupied : $space['is_occupied'];
+        
+        if ($isOccupied) {
+            return 'fas fa-car text-danger';
         }
-        return 'fas fa-check-circle';
+        return 'fas fa-check-circle text-success';
     }
 
     public function getStatusText($space)
     {
-        if ($space['is_occupied']) {
+        $isOccupied = is_object($space) ? $space->is_occupied : $space['is_occupied'];
+        
+        if ($isOccupied) {
             return '🚗 Vehicle Present';
         }
         return '✅ Space Available';

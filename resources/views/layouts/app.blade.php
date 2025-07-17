@@ -277,20 +277,6 @@
             background: #d1ecf1;
             color: #0c5460;
         }
-        .floor-card.no-data {
-            opacity: 0.6;
-            border: 2px dashed #dee2e6;
-            background: #f8f9fa;
-            cursor: not-allowed !important;
-        }
-        .no-data-badge {
-            background: #6c757d;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
     </style>
     
     @livewireStyles
@@ -402,7 +388,7 @@
         @endif
         
         @if(session('info'))
-            <div class="alert alert-info alert-dismissible fade show" role="alert>
+            <div class="alert alert-info alert-dismissible fade show" role="alert">
                 <i class="fas fa-info-circle me-2"></i>
                 {{ session('info') }}
                 <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
@@ -421,13 +407,21 @@
     @livewireScripts
     
     <script>
-        // Ensure Bootstrap is loaded before initializing components
-        document.addEventListener('DOMContentLoaded', function() {
+        // Initialize Bootstrap components and handle Livewire updates
+        function initializeBootstrap() {
             // Initialize all Bootstrap components
             const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
             dropdowns.forEach(dropdown => {
-                new bootstrap.Dropdown(dropdown);
+                if (!dropdown.hasAttribute('data-bs-initialized')) {
+                    new bootstrap.Dropdown(dropdown);
+                    dropdown.setAttribute('data-bs-initialized', 'true');
+                }
             });
+        }
+
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeBootstrap();
             
             // Auto-hide alerts after 5 seconds
             setTimeout(function() {
@@ -437,6 +431,11 @@
                     bsAlert.close();
                 });
             }, 5000);
+        });
+        
+        // Re-initialize after Livewire updates
+        document.addEventListener('livewire:updated', function() {
+            initializeBootstrap();
         });
         
         // Global Livewire configuration
