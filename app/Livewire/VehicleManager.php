@@ -8,7 +8,7 @@ use App\Models\SysUser;
 
 class VehicleManager extends Component
 {
-    protected $layout = 'layouts.app'; 
+   // protected $layout = 'layouts.app'; 
     // Form properties
     public $plate_number = '';
     public $vehicle_make = '';
