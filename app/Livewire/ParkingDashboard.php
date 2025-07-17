@@ -287,6 +287,6 @@ class ParkingDashboard extends Component
 
     public function render()
     {
-        return view('livewire.parking-dashboard')->layout('components.layouts.app');
+        return view('livewire.parking-dashboard')->layout('layouts.app');
     }
 }

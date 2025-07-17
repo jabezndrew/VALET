@@ -78,6 +78,6 @@ class FloorDetail extends Component
 
     public function render()
     {
-        return view('livewire.floor-detail')->layout('components.layouts.app');
+        return view('livewire.floor-detail')->layout('layouts.app');
     }
 }
