@@ -1,6 +1,15 @@
 <!-- resources/views/livewire/auth/login.blade.php -->
-<div>
-    @push('styles')
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <title>Login - VALET Smart Parking</title>
+    
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
     <style>
         body {
             background: linear-gradient(135deg, #B22020, #8B1A1A);
@@ -96,8 +105,10 @@
             color: #721c24;
         }
     </style>
-    @endpush
-
+    
+    @livewireStyles
+</head>
+<body>
     <div class="login-container">
         <div class="login-card">
             <div class="row g-0">
@@ -199,4 +210,8 @@
             </div>
         </div>
     </div>
-</div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    @livewireScripts
+</body>
+</html>

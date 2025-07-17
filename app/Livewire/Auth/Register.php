@@ -60,6 +60,6 @@ class Register extends Component
             abort(403, 'Only administrators can register new users.');
         }
         
-        return view('livewire.auth.register')->extends('layouts.base');
+        return view('livewire.auth.register');
     }
 }
