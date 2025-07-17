@@ -1,4 +1,4 @@
-<!-- resources/views/layouts/app.blade.php -->
+<!-- resources/views/components/layouts/app.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -188,85 +188,6 @@
             background: #dc3545;
             color: white;
         }
-
-        /* Modal Styles */
-        .modal-overlay {
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100%;
-            height: 100%;
-            background: rgba(0, 0, 0, 0.5);
-            z-index: 9999;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            padding: 20px;
-        }
-
-        .modal-content {
-            background: white;
-            border-radius: 20px;
-            max-width: 900px;
-            width: 100%;
-            max-height: 90vh;
-            overflow-y: auto;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.3);
-        }
-
-        .modal-header {
-            padding: 20px 30px;
-            border-bottom: 1px solid #e9ecef;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-        }
-
-        .btn-close {
-            background: none;
-            border: none;
-            font-size: 1.5rem;
-            cursor: pointer;
-            padding: 0;
-            color: #999;
-        }
-
-        .btn-close:hover {
-            color: #000;
-        }
-
-        .modal-body {
-            padding: 30px;
-        }
-
-        .modal-stat-number {
-            font-size: 1.8rem;
-            font-weight: bold;
-            margin-bottom: 5px;
-        }
-
-        .modal-space-card {
-            background: #f8f9fa;
-            border-radius: 10px;
-            padding: 15px;
-            border-left: 4px solid;
-            height: 100%;
-        }
-
-        .modal-space-card.available {
-            border-left-color: #28a745;
-        }
-
-        .modal-space-card.occupied {
-            border-left-color: #dc3545;
-        }
-
-        .status-badge-mini {
-            padding: 2px 6px;
-            border-radius: 6px;
-            font-size: 0.65rem;
-            font-weight: bold;
-        }
         
         /* User dropdown styles */
         .user-dropdown {
@@ -352,9 +273,6 @@
         }
     </style>
     
-    @stack('styles')
-    
-    <!-- Livewire Styles -->
     @livewireStyles
 </head>
 <body>
@@ -474,8 +392,7 @@
     @endif
 
     <!-- Page Content -->
-    @yield('content')
-    {{ $slot ?? '' }}
+    {{ $slot }}
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -516,7 +433,5 @@
             });
         }
     </script>
-    
-    @stack('scripts')
 </body>
 </html>
