@@ -258,9 +258,7 @@
                         
                         <div class="text-center mt-4">
                             <small class="text-muted">
-                                Need access? Contact your administrator<br>
-                                <strong>Test accounts:</strong> admin@valet.com, ssd@valet.com, security@valet.com, user@valet.com<br>
-                                <strong>Password:</strong> password123
+                                Need access? Contact your administrator
                             </small>
                         </div>
                     </div>

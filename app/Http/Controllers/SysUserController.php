@@ -64,6 +64,53 @@ class SysUserController extends Controller
         return redirect()->route('dashboard')->with('success', $message);
     }
 
+    public function showRegister()
+{
+    // Allow registration if no users exist, or if user is admin
+    $userCount = SysUser::count();
+    if ($userCount == 0 || (auth()->check() && auth()->user()->isAdmin())) {
+        return view('auth.register');
+    }
+    
+    abort(403, 'Only administrators can register new users.');
+}
+
+public function register(Request $request)
+{
+    // Same check as above
+    $userCount = SysUser::count();
+    if ($userCount > 0 && (!auth()->check() || !auth()->user()->isAdmin())) {
+        abort(403, 'Only administrators can register new users.');
+    }
+
+    $request->validate([
+        'name' => 'required|string|max:255',
+        'email' => 'required|string|email|max:255|unique:sys_users',
+        'password' => 'required|string|min:8|confirmed',
+        'role' => 'required|in:user,security,ssd,admin',
+        'employee_id' => 'nullable|string|max:50|unique:sys_users',
+        'department' => 'nullable|string|max:100',
+    ]);
+
+    $user = SysUser::create([
+        'name' => $request->name,
+        'email' => $request->email,
+        'password' => Hash::make($request->password),
+        'role' => $request->role,
+        'employee_id' => $request->employee_id,
+        'department' => $request->department,
+        'is_active' => true,
+    ]);
+
+    // If this is the first user, log them in
+    if ($userCount == 0) {
+        Auth::login($user);
+        return redirect()->route('dashboard')->with('success', 'Welcome! First admin account created.');
+    }
+
+    return redirect()->route('admin.users')->with('success', 'User created successfully.');
+}
+
     public function logout(Request $request)
     {
         Auth::logout();

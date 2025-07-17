@@ -88,3 +88,7 @@ Route::middleware(['auth', 'role:admin'])->group(function () {
         return view('admin.settings');
     })->name('admin.settings');
 });
+
+// Registration (available when no users exist, or for admins)
+Route::get('/register', [SysUserController::class, 'showRegister'])->name('register');
+Route::post('/register', [SysUserController::class, 'register']);
