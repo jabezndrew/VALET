@@ -1,5 +1,5 @@
 <?php
-// app/Livewire/FloorDetail.php - Replace entire file
+// app/Livewire/FloorDetail.php
 namespace App\Livewire;
 
 use Livewire\Component;
@@ -78,6 +78,6 @@ class FloorDetail extends Component
 
     public function render()
     {
-        return view('livewire.floor-detail');
+        return view('livewire.floor-detail')->layout('components.layouts.app');
     }
 }

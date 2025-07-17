@@ -1,5 +1,5 @@
 <?php
-// app/Livewire/ParkingDashboard.php - Replace entire file
+// app/Livewire/ParkingDashboard.php
 namespace App\Livewire;
 
 use Livewire\Component;
@@ -287,6 +287,6 @@ class ParkingDashboard extends Component
 
     public function render()
     {
-        return view('livewire.parking-dashboard');
+        return view('livewire.parking-dashboard')->layout('components.layouts.app');
     }
 }
