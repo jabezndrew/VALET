@@ -407,57 +407,58 @@
     @livewireScripts
     
     <script>
-        // Initialize Bootstrap components and handle Livewire updates
-        function initializeBootstrap() {
-            // Initialize all Bootstrap components
-            const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
-            dropdowns.forEach(dropdown => {
-                if (!dropdown.hasAttribute('data-bs-initialized')) {
-                    new bootstrap.Dropdown(dropdown);
-                    dropdown.setAttribute('data-bs-initialized', 'true');
-                }
-            });
-        }
+    // Initialize Bootstrap components
+    function initializeBootstrap() {
+        const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
+        dropdowns.forEach(dropdown => {
+            // Dispose existing instance if it exists
+            const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
+            if (existingInstance) {
+                existingInstance.dispose();
+            }
+            // Create new instance
+            new bootstrap.Dropdown(dropdown);
+        });
+    }
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            initializeBootstrap();
-            
-            // Auto-hide alerts after 5 seconds
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(function(alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                });
-            }, 5000);
-        });
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', function() {
+        initializeBootstrap();
         
-        // Re-initialize after Livewire updates
-        document.addEventListener('livewire:updated', function() {
-            initializeBootstrap();
-        });
-        
-        // Global Livewire configuration
-        document.addEventListener('livewire:init', () => {
-            // Auto-refresh every 3 seconds
-            setInterval(() => {
-                Livewire.dispatch('refresh-parking-data');
-            }, 3000);
-        });
-        
-        // Logout function
-        function logout() {
-            fetch('/logout', {
-                method: 'POST',
-                headers: {
-                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                    'Content-Type': 'application/json',
-                },
-            }).then(() => {
-                window.location.href = '/login';
+        // Auto-hide alerts after 5 seconds
+        setTimeout(function() {
+            const alerts = document.querySelectorAll('.alert');
+            alerts.forEach(function(alert) {
+                const bsAlert = new bootstrap.Alert(alert);
+                bsAlert.close();
             });
-        }
-    </script>
+        }, 5000);
+    });
+    
+    // Re-initialize after Livewire updates
+    document.addEventListener('livewire:updated', function() {
+        initializeBootstrap();
+    });
+    
+    // Global Livewire configuration
+    document.addEventListener('livewire:init', () => {
+        setInterval(() => {
+            Livewire.dispatch('refresh-parking-data');
+        }, 3000);
+    });
+    
+    // Logout function
+    function logout() {
+        fetch('/logout', {
+            method: 'POST',
+            headers: {
+                'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                'Content-Type': 'application/json',
+            },
+        }).then(() => {
+            window.location.href = '/login';
+        });
+    }
+</script>
 </body>
 </html>

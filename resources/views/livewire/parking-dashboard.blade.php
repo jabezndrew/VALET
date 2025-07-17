@@ -1,10 +1,8 @@
-<!-- Replace entire resources/views/livewire/parking-dashboard.blade.php -->
 <div wire:poll.3s="loadParkingData">
     <div class="container mt-4">
         <div class="campus-section">
             <h4 class="mb-4 fw-bold text-center">USJ-R Quadricentennial Campus</h4>
             
-            <!-- Overall Stats -->
             <div class="row text-center mb-4">
                 <div class="col-md-4">
                     <div class="stat-circle available-circle">
@@ -26,14 +24,12 @@
                 </div>
             </div>
 
-            <!-- Overall Occupancy -->
             <div class="text-center mb-4">
                 <span class="text-muted">Overall Occupancy</span>
                 <div class="h5 fw-bold">{{ round($totalSpaces > 0 ? ($occupiedSpaces / $totalSpaces) * 100 : 0) }}% Full</div>
             </div>
         </div>
 
-        <!-- Select Floor Section -->
         <div class="floor-section">
             <div class="d-flex justify-content-between align-items-center mb-4">
                 <h4 class="mb-0 fw-bold">Select Floor</h4>
@@ -96,9 +92,8 @@
         </div>
     </div>
 
-    <!-- Floor Details Modal -->
     @if($showModal)
-    <div class="modal fade show" id="floorModal" tabindex="-1" style="display: block;">
+    <div class="modal fade show" style="display: block;" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -109,7 +104,6 @@
                     <button type="button" class="btn-close" wire:click="closeModal"></button>
                 </div>
                 <div class="modal-body">
-                    <!-- Floor Stats -->
                     <div class="row text-center mb-4">
                         <div class="col-3">
                             <div class="stat-number text-primary">{{ $selectedFloorStats['total'] ?? 0 }}</div>
@@ -129,7 +123,6 @@
                         </div>
                     </div>
 
-                    <!-- Parking Spaces -->
                     <div class="row">
                         @forelse($selectedFloorSpaces as $space)
                             <div class="col-md-6 col-lg-4 mb-3">
@@ -168,36 +161,33 @@
     </div>
     <div class="modal-backdrop fade show"></div>
     @endif
+</div>
 
-    <style>
-        .floor-card.no-data {
-            opacity: 0.6;
-            border: 2px dashed #dee2e6;
-            background: #f8f9fa;
-            cursor: not-allowed !important;
-        }
-        .no-data-badge {
-            background: #6c757d;
-            color: white;
-            padding: 4px 8px;
-            border-radius: 12px;
-            font-size: 0.75rem;
-            font-weight: bold;
-        }
-        .stat-number {
-            font-size: 1.5rem;
-            font-weight: bold;
-        }
-    </style>
+<script>
+    document.addEventListener('livewire:init', () => {
+        Livewire.on('modal-closed', () => {
+            // Re-initialize dropdowns after modal closes
+            initializeDropdowns();
+        });
+    });
 
-    <script>
-        // Re-initialize Bootstrap components after Livewire updates
-        document.addEventListener('livewire:updated', function () {
-            // Re-initialize dropdowns
+    document.addEventListener('livewire:updated', () => {
+        // Re-initialize dropdowns after every Livewire update
+        initializeDropdowns();
+    });
+
+    function initializeDropdowns() {
+        setTimeout(() => {
             const dropdowns = document.querySelectorAll('[data-bs-toggle="dropdown"]');
             dropdowns.forEach(dropdown => {
+                // Dispose existing instance if it exists
+                const existingInstance = bootstrap.Dropdown.getInstance(dropdown);
+                if (existingInstance) {
+                    existingInstance.dispose();
+                }
+                // Create new instance
                 new bootstrap.Dropdown(dropdown);
             });
-        });
-    </script>
-</div>
+        }, 100);
+    }
+</script>

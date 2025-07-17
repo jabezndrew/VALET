@@ -1,5 +1,4 @@
 <?php
-// app/Livewire/ParkingDashboard.php
 namespace App\Livewire;
 
 use Livewire\Component;
@@ -44,7 +43,6 @@ class ParkingDashboard extends Component
         try {
             $this->ensureTableExists();
             
-            // Get all parking spaces with proper Carbon parsing
             $this->allSpaces = DB::table('parking_spaces')
                 ->orderBy('sensor_id')
                 ->get()
@@ -55,16 +53,9 @@ class ParkingDashboard extends Component
                 })
                 ->toArray();
 
-            // Update available floors
             $this->updateAvailableFloors();
-
-            // Filter spaces based on selected floor
             $this->filterSpacesByFloor();
-
-            // Update statistics
             $this->updateStatistics();
-            
-            // Update floor statistics (now includes all floors 1-4)
             $this->updateFloorStats();
             
             $this->lastUpdate = now()->format('H:i:s');
@@ -72,11 +63,10 @@ class ParkingDashboard extends Component
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to load parking data: ' . $e->getMessage());
             
-            // Fallback to empty data
             $this->allSpaces = [];
             $this->spaces = [];
             $this->availableFloors = [];
-            $this->floorStats = $this->getDefaultFloorStats();
+            $this->floorStats = [];
             $this->resetStatistics();
         }
     }
@@ -90,7 +80,6 @@ class ParkingDashboard extends Component
 
     public function goToFloor($floorLevel)
     {
-        // Check if floor has data
         $hasData = collect($this->allSpaces)->where('floor_level', $floorLevel)->count() > 0;
         
         if (!$hasData) {
@@ -98,7 +87,6 @@ class ParkingDashboard extends Component
             return;
         }
         
-        // Show modal instead of redirecting
         $this->selectFloor($floorLevel);
     }
 
@@ -108,6 +96,7 @@ class ParkingDashboard extends Component
         $this->selectedFloor = '';
         $this->selectedFloorSpaces = [];
         $this->selectedFloorStats = [];
+        $this->dispatch('modal-closed');
     }
 
     public function getSensorDisplayName($sensorId)
@@ -131,7 +120,6 @@ class ParkingDashboard extends Component
     private function loadSelectedFloorData()
     {
         try {
-            // Get spaces for this specific floor
             $this->selectedFloorSpaces = DB::table('parking_spaces')
                 ->where('floor_level', $this->selectedFloor)
                 ->orderBy('sensor_id')
@@ -143,7 +131,6 @@ class ParkingDashboard extends Component
                 })
                 ->toArray();
 
-            // Calculate floor stats
             $total = count($this->selectedFloorSpaces);
             $occupied = collect($this->selectedFloorSpaces)->where('is_occupied', true)->count();
             $available = $total - $occupied;
@@ -219,8 +206,6 @@ class ParkingDashboard extends Component
     private function updateFloorStats()
     {
         $allSpaces = collect($this->allSpaces);
-        
-        // Define all floors that should be displayed
         $allFloors = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
         
         $this->floorStats = [];
@@ -230,7 +215,6 @@ class ParkingDashboard extends Component
             $total = $floorSpaces->count();
             
             if ($total > 0) {
-                // Floor has data
                 $occupied = $floorSpaces->where('is_occupied', true)->count();
                 $available = $total - $occupied;
                 $occupancyRate = round(($occupied / $total) * 100, 1);
@@ -244,7 +228,6 @@ class ParkingDashboard extends Component
                     'has_data' => true
                 ];
             } else {
-                // Floor has no data yet
                 $this->floorStats[] = [
                     'floor_level' => $floorName,
                     'total' => 0,
@@ -255,44 +238,6 @@ class ParkingDashboard extends Component
                 ];
             }
         }
-    }
-
-    private function getDefaultFloorStats()
-    {
-        return [
-            [
-                'floor_level' => '1st Floor',
-                'total' => 0,
-                'occupied' => 0,
-                'available' => 0,
-                'occupancy_rate' => 0,
-                'has_data' => false
-            ],
-            [
-                'floor_level' => '2nd Floor',
-                'total' => 0,
-                'occupied' => 0,
-                'available' => 0,
-                'occupancy_rate' => 0,
-                'has_data' => false
-            ],
-            [
-                'floor_level' => '3rd Floor',
-                'total' => 0,
-                'occupied' => 0,
-                'available' => 0,
-                'occupancy_rate' => 0,
-                'has_data' => false
-            ],
-            [
-                'floor_level' => '4th Floor',
-                'total' => 0,
-                'occupied' => 0,
-                'available' => 0,
-                'occupancy_rate' => 0,
-                'has_data' => false
-            ]
-        ];
     }
 
     private function resetStatistics()
@@ -318,20 +263,9 @@ class ParkingDashboard extends Component
         $isOccupied = is_object($space) ? $space->is_occupied : $space['is_occupied'];
         
         if ($isOccupied) {
-            return '🚗 Vehicle Present';
+            return 'Vehicle Present';
         }
-        return '✅ Space Available';
-    }
-
-    public function getFloorIcon($floorLevel)
-    {
-        if (str_contains(strtolower($floorLevel), 'basement') || str_contains($floorLevel, 'B')) {
-            return 'fas fa-layer-group';
-        }
-        if (str_contains($floorLevel, '1st') || str_contains($floorLevel, 'Ground')) {
-            return 'fas fa-home';
-        }
-        return 'fas fa-building';
+        return 'Space Available';
     }
 
     private function ensureTableExists()
@@ -346,7 +280,6 @@ class ParkingDashboard extends Component
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
         ) ENGINE=InnoDB");
         
-        // Add floor_level column if it doesn't exist (for existing tables)
         $columnExists = DB::select("SHOW COLUMNS FROM parking_spaces LIKE 'floor_level'");
         if (empty($columnExists)) {
             DB::statement("ALTER TABLE parking_spaces ADD COLUMN floor_level VARCHAR(255) DEFAULT '4th Floor' AFTER distance_cm");
