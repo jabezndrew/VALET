@@ -18,7 +18,6 @@ class SysUserController extends Controller
             $search = $request->get('search');
             $role = $request->get('role');
             $status = $request->get('status'); // active, inactive, all
-            $perPage = $request->get('per_page', 50); // Default 50 users
 
             $query = SysUser::query();
 
@@ -43,7 +42,7 @@ class SysUserController extends Controller
                 $query->where('is_active', false);
             }
 
-            // Get users with pagination
+            // Get users
             $users = $query->select([
                 'id',
                 'name', 
@@ -53,10 +52,10 @@ class SysUserController extends Controller
                 'department',
                 'is_active',
                 'created_at'
-            ])->latest()->paginate($perPage);
+            ])->latest()->get();
 
             // Transform the data to include role display name
-            $transformedUsers = $users->getCollection()->map(function ($user) {
+            $transformedUsers = $users->map(function ($user) {
                 return [
                     'id' => $user->id,
                     'name' => $user->name,
@@ -71,31 +70,13 @@ class SysUserController extends Controller
             });
 
             return response()->json([
-                'success' => true,
-                'message' => 'Users retrieved successfully',
-                'data' => [
-                    'users' => $transformedUsers,
-                    'pagination' => [
-                        'current_page' => $users->currentPage(),
-                        'last_page' => $users->lastPage(),
-                        'per_page' => $users->perPage(),
-                        'total' => $users->total(),
-                        'from' => $users->firstItem(),
-                        'to' => $users->lastItem(),
-                    ],
-                    'filters' => [
-                        'search' => $search,
-                        'role' => $role,
-                        'status' => $status,
-                    ]
-                ]
+                'users' => $transformedUsers
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to retrieve users',
-                'error' => $e->getMessage()
+                'error' => 'Failed to retrieve users',
+                'message' => $e->getMessage()
             ], 500);
         }
     }
@@ -124,17 +105,12 @@ class SysUserController extends Controller
                     ->toArray(),
             ];
 
-            return response()->json([
-                'success' => true,
-                'message' => 'Statistics retrieved successfully',
-                'data' => $stats
-            ]);
+            return response()->json($stats);
 
         } catch (\Exception $e) {
             return response()->json([
-                'success' => false,
-                'message' => 'Failed to retrieve statistics',
-                'error' => $e->getMessage()
+                'error' => 'Failed to retrieve statistics',
+                'message' => $e->getMessage()
             ], 500);
         }
     }
