@@ -1,5 +1,5 @@
 <?php
-
+// Replace entire app/Livewire/FloorDetail.php with this:
 namespace App\Livewire;
 
 use Livewire\Component;
@@ -13,9 +13,9 @@ class FloorDetail extends Component
     public $floorStats = [];
     public $lastUpdate;
 
-    public function mount($floorLevel)
+    public function mount($floor)
     {
-        $this->floorLevel = $floorLevel;
+        $this->floorLevel = $floor;
         $this->loadFloorData();
     }
 
@@ -71,8 +71,13 @@ class FloorDetail extends Component
         return '✅ Space Available';
     }
 
+    public function goBack()
+    {
+        $this->redirect('/dashboard', navigate: true);
+    }
+
     public function render()
     {
-        return view('livewire.floor-detail');
+        return view('livewire.floor-detail')->layout('layouts.app');
     }
 }

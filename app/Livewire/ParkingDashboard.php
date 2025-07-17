@@ -1,5 +1,5 @@
 <?php
-
+// Replace entire app/Livewire/ParkingDashboard.php with this:
 namespace App\Livewire;
 
 use Livewire\Component;
@@ -86,6 +86,11 @@ class ParkingDashboard extends Component
         $this->selectedFloor = $floorLevel;
         $this->loadSelectedFloorData();
         $this->showModal = true;
+    }
+
+    public function goToFloor($floorLevel)
+    {
+        $this->redirect('/floor/' . urlencode($floorLevel), navigate: true);
     }
 
     public function closeModal()
@@ -282,6 +287,6 @@ class ParkingDashboard extends Component
 
     public function render()
     {
-        return view('livewire.parking-dashboard');
+        return view('livewire.parking-dashboard')->layout('layouts.app');
     }
 }

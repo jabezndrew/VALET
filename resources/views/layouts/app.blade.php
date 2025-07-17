@@ -1,3 +1,4 @@
+<!-- resources/views/layouts/app.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -376,18 +377,18 @@
                 @auth
                 <div class="d-flex align-items-center">
                     <nav class="navbar-nav d-flex flex-row me-3">
-                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}" wire:navigate>
                             <i class="fas fa-home me-1"></i> Dashboard
                         </a>
                         
                         @if(auth()->user()->canViewCars())
-                        <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" href="{{ route('cars.index') }}">
+                        <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" href="{{ route('cars.index') }}" wire:navigate>
                             <i class="fas fa-car me-1"></i> Vehicles
                         </a>
                         @endif
                         
                         @if(auth()->user()->canManageUsers())
-                        <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.users') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.users') }}" wire:navigate>
                             <i class="fas fa-users me-1"></i> Users
                         </a>
                         @endif
@@ -410,26 +411,23 @@
                             </li>
                             @if(auth()->user()->canManageUsers())
                             <li>
-                                <a class="dropdown-item" href="{{ route('admin.settings') }}">
+                                <a class="dropdown-item" href="{{ route('admin.settings') }}" wire:navigate>
                                     <i class="fas fa-cog me-2"></i> Settings
                                 </a>
                             </li>
                             @endif
                             <li><hr class="dropdown-divider"></li>
                             <li>
-                                <form method="POST" action="{{ route('logout') }}" class="d-inline">
-                                    @csrf
-                                    <button type="submit" class="dropdown-item text-danger" style="background: none; border: none; width: 100%; text-align: left;">
-                                        <i class="fas fa-sign-out-alt me-2"></i> Logout
-                                    </button>
-                                </form>
+                                <button onclick="logout()" class="dropdown-item text-danger" style="background: none; border: none; width: 100%; text-align: left;">
+                                    <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                </button>
                             </li>
                         </ul>
                     </div>
                 </div>
                 @else
                 <div class="d-flex">
-                    <a href="{{ route('login') }}" class="btn btn-outline-light">
+                    <a href="{{ route('login') }}" class="btn btn-outline-light" wire:navigate>
                         <i class="fas fa-sign-in-alt me-2"></i> Login
                     </a>
                 </div>
@@ -477,6 +475,7 @@
 
     <!-- Page Content -->
     @yield('content')
+    {{ $slot ?? '' }}
 
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -503,6 +502,19 @@
                 });
             }, 5000);
         });
+        
+        // Logout function
+        function logout() {
+            fetch('/logout', {
+                method: 'POST',
+                headers: {
+                    'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                    'Content-Type': 'application/json',
+                },
+            }).then(() => {
+                window.location.href = '/login';
+            });
+        }
     </script>
     
     @stack('scripts')
