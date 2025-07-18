@@ -9,7 +9,7 @@ use Illuminate\Validation\Rules\Password;
 
 class UserManager extends Component
 {
-    //protected $layout = 'layouts.app';  
+    protected $layout = 'layouts.livewire';
 
     public $name = '';
     public $email = '';
