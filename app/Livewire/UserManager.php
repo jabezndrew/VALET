@@ -64,7 +64,7 @@ class UserManager extends Component
         return view('livewire.user-manager', [
             'users' => $users,
             'stats' => $stats
-        ])->layout('layouts.livewire');
+        ])->layout('layouts.app');
     }
 
     public function openModal($userId = null)

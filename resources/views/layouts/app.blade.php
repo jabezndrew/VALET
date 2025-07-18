@@ -189,6 +189,7 @@
         padding: 8px 16px !important;
         transition: all 0.3s ease;
         text-decoration: none;
+        cursor: pointer;
     }
     
     .nav-link:hover, .nav-link.active {
@@ -255,6 +256,7 @@
         border-radius: 8px;
         margin: 2px 8px;
         transition: background 0.3s ease;
+        cursor: pointer;
     }
 
     .dropdown-item:hover {
@@ -345,6 +347,12 @@
         font-size: 1.5rem;
         font-weight: bold;
     }
+
+    /* Loading overlay for smooth navigation */
+    .nav-loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
 </style>
     @livewireStyles
 </head>
@@ -368,24 +376,32 @@
                 @auth
                 <div class="d-flex align-items-center">
                     <nav class="navbar-nav d-flex flex-row me-3">
-                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" 
+                           href="{{ route('dashboard') }}" 
+                           wire:navigate>
                             <i class="fas fa-home me-1"></i> Dashboard
                         </a>
                         
                         @if(auth()->user()->canViewCars())
-                        <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" href="{{ route('cars.index') }}">
+                        <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" 
+                           href="{{ route('cars.index') }}" 
+                           wire:navigate>
                             <i class="fas fa-car me-1"></i> Vehicles
                         </a>
                         @endif
                         
                         @if(auth()->user()->canManageUsers())
-                        <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.users') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" 
+                           href="{{ route('admin.users') }}" 
+                           wire:navigate>
                             <i class="fas fa-users me-1"></i> Users
                         </a>
                         @endif
                         
                         <!-- Feedback Button - Available to all authenticated users -->
-                        <a class="nav-link feedback-btn {{ request()->routeIs('feedback.*') ? 'active' : '' }}" href="{{ route('feedback.index') }}">
+                        <a class="nav-link feedback-btn {{ request()->routeIs('feedback.*') ? 'active' : '' }}" 
+                           href="{{ route('feedback.index') }}" 
+                           wire:navigate>
                             <i class="fas fa-comment-dots me-1"></i> Feedback
                         </a>
                     </nav>
@@ -420,6 +436,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Loading indicator for navigation -->
+    <div id="navigation-loading" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, #B22020, #ff6b6b); z-index: 9999;"></div>
 
     <!-- Alert Messages -->
     @if(session('success') || session('error') || session('warning') || session('info'))
@@ -459,7 +478,7 @@
     @endif
 
     <!-- Page Content -->
-    -- {{ $slot }} --
+    {{ $slot }}
    
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
@@ -501,6 +520,23 @@
             setInterval(() => {
                 Livewire.dispatch('refresh-parking-data');
             }, 3000);
+        });
+
+        // Livewire navigation events for smooth transitions
+        document.addEventListener('livewire:navigate', function() {
+            document.getElementById('navigation-loading').style.display = 'block';
+            document.body.classList.add('nav-loading');
+        });
+
+        document.addEventListener('livewire:navigated', function() {
+            document.getElementById('navigation-loading').style.display = 'none';
+            document.body.classList.remove('nav-loading');
+            
+            // Close dropdown on navigation
+            const menu = document.getElementById('userDropdownMenu');
+            if (menu) {
+                menu.classList.remove('show');
+            }
         });
         
         // Logout function

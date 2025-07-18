@@ -51,7 +51,7 @@ class VehicleManager extends Component
             'vehicles' => $vehicles,
             'users' => $users,
             'stats' => $stats
-        ])->layout('layouts.livewire');
+        ])->layout('layouts.app');
     }
 
     public function openModal($vehicleId = null)
