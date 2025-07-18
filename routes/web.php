@@ -17,27 +17,16 @@ Route::middleware('guest')->group(function () {
 Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/dashboard', App\Livewire\ParkingDashboard::class)->name('dashboard');
     Route::get('/floor/{floor}', App\Livewire\FloorDetail::class)->name('floor.detail');
-});
-
-Route::middleware(['auth', 'role:security'])->group(function () {
-    Route::get('/cars', function () { return 'Cars Index - Coming Soon'; })->name('cars.index');
-});
-
-Route::middleware(['auth', 'role:user'])->group(function () {
     Route::get('/feedback', \App\Livewire\FeedbackManager::class)->name('feedback.index');
 });
 
-Route::middleware(['auth', 'role:admin'])->group(function () {
-    Route::get('/admin/users', function () { return 'Users Admin - Coming Soon'; })->name('admin.users');
-    Route::get('/admin/settings', function () { return 'Settings - Coming Soon'; })->name('admin.settings');
-});
 Route::middleware(['auth', 'role:security'])->group(function () {
     Route::get('/cars', \App\Livewire\VehicleManager::class)->name('cars.index');
 });
 
-// User Management Routes (Admin only)
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/users', \App\Livewire\UserManager::class)->name('admin.users');
+    Route::get('/admin/settings', function () { return 'Settings - Coming Soon'; })->name('admin.settings');
 });
 
 Route::post('/logout', function () {
