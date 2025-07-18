@@ -1,7 +1,4 @@
 
-
-    <div>
-    <h1>VEHICLE MANAGER LOADED!</h1>
     <div class="container mt-4">
         <div class="row">
             <div class="col-12">
