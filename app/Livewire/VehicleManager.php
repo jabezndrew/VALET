@@ -47,8 +47,8 @@ class VehicleManager extends Component
     $vehicles = $this->getVehicles();
     $users = SysUser::where('is_active', true)->orderBy('name')->get();
     $stats = $this->getVehicleStats();
-    
-    return view('livewire.vehicle-manager', [  // Make sure this is 'vehicle-manager', not 'user-manager'
+
+    return view('livewire.vehicle-manager', [
         'vehicles' => $vehicles,
         'users' => $users,
         'stats' => $stats
