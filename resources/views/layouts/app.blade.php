@@ -315,7 +315,13 @@
         background: #f8d7da;
         color: #721c24;
     }
-    
+    html, body {
+    background-color: #f8f9fa !important;
+}
+
+[wire\:loading] {
+    opacity: 0.6;
+}
     .alert-warning {
         background: #fff3cd;
         color: #856404;
