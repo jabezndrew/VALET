@@ -50,11 +50,22 @@
         padding: 8px 16px !important;
         transition: all 0.3s ease;
         text-decoration: none;
+        cursor: pointer;
     }
     
     .nav-link:hover, .nav-link.active {
         background: rgba(255,255,255,0.1);
         color: white !important;
+    }
+    
+    .nav-link.feedback-btn {
+        background: rgba(255,255,255,0.15);
+        border: 1px solid rgba(255,255,255,0.3);
+    }
+    
+    .nav-link.feedback-btn:hover {
+        background: rgba(255,255,255,0.25);
+        transform: translateY(-1px);
     }
     
     .user-dropdown-wrapper {
@@ -105,6 +116,7 @@
         border-radius: 8px;
         margin: 2px 8px;
         transition: background 0.3s ease;
+        cursor: pointer;
     }
 
     .dropdown-item:hover {
@@ -165,6 +177,12 @@
         background: #d1ecf1;
         color: #0c5460;
     }
+
+    /* Loading overlay for smooth navigation */
+    .nav-loading {
+        opacity: 0.7;
+        pointer-events: none;
+    }
 </style>
     @livewireStyles
 </head>
@@ -188,23 +206,31 @@
                 @auth
                 <div class="d-flex align-items-center">
                     <nav class="navbar-nav d-flex flex-row me-3">
-                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" href="{{ route('dashboard') }}">
+                        <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" 
+                           href="{{ route('dashboard') }}" 
+                           wire:navigate>
                             <i class="fas fa-home me-1"></i> Dashboard
                         </a>
                         
                         @if(auth()->user()->canViewCars())
-                        <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" href="{{ route('cars.index') }}">
+                        <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" 
+                           href="{{ route('cars.index') }}" 
+                           wire:navigate>
                             <i class="fas fa-car me-1"></i> Vehicles
                         </a>
                         @endif
                         
                         @if(auth()->user()->canManageUsers())
-                        <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" href="{{ route('admin.users') }}">
+                        <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" 
+                           href="{{ route('admin.users') }}" 
+                           wire:navigate>
                             <i class="fas fa-users me-1"></i> Users
                         </a>
                         @endif
                         
-                        <a class="nav-link feedback-btn {{ request()->routeIs('feedback.*') ? 'active' : '' }}" href="{{ route('feedback.index') }}">
+                        <a class="nav-link feedback-btn {{ request()->routeIs('feedback.*') ? 'active' : '' }}" 
+                           href="{{ route('feedback.index') }}" 
+                           wire:navigate>
                             <i class="fas fa-comment-dots me-1"></i> Feedback
                         </a>
                     </nav>
@@ -233,6 +259,9 @@
             </div>
         </div>
     </div>
+
+    <!-- Loading indicator for navigation -->
+    <div id="navigation-loading" style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 3px; background: linear-gradient(90deg, #B22020, #ff6b6b); z-index: 9999;"></div>
 
     <!-- Page Content -->
     {{ $slot }}
@@ -269,6 +298,34 @@
                 window.location.href = '/login';
             });
         }
+
+        // Livewire navigation events
+        document.addEventListener('livewire:navigate', function() {
+            document.getElementById('navigation-loading').style.display = 'block';
+            document.body.classList.add('nav-loading');
+        });
+
+        document.addEventListener('livewire:navigated', function() {
+            document.getElementById('navigation-loading').style.display = 'none';
+            document.body.classList.remove('nav-loading');
+            
+            // Close dropdown on navigation
+            const menu = document.getElementById('userDropdownMenu');
+            if (menu) {
+                menu.classList.remove('show');
+            }
+        });
+
+        // Auto-hide alerts after 5 seconds
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(function() {
+                const alerts = document.querySelectorAll('.alert');
+                alerts.forEach(function(alert) {
+                    const bsAlert = new bootstrap.Alert(alert);
+                    bsAlert.close();
+                });
+            }, 5000);
+        });
     </script>
 </body>
 </html>

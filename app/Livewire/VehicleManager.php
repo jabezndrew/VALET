@@ -8,7 +8,6 @@ use App\Models\SysUser;
 
 class VehicleManager extends Component
 {
-   protected $layout = 'layouts.livewire';
     // Form properties
     public $plate_number = '';
     public $vehicle_make = '';
@@ -43,17 +42,17 @@ class VehicleManager extends Component
     }
 
     public function render()
-{
-    $vehicles = $this->getVehicles();
-    $users = SysUser::where('is_active', true)->orderBy('name')->get();
-    $stats = $this->getVehicleStats();
-
-    return view('livewire.vehicle-manager', [
-        'vehicles' => $vehicles,
-        'users' => $users,
-        'stats' => $stats
-    ])->layout('layouts.livewire');
-}
+    {
+        $vehicles = $this->getVehicles();
+        $users = SysUser::where('is_active', true)->orderBy('name')->get();
+        $stats = $this->getVehicleStats();
+        
+        return view('livewire.vehicle-manager', [
+            'vehicles' => $vehicles,
+            'users' => $users,
+            'stats' => $stats
+        ])->layout('layouts.livewire');
+    }
 
     public function openModal($vehicleId = null)
     {
@@ -93,7 +92,7 @@ class VehicleManager extends Component
                 ->first();
 
             if ($existingPlate) {
-                session()->flash('error', 'This plate number is already registered.');
+                $this->dispatch('show-alert', type: 'error', message: 'This plate number is already registered.');
                 return;
             }
 
@@ -104,7 +103,7 @@ class VehicleManager extends Component
                 ->first();
 
             if ($existingRfid) {
-                session()->flash('error', 'This RFID tag is already in use.');
+                $this->dispatch('show-alert', type: 'error', message: 'This RFID tag is already in use.');
                 return;
             }
 
@@ -121,24 +120,24 @@ class VehicleManager extends Component
 
             if ($this->editingId) {
                 DB::table('vehicles')->where('id', $this->editingId)->update($data);
-                session()->flash('success', 'Vehicle updated successfully.');
+                $this->dispatch('show-alert', type: 'success', message: 'Vehicle updated successfully.');
             } else {
                 $data['is_active'] = true;
                 $data['created_at'] = now();
                 DB::table('vehicles')->insert($data);
-                session()->flash('success', 'Vehicle registered successfully.');
+                $this->dispatch('show-alert', type: 'success', message: 'Vehicle registered successfully.');
             }
 
             $this->closeModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to save vehicle: ' . $e->getMessage());
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to save vehicle: ' . $e->getMessage());
         }
     }
 
     public function toggleStatus($vehicleId)
     {
         if (!auth()->user()->canManageCars()) {
-            session()->flash('error', 'Unauthorized action.');
+            $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
 
@@ -152,22 +151,22 @@ class VehicleManager extends Component
                 ]);
 
             $status = $vehicle->is_active ? 'deactivated' : 'activated';
-            session()->flash('success', "Vehicle {$status} successfully.");
+            $this->dispatch('show-alert', type: 'success', message: "Vehicle {$status} successfully.");
         }
     }
 
     public function delete($vehicleId)
     {
         if (!auth()->user()->canManageCars()) {
-            session()->flash('error', 'Unauthorized action.');
+            $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
 
         try {
             DB::table('vehicles')->where('id', $vehicleId)->delete();
-            session()->flash('success', 'Vehicle deleted successfully.');
+            $this->dispatch('show-alert', type: 'success', message: 'Vehicle deleted successfully.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to delete vehicle.');
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to delete vehicle.');
         }
     }
 
@@ -232,23 +231,23 @@ class VehicleManager extends Component
     }
 
     private function ensureVehicleTableExists()
-{
-    DB::statement("CREATE TABLE IF NOT EXISTS vehicles (
-        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        plate_number VARCHAR(20) UNIQUE NOT NULL,
-        vehicle_make VARCHAR(50) NOT NULL,
-        vehicle_model VARCHAR(50) NOT NULL,
-        vehicle_color VARCHAR(30) NOT NULL,
-        vehicle_type ENUM('car', 'motorcycle', 'suv', 'truck', 'van') DEFAULT 'car',
-        rfid_tag VARCHAR(50) UNIQUE NOT NULL,
-        owner_id BIGINT UNSIGNED NOT NULL,
-        is_active BOOLEAN DEFAULT TRUE,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_plate_number (plate_number),
-        INDEX idx_rfid_tag (rfid_tag),
-        INDEX idx_owner_id (owner_id),
-        FOREIGN KEY (owner_id) REFERENCES sys_users(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB");
-}
+    {
+        DB::statement("CREATE TABLE IF NOT EXISTS vehicles (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            plate_number VARCHAR(20) UNIQUE NOT NULL,
+            vehicle_make VARCHAR(50) NOT NULL,
+            vehicle_model VARCHAR(50) NOT NULL,
+            vehicle_color VARCHAR(30) NOT NULL,
+            vehicle_type ENUM('car', 'motorcycle', 'suv', 'truck', 'van') DEFAULT 'car',
+            rfid_tag VARCHAR(50) UNIQUE NOT NULL,
+            owner_id BIGINT UNSIGNED NOT NULL,
+            is_active BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_plate_number (plate_number),
+            INDEX idx_rfid_tag (rfid_tag),
+            INDEX idx_owner_id (owner_id),
+            FOREIGN KEY (owner_id) REFERENCES sys_users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB");
+    }
 }

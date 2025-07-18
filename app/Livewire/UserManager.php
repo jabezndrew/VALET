@@ -9,8 +9,7 @@ use Illuminate\Validation\Rules\Password;
 
 class UserManager extends Component
 {
-    //protected $layout = 'layouts.app';  
-
+    // Form properties
     public $name = '';
     public $email = '';
     public $password = '';
@@ -58,16 +57,15 @@ class UserManager extends Component
     }
 
     public function render()
-{
-    // Your existing code...
-    $users = $this->getUsers();
-    $stats = $this->getUserStats();
-    
-    return view('livewire.user-manager', [
-        'users' => $users,
-        'stats' => $stats
-    ])->layout('layouts.livewire');  // Force the layout here
-}
+    {
+        $users = $this->getUsers();
+        $stats = $this->getUserStats();
+        
+        return view('livewire.user-manager', [
+            'users' => $users,
+            'stats' => $stats
+        ])->layout('layouts.livewire');
+    }
 
     public function openModal($userId = null)
     {
@@ -127,7 +125,7 @@ class UserManager extends Component
                         ->count();
                     
                     if ($activeAdmins == 0) {
-                        session()->flash('error', 'Cannot deactivate the last active admin.');
+                        $this->dispatch('show-alert', type: 'error', message: 'Cannot deactivate the last active admin.');
                         return;
                     }
                 }
@@ -139,15 +137,15 @@ class UserManager extends Component
                     $user->tokens()->delete();
                 }
                 
-                session()->flash('success', 'User updated successfully.');
+                $this->dispatch('show-alert', type: 'success', message: 'User updated successfully.');
             } else {
                 SysUser::create($data);
-                session()->flash('success', 'User created successfully.');
+                $this->dispatch('show-alert', type: 'success', message: 'User created successfully.');
             }
 
             $this->closeModal();
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to save user: ' . $e->getMessage());
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to save user: ' . $e->getMessage());
         }
     }
 
@@ -164,7 +162,7 @@ class UserManager extends Component
                 ->count();
             
             if ($activeAdmins == 0) {
-                session()->flash('error', 'Cannot deactivate the last active admin.');
+                $this->dispatch('show-alert', type: 'error', message: 'Cannot deactivate the last active admin.');
                 return;
             }
         }
@@ -178,7 +176,7 @@ class UserManager extends Component
         }
 
         $status = $user->is_active ? 'activated' : 'deactivated';
-        session()->flash('success', "User {$status} successfully.");
+        $this->dispatch('show-alert', type: 'success', message: "User {$status} successfully.");
     }
 
     public function delete($userId)
@@ -190,7 +188,7 @@ class UserManager extends Component
         if ($user->isAdmin()) {
             $adminCount = SysUser::where('role', 'admin')->where('is_active', true)->count();
             if ($adminCount <= 1) {
-                session()->flash('error', 'Cannot delete the last active admin.');
+                $this->dispatch('show-alert', type: 'error', message: 'Cannot delete the last active admin.');
                 return;
             }
         }
@@ -202,9 +200,9 @@ class UserManager extends Component
             // Delete user
             $user->delete();
             
-            session()->flash('success', 'User deleted successfully.');
+            $this->dispatch('show-alert', type: 'success', message: 'User deleted successfully.');
         } catch (\Exception $e) {
-            session()->flash('error', 'Failed to delete user.');
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to delete user.');
         }
     }
 

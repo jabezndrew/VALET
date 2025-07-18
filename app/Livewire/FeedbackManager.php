@@ -7,7 +7,6 @@ use Illuminate\Support\Facades\DB;
 
 class FeedbackManager extends Component
 {
-    protected $layout = 'layouts.livewire';
     // Form properties
     public $type = '';
     public $subject = '';
@@ -65,13 +64,13 @@ class FeedbackManager extends Component
         // Reset form
         $this->reset(['type', 'subject', 'message', 'parking_location']);
         
-        session()->flash('success', 'Thank you for your feedback! We appreciate your input.');
+        $this->dispatch('show-alert', type: 'success', message: 'Thank you for your feedback! We appreciate your input.');
     }
 
     public function quickUpdateStatus($feedbackId, $status)
     {
         if (!auth()->user()->canManageUsers()) {
-            session()->flash('error', 'Unauthorized action.');
+            $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
 
@@ -82,13 +81,13 @@ class FeedbackManager extends Component
                 'updated_at' => now(),
             ]);
 
-        session()->flash('success', 'Feedback status updated successfully.');
+        $this->dispatch('show-alert', type: 'success', message: 'Feedback status updated successfully.');
     }
 
     public function openResponseModal($feedbackId)
     {
         if (!auth()->user()->canManageUsers()) {
-            session()->flash('error', 'Unauthorized action.');
+            $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
 
@@ -113,7 +112,7 @@ class FeedbackManager extends Component
     public function saveAdminResponse()
     {
         if (!auth()->user()->canManageUsers() || !$this->selectedFeedbackId) {
-            session()->flash('error', 'Unauthorized action.');
+            $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
 
@@ -131,7 +130,7 @@ class FeedbackManager extends Component
             ]);
 
         $this->closeResponseModal();
-        session()->flash('success', 'Feedback updated successfully.');
+        $this->dispatch('show-alert', type: 'success', message: 'Feedback updated successfully.');
     }
 
     private function getFeedbacks()
@@ -174,22 +173,22 @@ class FeedbackManager extends Component
     }
 
     private function ensureFeedbackTableExists(): void
-{
-    DB::statement("CREATE TABLE IF NOT EXISTS feedbacks (
-        id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-        user_id BIGINT UNSIGNED NOT NULL,
-        type ENUM('bug', 'suggestion', 'complaint', 'compliment', 'general') NOT NULL,
-        subject VARCHAR(255) NOT NULL,
-        message TEXT NOT NULL,
-        parking_location VARCHAR(100) NULL,
-        status ENUM('new', 'in_progress', 'resolved', 'closed') DEFAULT 'new',
-        admin_response TEXT NULL,
-        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-        INDEX idx_user_id (user_id),
-        INDEX idx_status (status),
-        INDEX idx_type (type),
-        FOREIGN KEY (user_id) REFERENCES sys_users(id) ON DELETE CASCADE
-    ) ENGINE=InnoDB");
-}
+    {
+        DB::statement("CREATE TABLE IF NOT EXISTS feedbacks (
+            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
+            user_id BIGINT UNSIGNED NOT NULL,
+            type ENUM('bug', 'suggestion', 'complaint', 'compliment', 'general') NOT NULL,
+            subject VARCHAR(255) NOT NULL,
+            message TEXT NOT NULL,
+            parking_location VARCHAR(100) NULL,
+            status ENUM('new', 'in_progress', 'resolved', 'closed') DEFAULT 'new',
+            admin_response TEXT NULL,
+            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+            INDEX idx_user_id (user_id),
+            INDEX idx_status (status),
+            INDEX idx_type (type),
+            FOREIGN KEY (user_id) REFERENCES sys_users(id) ON DELETE CASCADE
+        ) ENGINE=InnoDB");
+    }
 }
