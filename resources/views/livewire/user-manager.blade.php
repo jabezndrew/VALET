@@ -1,6 +1,4 @@
-<div>
-    <h1>VEHICLE MANAGER LOADED!</h1>
-<div>
+
     <div class="container mt-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
