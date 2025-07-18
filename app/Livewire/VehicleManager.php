@@ -43,16 +43,17 @@ class VehicleManager extends Component
     }
 
     public function render()
-    {
-        $vehicles = $this->getVehicles();
-        $users = SysUser::where('is_active', true)->orderBy('name')->get();
-        $stats = $this->getVehicleStats();
-        
-        return view('livewire.user-manager', [
+{
+    $vehicles = $this->getVehicles();
+    $users = SysUser::where('is_active', true)->orderBy('name')->get();
+    $stats = $this->getVehicleStats();
+    
+    return view('livewire.vehicle-manager', [  // Make sure this is 'vehicle-manager', not 'user-manager'
+        'vehicles' => $vehicles,
         'users' => $users,
         'stats' => $stats
     ])->layout('layouts.livewire');
-    }
+}
 
     public function openModal($vehicleId = null)
     {
