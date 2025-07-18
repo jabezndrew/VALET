@@ -9,7 +9,7 @@ use Illuminate\Validation\Rules\Password;
 
 class UserManager extends Component
 {
-    protected $layout = 'layouts.livewire';
+    //protected $layout = 'layouts.app';  
 
     public $name = '';
     public $email = '';
@@ -58,15 +58,16 @@ class UserManager extends Component
     }
 
     public function render()
-    {
-        $users = $this->getUsers();
-        $stats = $this->getUserStats();
-        
-        return view('livewire.user-manager', [
-            'users' => $users,
-            'stats' => $stats
-        ]);
-    }
+{
+    // Your existing code...
+    $users = $this->getUsers();
+    $stats = $this->getUserStats();
+    
+    return view('livewire.user-manager', [
+        'users' => $users,
+        'stats' => $stats
+    ])->layout('layouts.livewire');  // Force the layout here
+}
 
     public function openModal($userId = null)
     {

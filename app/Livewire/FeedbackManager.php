@@ -44,7 +44,7 @@ class FeedbackManager extends Component
         return view('livewire.feedback-manager', [
             'feedbacks' => $feedbacks,
             'stats' => $stats
-        ]);
+        ])->layout('layouts.livewire');
     }
 
     public function submitFeedback()
