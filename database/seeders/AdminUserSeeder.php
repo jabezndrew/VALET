@@ -22,5 +22,16 @@ class AdminUserSeeder extends Seeder
                 'is_active' => true,
             ]);
         }
+        if (SysUser::where('role', 'user')->count() === 0) {
+            SysUser::create([
+                'name' => 'John Doe',
+                'email' => 'user@valet.com',
+                'password' => Hash::make('password123'),
+                'role' => 'user',
+                'employee_id' => 'USER001',
+                'department' => 'General User',
+                'is_active' => true,
+            ]);
+        }
     }
 }

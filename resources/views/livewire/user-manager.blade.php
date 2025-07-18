@@ -1,4 +1,6 @@
-<x-layouts.app>
+@extends('layouts.app')
+
+@section('content')
 <div>
     <div class="container mt-4">
         <!-- Header -->
@@ -292,4 +294,4 @@
     <div class="modal-backdrop fade show"></div>
     @endif
 </div>
-</x-layouts.app>
+@endsection
