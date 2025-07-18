@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class FeedbackManager extends Component
 {
-    //protected $layout = 'layouts.app';
+    protected $layout = 'layouts.livewire';
     // Form properties
     public $type = '';
     public $subject = '';

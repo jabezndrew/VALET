@@ -1,4 +1,3 @@
-<!-- resources/views/components/layouts/app.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -40,144 +39,6 @@
         object-fit: contain;
     }
     
-    .campus-section {
-        background: white;
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-    
-    .stat-circle {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 15px;
-        position: relative;
-        /* REMOVED static backgrounds - now dynamic */
-    }
-    
-    .stat-circle .stat-number {
-        background: white;
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 1.8rem;
-    }
-    
-    .floor-section {
-        margin-top: 30px;
-    }
-    
-    .live-badge {
-        background: #28a745;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 15px;
-        font-size: 0.9rem;
-        font-weight: bold;
-    }
-    
-    .floor-card {
-        background: white;
-        border-radius: 20px;
-        padding: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease;
-        height: 100%;
-    }
-    
-    .floor-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .available-badge {
-        background: #28a745;
-        color: white;
-        padding: 6px 12px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: bold;
-    }
-    
-    .limited-badge {
-        background: #fd7e14;
-        color: white;
-        padding: 6px 12px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: bold;
-    }
-    
-    .full-badge {
-        background: #dc3545;
-        color: white;
-        padding: 6px 12px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: bold;
-    }
-    
-    .floor-number {
-        font-size: 2rem;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-    
-    .available-color { color: #28a745; }
-    .occupied-color { color: #dc3545; }
-    .total-color { color: #007bff; }
-    
-    .progress {
-        height: 10px;
-        border-radius: 5px;
-        background-color: #e9ecef;
-    }
-    
-    .progress-bar {
-        border-radius: 5px;
-    }
-
-    .parking-space-card {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        border-left: 4px solid;
-        height: 100%;
-    }
-    
-    .parking-space-card.available {
-        border-left-color: #28a745;
-    }
-    
-    .parking-space-card.occupied {
-        border-left-color: #dc3545;
-    }
-
-    .status-badge-small {
-        padding: 4px 8px;
-        border-radius: 8px;
-        font-size: 0.7rem;
-        font-weight: bold;
-    }
-
-    .badge-available {
-        background: #28a745;
-        color: white;
-    }
-
-    .badge-occupied {
-        background: #dc3545;
-        color: white;
-    }
-    
     .navbar-nav {
         gap: 15px;
     }
@@ -196,17 +57,6 @@
         color: white !important;
     }
     
-    .nav-link.feedback-btn {
-        background: rgba(255,255,255,0.15);
-        border: 1px solid rgba(255,255,255,0.3);
-    }
-    
-    .nav-link.feedback-btn:hover {
-        background: rgba(255,255,255,0.25);
-        transform: translateY(-1px);
-    }
-    
-    /* Simple User Dropdown */
     .user-dropdown-wrapper {
         position: relative;
     }
@@ -281,13 +131,6 @@
         margin: 8px 0;
     }
     
-    .role-badge {
-        font-size: 0.7rem;
-        padding: 2px 8px;
-        border-radius: 10px;
-        margin-left: 8px;
-    }
-    
     .dropdown-role-info {
         padding: 8px 20px;
         background: #f8f9fa;
@@ -297,7 +140,6 @@
         color: #6c757d;
     }
     
-    /* Alert styles */
     .alert {
         border-radius: 12px;
         border: none;
@@ -322,28 +164,6 @@
     .alert-info {
         background: #d1ecf1;
         color: #0c5460;
-    }
-    
-    /* Floor card no-data styles */
-    .floor-card.no-data {
-        opacity: 0.6;
-        border: 2px dashed #dee2e6;
-        background: #f8f9fa;
-        cursor: not-allowed !important;
-    }
-    
-    .no-data-badge {
-        background: #6c757d;
-        color: white;
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: bold;
-    }
-    
-    .stat-number {
-        font-size: 1.5rem;
-        font-weight: bold;
     }
 </style>
     @livewireStyles
@@ -384,13 +204,12 @@
                         </a>
                         @endif
                         
-                        <!-- Feedback Button - Available to all authenticated users -->
                         <a class="nav-link feedback-btn {{ request()->routeIs('feedback.*') ? 'active' : '' }}" href="{{ route('feedback.index') }}">
                             <i class="fas fa-comment-dots me-1"></i> Feedback
                         </a>
                     </nav>
                     
-                    <!-- User Dropdown - SIMPLIFIED VERSION -->
+                    <!-- User Dropdown -->
                     <div class="user-dropdown-wrapper">
                         <button class="user-dropdown" onclick="toggleUserDropdown()">
                             <i class="fas fa-user me-2"></i>
@@ -410,57 +229,14 @@
                         </div>
                     </div>
                 </div>
-                @else
-                <div class="d-flex">
-                    <a href="{{ route('login') }}" class="btn btn-outline-light">
-                        <i class="fas fa-sign-in-alt me-2"></i> Login
-                    </a>
-                </div>
                 @endauth
             </div>
         </div>
     </div>
 
-    <!-- Alert Messages -->
-    @if(session('success') || session('error') || session('warning') || session('info'))
-    <div class="container mt-3">
-        @if(session('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        
-        @if(session('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        
-        @if(session('warning'))
-            <div class="alert alert-warning alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {{ session('warning') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-        
-        @if(session('info'))
-            <div class="alert alert-info alert-dismissible fade show" role="alert">
-                <i class="fas fa-info-circle me-2"></i>
-                {{ session('info') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            </div>
-        @endif
-    </div>
-    @endif
-
     <!-- Page Content -->
-    -- {{ $slot }} --
-   
+    @yield('content')
+
     <!-- Bootstrap JS -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     
@@ -468,13 +244,11 @@
     @livewireScripts
     
     <script>
-        // Simple dropdown toggle
         function toggleUserDropdown() {
             const menu = document.getElementById('userDropdownMenu');
             menu.classList.toggle('show');
         }
 
-        // Close dropdown when clicking outside
         document.addEventListener('click', function(event) {
             const wrapper = document.querySelector('.user-dropdown-wrapper');
             const menu = document.getElementById('userDropdownMenu');
@@ -484,26 +258,6 @@
             }
         });
 
-        // Initialize on page load
-        document.addEventListener('DOMContentLoaded', function() {
-            // Auto-hide alerts after 5 seconds
-            setTimeout(function() {
-                const alerts = document.querySelectorAll('.alert');
-                alerts.forEach(function(alert) {
-                    const bsAlert = new bootstrap.Alert(alert);
-                    bsAlert.close();
-                });
-            }, 5000);
-        });
-        
-        // Global Livewire configuration
-        document.addEventListener('livewire:init', () => {
-            setInterval(() => {
-                Livewire.dispatch('refresh-parking-data');
-            }, 3000);
-        });
-        
-        // Logout function
         function logout() {
             fetch('/logout', {
                 method: 'POST',
