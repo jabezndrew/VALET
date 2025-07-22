@@ -28,6 +28,9 @@ class ParkingDashboard extends Component
     public $selectedFloor = '';
     public $selectedFloorSpaces = [];
     public $selectedFloorStats = [];
+    public $showVerifyModal = false;
+    public $verifyRfidTag = '';
+    public $verifyResult = null;
 
     protected $listeners = [
         'refresh-parking-data' => 'loadParkingData'
@@ -77,7 +80,106 @@ class ParkingDashboard extends Component
         $this->loadSelectedFloorData();
         $this->showModal = true;
     }
+    public function openVerifyModal()
+{
+    if (auth()->user()->role === 'user') {
+        return;
+    }
+    
+    $this->verifyRfidTag = '';
+    $this->verifyResult = null;
+    $this->showVerifyModal = true;
+}
 
+    public function closeVerifyModal()
+    {
+        $this->showVerifyModal = false;
+        $this->verifyRfidTag = '';
+        $this->verifyResult = null;
+    }
+
+    public function verifyVehicle()
+    {
+        if (auth()->user()->role === 'user') {
+            return;
+        }
+
+        $this->validate(['verifyRfidTag' => 'required|string']);
+
+        $vehicle = DB::table('vehicles')
+            ->leftJoin('sys_users', 'vehicles.owner_id', '=', 'sys_users.id')
+            ->select(
+                'vehicles.*',
+                'sys_users.name as owner_name',
+                'sys_users.role as owner_role'
+            )
+            ->where('vehicles.rfid_tag', $this->verifyRfidTag)
+            ->first();
+
+        if (!$vehicle) {
+            $this->verifyResult = [
+                'status' => 'NOT_FOUND',
+                'message' => 'Vehicle not found in the system.',
+                'color' => 'danger'
+            ];
+            return;
+        }
+
+        $status = $this->getVehicleStatus($vehicle);
+        
+        $this->verifyResult = [
+            'status' => $status,
+            'vehicle' => $vehicle,
+            'message' => $this->getVerifyMessage($status),
+            'color' => $this->getVerifyColor($status)
+        ];
+    }
+
+    private function getVehicleStatus($vehicle)
+    {
+        if (!$vehicle->is_active) {
+            return 'Inactive';
+        }
+
+        if (isset($vehicle->expires_at) && $vehicle->expires_at) {
+            $expiryDate = Carbon::parse($vehicle->expires_at);
+            $now = Carbon::now();
+
+            if ($expiryDate->isPast()) {
+                return 'Expired';
+            } 
+            
+            $daysUntilExpiry = $now->diffInDays($expiryDate, false);
+            
+            if ($daysUntilExpiry >= 0 && $daysUntilExpiry <= 30) {
+                return 'Expiring Soon';
+            }
+        }
+
+        return 'Active';
+    }
+
+    private function getVerifyMessage($status)
+    {
+        return match($status) {
+            'Active' => 'Vehicle is active and authorized for parking.',
+            'Expired' => 'Vehicle registration has expired. Renewal required.',
+            'Expiring Soon' => 'Vehicle registration expires soon. Please renew.',
+            'Inactive' => 'Vehicle is inactive. Contact administrator.',
+            default => 'Unknown status.'
+        };
+    }
+
+    private function getVerifyColor($status)
+    {
+        return match($status) {
+            'Active' => 'success',
+            'Expired' => 'danger',
+            'Expiring Soon' => 'warning',
+            'Inactive' => 'secondary',
+            default => 'secondary'
+        };
+    }
     public function goToFloor($floorLevel)
     {
         $hasData = collect($this->allSpaces)->where('floor_level', $floorLevel)->count() > 0;

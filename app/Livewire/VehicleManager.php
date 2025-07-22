@@ -23,6 +23,11 @@ class VehicleManager extends Component
     public $editingId = null;
     public $showModal = false;
     
+    // Verify vehicle modal
+    public $showVerifyModal = false;
+    public $verifyRfid = '';
+    public $verifyResult = null;
+    
     // Filters
     public $search = '';
     public $statusFilter = 'all';
@@ -34,7 +39,7 @@ class VehicleManager extends Component
         'vehicle_make' => 'required|string|max:50',
         'vehicle_model' => 'required|string|max:50',
         'vehicle_color' => 'required|string|max:30',
-        'vehicle_type' => 'required|in:car,motorcycle,suv,truck,van',
+        'vehicle_type' => 'required|in:car,suv,truck,van',
         'rfid_tag' => 'required|string|max:50',
         'owner_id' => 'required|exists:sys_users,id',
         'expires_at' => 'nullable|date|after_or_equal:today',
@@ -56,6 +61,98 @@ class VehicleManager extends Component
             'users' => $users,
             'stats' => $stats
         ])->layout('layouts.app');
+    }
+
+    // VERIFY VEHICLE METHODS
+    public function openVerifyModal()
+    {
+        if (auth()->user()->role === 'user') {
+            $this->dispatch('show-alert', type: 'error', message: 'Access denied.');
+            return;
+        }
+        
+        $this->verifyRfid = '';
+        $this->verifyResult = null;
+        $this->showVerifyModal = true;
+    }
+
+    public function closeVerifyModal()
+    {
+        $this->showVerifyModal = false;
+        $this->verifyRfid = '';
+        $this->verifyResult = null;
+    }
+
+    public function verifyVehicle()
+    {
+        if (auth()->user()->role === 'user') {
+            $this->dispatch('show-alert', type: 'error', message: 'Access denied.');
+            return;
+        }
+
+        $this->validate(['verifyRfid' => 'required|string']);
+
+        $vehicle = DB::table('vehicles')
+            ->leftJoin('sys_users', 'vehicles.owner_id', '=', 'sys_users.id')
+            ->select(
+                'vehicles.*',
+                'sys_users.name as owner_name',
+                'sys_users.role as owner_role'
+            )
+            ->where('vehicles.rfid_tag', $this->verifyRfid)
+            ->first();
+
+        if (!$vehicle) {
+            $this->verifyResult = [
+                'status' => 'NOT_FOUND',
+                'message' => 'Vehicle not found in system',
+                'color' => 'danger'
+            ];
+            return;
+        }
+
+        // Check if vehicle is active and not expired
+        if (!$vehicle->is_active) {
+            $this->verifyResult = [
+                'status' => 'INACTIVE',
+                'message' => 'Vehicle is deactivated',
+                'vehicle' => $vehicle,
+                'color' => 'warning'
+            ];
+            return;
+        }
+
+        // Check expiry if column exists
+        if ($this->columnExists('vehicles', 'expires_at') && $vehicle->expires_at) {
+            $expiryDate = Carbon::parse($vehicle->expires_at);
+            
+            if ($expiryDate->isPast()) {
+                $this->verifyResult = [
+                    'status' => 'EXPIRED',
+                    'message' => 'Vehicle registration expired on ' . $expiryDate->format('M j, Y'),
+                    'vehicle' => $vehicle,
+                    'color' => 'danger'
+                ];
+                return;
+            }
+            
+            if ($expiryDate->diffInDays(Carbon::now()) <= 30) {
+                $this->verifyResult = [
+                    'status' => 'EXPIRING_SOON',
+                    'message' => 'Vehicle expires on ' . $expiryDate->format('M j, Y') . ' (' . $expiryDate->diffForHumans() . ')',
+                    'vehicle' => $vehicle,
+                    'color' => 'warning'
+                ];
+                return;
+            }
+        }
+
+        $this->verifyResult = [
+            'status' => 'ACTIVE',
+            'message' => 'Vehicle is active and valid',
+            'vehicle' => $vehicle,
+            'color' => 'success'
+        ];
     }
 
     public function openModal($vehicleId = null)
@@ -212,7 +309,7 @@ class VehicleManager extends Component
         $this->dispatch('show-alert', type: 'info', message: 'Export feature coming soon.');
     }
 
-    // Helper methods for UI display
+    // Helper methods for UI display - FIXED STATUS DETECTION
     public function getVehicleStatus($vehicle)
     {
         if (!$vehicle->is_active) {
@@ -225,7 +322,7 @@ class VehicleManager extends Component
 
             if ($expiryDate->isPast()) {
                 return 'Expired';
-            } elseif ($expiryDate->diffInDays($now) <= 30) {
+            } elseif ($expiryDate->diffInDays($now) <= 30 && $expiryDate->isFuture()) {
                 return 'Expiring Soon';
             }
         }
@@ -261,13 +358,12 @@ class VehicleManager extends Component
         if (!$expiresAt) return '';
         
         $expiryDate = Carbon::parse($expiresAt);
-        $now = Carbon::now();
         
         if ($expiryDate->isPast()) {
-            return $expiryDate->diffForHumans();
+            return 'Expired ' . $expiryDate->diffForHumans();
         }
         
-        return $expiryDate->diffForHumans();
+        return 'Expires ' . $expiryDate->diffForHumans();
     }
 
     public function isExpired($expiresAt)
@@ -411,14 +507,14 @@ class VehicleManager extends Component
 
     private function ensureVehicleTableExists()
     {
-        // Create table if it doesn't exist
+        // Create table if it doesn't exist (REMOVED MOTORCYCLE)
         DB::statement("CREATE TABLE IF NOT EXISTS vehicles (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             plate_number VARCHAR(20) UNIQUE NOT NULL,
             vehicle_make VARCHAR(50) NOT NULL,
             vehicle_model VARCHAR(50) NOT NULL,
             vehicle_color VARCHAR(30) NOT NULL,
-            vehicle_type ENUM('car', 'motorcycle', 'suv', 'truck', 'van') DEFAULT 'car',
+            vehicle_type ENUM('car', 'suv', 'truck', 'van') DEFAULT 'car',
             rfid_tag VARCHAR(50) UNIQUE NOT NULL,
             owner_id BIGINT UNSIGNED NOT NULL,
             is_active BOOLEAN DEFAULT TRUE,

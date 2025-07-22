@@ -11,11 +11,18 @@
                 </h2>
                 <p class="text-muted mb-0">Manage registered vehicles and RFID tags</p>
             </div>
-            @if(auth()->user()->canManageCars())
-            <button wire:click="openModal" class="btn btn-valet-charcoal">
-                Register Vehicle
-            </button>
-            @endif
+            <div class="d-flex gap-2">
+                @if(auth()->user()->role !== 'user')
+                <button wire:click="openVerifyModal" class="btn btn-outline-success">
+                    <i class="fas fa-search me-1"></i> Verify Vehicle
+                </button>
+                @endif
+                @if(auth()->user()->canManageCars())
+                <button wire:click="openModal" class="btn btn-valet-charcoal">
+                    Register Vehicle
+                </button>
+                @endif
+            </div>
         </div>
 
         <!-- Stats -->
@@ -75,7 +82,6 @@
                         <select wire:model.live="typeFilter" class="form-select">
                             <option value="all">All Types</option>
                             <option value="car">Car</option>
-                            <option value="motorcycle">Motorcycle</option>
                             <option value="suv">SUV</option>
                             <option value="truck">Truck</option>
                             <option value="van">Van</option>
@@ -275,7 +281,6 @@
                                     <label class="form-label fw-bold">Type</label>
                                     <select wire:model="vehicle_type" class="form-select" required>
                                         <option value="car">Car</option>
-                                        <option value="motorcycle">Motorcycle</option>
                                         <option value="suv">SUV</option>
                                         <option value="truck">Truck</option>
                                         <option value="van">Van</option>
@@ -332,6 +337,74 @@
                         </button>
                     </div>
                 </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+    @endif
+
+    <!-- Verify Vehicle Modal -->
+    @if($showVerifyModal)
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        <i class="fas fa-search me-2"></i>
+                        Verify Vehicle
+                    </h5>
+                    <button type="button" class="btn-close" wire:click="closeVerifyModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">RFID Tag</label>
+                        <input wire:model="verifyRfid" type="text" class="form-control" 
+                               placeholder="Enter RFID tag to verify..." 
+                               wire:keydown.enter="verifyVehicle">
+                        @error('verifyRfid') <div class="text-danger small">{{ $message }}</div> @enderror
+                    </div>
+
+                    @if($verifyResult)
+                        <div class="alert alert-{{ $verifyResult['color'] }} mt-3">
+                            <div class="d-flex align-items-center">
+                                <i class="fas fa-{{ 
+                                    $verifyResult['status'] === 'ACTIVE' ? 'check-circle' : 
+                                    ($verifyResult['status'] === 'NOT_FOUND' ? 'times-circle' : 'exclamation-triangle') 
+                                }} me-2"></i>
+                                <div>
+                                    <strong>{{ $verifyResult['status'] }}</strong>
+                                    <div>{{ $verifyResult['message'] }}</div>
+                                </div>
+                            </div>
+                            
+                            @if(isset($verifyResult['vehicle']))
+                                <hr class="my-2">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small>
+                                            <strong>Vehicle:</strong><br>
+                                            {{ $verifyResult['vehicle']->vehicle_make }} {{ $verifyResult['vehicle']->vehicle_model }}<br>
+                                            <strong>Plate:</strong> {{ $verifyResult['vehicle']->plate_number }}
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small>
+                                            <strong>Owner:</strong><br>
+                                            {{ $verifyResult['vehicle']->owner_name }}<br>
+                                            <strong>Role:</strong> {{ ucfirst($verifyResult['vehicle']->owner_role) }}
+                                        </small>
+                                    </div>
+                                </div>
+                            @endif
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="closeVerifyModal">Close</button>
+                    <button type="button" class="btn btn-success" wire:click="verifyVehicle">
+                        <i class="fas fa-search me-1"></i> Verify
+                    </button>
+                </div>
             </div>
         </div>
     </div>
