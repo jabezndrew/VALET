@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use Illuminate\Support\Facades\DB;
 use App\Models\SysUser;
+use Carbon\Carbon;
 
 class VehicleManager extends Component
 {
@@ -16,6 +17,7 @@ class VehicleManager extends Component
     public $vehicle_type = 'car';
     public $rfid_tag = '';
     public $owner_id = '';
+    public $expires_at = '';
     
     // Edit mode
     public $editingId = null;
@@ -25,6 +27,7 @@ class VehicleManager extends Component
     public $search = '';
     public $statusFilter = 'all';
     public $typeFilter = 'all';
+    public $ownerRoleFilter = 'all';
 
     protected $rules = [
         'plate_number' => 'required|string|max:20',
@@ -34,6 +37,7 @@ class VehicleManager extends Component
         'vehicle_type' => 'required|in:car,motorcycle,suv,truck,van',
         'rfid_tag' => 'required|string|max:50',
         'owner_id' => 'required|exists:sys_users,id',
+        'expires_at' => 'nullable|date|after_or_equal:today',
     ];
 
     public function mount()
@@ -67,6 +71,7 @@ class VehicleManager extends Component
                 $this->vehicle_type = $vehicle->vehicle_type;
                 $this->rfid_tag = $vehicle->rfid_tag;
                 $this->owner_id = $vehicle->owner_id;
+                $this->expires_at = $vehicle->expires_at ? Carbon::parse($vehicle->expires_at)->format('Y-m-d') : '';
             }
         } else {
             $this->resetForm();
@@ -115,6 +120,7 @@ class VehicleManager extends Component
                 'vehicle_type' => $this->vehicle_type,
                 'rfid_tag' => $this->rfid_tag,
                 'owner_id' => $this->owner_id,
+                'expires_at' => $this->expires_at ?: null,
                 'updated_at' => now(),
             ];
 
@@ -132,6 +138,27 @@ class VehicleManager extends Component
         } catch (\Exception $e) {
             $this->dispatch('show-alert', type: 'error', message: 'Failed to save vehicle: ' . $e->getMessage());
         }
+    }
+
+    public function renewVehicle($vehicleId)
+    {
+        if (!auth()->user()->canManageCars()) {
+            $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
+            return;
+        }
+
+        // Renew for next semester (6 months from now)
+        $newExpiryDate = Carbon::now()->addMonths(6);
+
+        DB::table('vehicles')
+            ->where('id', $vehicleId)
+            ->update([
+                'expires_at' => $newExpiryDate,
+                'is_active' => true,
+                'updated_at' => now()
+            ]);
+
+        $this->dispatch('show-alert', type: 'success', message: 'Vehicle renewed successfully until ' . $newExpiryDate->format('M j, Y'));
     }
 
     public function toggleStatus($vehicleId)
@@ -170,6 +197,83 @@ class VehicleManager extends Component
         }
     }
 
+    public function exportVehicles()
+    {
+        // This would export vehicles to CSV - implement as needed
+        $this->dispatch('show-alert', type: 'info', message: 'Export feature coming soon.');
+    }
+
+    // Helper methods for UI display
+    public function getVehicleStatus($vehicle)
+    {
+        if (!$vehicle->is_active) {
+            return 'Inactive';
+        }
+
+        if ($vehicle->expires_at) {
+            $expiryDate = Carbon::parse($vehicle->expires_at);
+            $now = Carbon::now();
+
+            if ($expiryDate->isPast()) {
+                return 'Expired';
+            } elseif ($expiryDate->diffInDays($now) <= 30) {
+                return 'Expiring Soon';
+            }
+        }
+
+        return 'Active';
+    }
+
+    public function getStatusBadgeClass($vehicle)
+    {
+        $status = $this->getVehicleStatus($vehicle);
+        
+        return match($status) {
+            'Active' => 'badge-active',
+            'Expired' => 'badge-inactive',
+            'Expiring Soon' => 'bg-warning text-dark',
+            'Inactive' => 'badge-types',
+            default => 'badge-types'
+        };
+    }
+
+    public function getRowClass($vehicle)
+    {
+        if ($this->isExpired($vehicle->expires_at)) {
+            return 'table-danger';
+        } elseif ($this->isExpiringSoon($vehicle->expires_at)) {
+            return 'table-warning';
+        }
+        return '';
+    }
+
+    public function getDaysUntilExpiry($expiresAt)
+    {
+        if (!$expiresAt) return '';
+        
+        $expiryDate = Carbon::parse($expiresAt);
+        $now = Carbon::now();
+        
+        if ($expiryDate->isPast()) {
+            return $expiryDate->diffForHumans();
+        }
+        
+        return $expiryDate->diffForHumans();
+    }
+
+    public function isExpired($expiresAt)
+    {
+        if (!$expiresAt) return false;
+        return Carbon::parse($expiresAt)->isPast();
+    }
+
+    public function isExpiringSoon($expiresAt)
+    {
+        if (!$expiresAt) return false;
+        $expiryDate = Carbon::parse($expiresAt);
+        return $expiryDate->isFuture() && $expiryDate->diffInDays(Carbon::now()) <= 30;
+    }
+
     private function resetForm()
     {
         $this->editingId = null;
@@ -180,6 +284,7 @@ class VehicleManager extends Component
         $this->vehicle_type = 'car';
         $this->rfid_tag = '';
         $this->owner_id = '';
+        $this->expires_at = '';
         $this->resetErrorBag();
     }
 
@@ -204,12 +309,33 @@ class VehicleManager extends Component
         }
 
         if ($this->statusFilter !== 'all') {
-            $active = $this->statusFilter === 'active';
-            $query->where('vehicles.is_active', $active);
+            switch ($this->statusFilter) {
+                case 'active':
+                    $query->where('vehicles.is_active', true)
+                          ->where(function($q) {
+                              $q->whereNull('vehicles.expires_at')
+                                ->orWhere('vehicles.expires_at', '>', now());
+                          });
+                    break;
+                case 'expired':
+                    $query->where('vehicles.expires_at', '<', now());
+                    break;
+                case 'expiring_soon':
+                    $query->where('vehicles.expires_at', '>', now())
+                          ->where('vehicles.expires_at', '<=', now()->addDays(30));
+                    break;
+                case 'inactive':
+                    $query->where('vehicles.is_active', false);
+                    break;
+            }
         }
 
         if ($this->typeFilter !== 'all') {
             $query->where('vehicles.vehicle_type', $this->typeFilter);
+        }
+
+        if ($this->ownerRoleFilter !== 'all') {
+            $query->where('sys_users.role', $this->ownerRoleFilter);
         }
 
         return $query->orderBy('vehicles.created_at', 'desc')->get();
@@ -217,10 +343,19 @@ class VehicleManager extends Component
 
     private function getVehicleStats()
     {
+        $totalQuery = DB::table('vehicles');
+        $activeQuery = DB::table('vehicles')->where('is_active', true);
+        
         return [
-            'total' => DB::table('vehicles')->count(),
-            'active' => DB::table('vehicles')->where('is_active', true)->count(),
-            'inactive' => DB::table('vehicles')->where('is_active', false)->count(),
+            'total' => $totalQuery->count(),
+            'active' => $activeQuery->whereNull('expires_at')
+                                   ->orWhere('expires_at', '>', now())
+                                   ->count(),
+            'expired' => DB::table('vehicles')->where('expires_at', '<', now())->count(),
+            'expiring_soon' => DB::table('vehicles')
+                                 ->where('expires_at', '>', now())
+                                 ->where('expires_at', '<=', now()->addDays(30))
+                                 ->count(),
             'by_type' => DB::table('vehicles')
                 ->select('vehicle_type')
                 ->selectRaw('COUNT(*) as count')
@@ -241,12 +376,14 @@ class VehicleManager extends Component
             vehicle_type ENUM('car', 'motorcycle', 'suv', 'truck', 'van') DEFAULT 'car',
             rfid_tag VARCHAR(50) UNIQUE NOT NULL,
             owner_id BIGINT UNSIGNED NOT NULL,
+            expires_at DATETIME NULL,
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_plate_number (plate_number),
             INDEX idx_rfid_tag (rfid_tag),
             INDEX idx_owner_id (owner_id),
+            INDEX idx_expires_at (expires_at),
             FOREIGN KEY (owner_id) REFERENCES sys_users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB");
     }

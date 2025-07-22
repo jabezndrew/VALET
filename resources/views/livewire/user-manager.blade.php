@@ -9,7 +9,7 @@
                 <h2 class="fw-bold mb-1">
                     User Management
                 </h2>
-                <p class="text-muted mb-0">Manage system users and their roles</p>
+                <p class="text-muted mb-0">Manage system users and their access</p>
             </div>
             <button wire:click="openModal" class="btn btn-valet-charcoal">
                 Add New User
@@ -58,7 +58,7 @@
                 <div class="row">
                     <div class="col-md-6">
                         <input wire:model.live="search" type="text" class="form-control" 
-                               placeholder="Search by name, email, or employee ID...">
+                               placeholder="Search by name, email, or ID...">
                     </div>
                     <div class="col-md-3">
                         <select wire:model.live="roleFilter" class="form-select">
@@ -89,8 +89,8 @@
                             <tr>
                                 <th>User</th>
                                 <th>Role</th>
-                                <th>Employee ID</th>
-                                <th>Department</th>
+                                <th>User ID</th>
+                                <th>Category</th>
                                 <th>Status</th>
                                 <th>Created</th>
                                 <th>Actions</th>
@@ -189,7 +189,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Full Name</label>
                                     <input wire:model="name" type="text" class="form-control" 
-                                           placeholder="John Doe" required>
+                                           placeholder="e.g. John Doe" required>
                                     @error('name') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -197,7 +197,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Email Address</label>
                                     <input wire:model="email" type="email" class="form-control" 
-                                           placeholder="john@usjr.edu.ph" required>
+                                           placeholder="e.g. john.doe@gmail.com" required>
                                     @error('email') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -238,9 +238,9 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Employee ID</label>
+                                    <label class="form-label fw-bold">User ID <small class="text-muted">(Optional)</small></label>
                                     <input wire:model="employee_id" type="text" class="form-control" 
-                                           placeholder="EMP001">
+                                           placeholder="e.g. USER001, STU001, EMP001">
                                     @error('employee_id') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -249,9 +249,9 @@
                         <div class="row">
                             <div class="col-md-8">
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Department</label>
+                                    <label class="form-label fw-bold">Category <small class="text-muted">(Optional)</small></label>
                                     <input wire:model="department" type="text" class="form-control" 
-                                           placeholder="IT Department">
+                                           placeholder="e.g. Student, Parent, IT Department, General User">
                                     @error('department') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -300,7 +300,7 @@
                         <div id="${alertId}" class="alert alert-${event.type} alert-dismissible fade show" role="alert">
                             <i class="fas fa-${event.type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
                             ${event.message}
-                            <button type="type" class="btn-close" onclick="document.getElementById('${alertId}').remove()"></button>
+                            <button type="button" class="btn-close" onclick="document.getElementById('${alertId}').remove()"></button>
                         </div>
                     </div>
                 `;
