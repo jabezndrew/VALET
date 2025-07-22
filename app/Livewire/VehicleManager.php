@@ -71,7 +71,7 @@ class VehicleManager extends Component
                 $this->vehicle_type = $vehicle->vehicle_type;
                 $this->rfid_tag = $vehicle->rfid_tag;
                 $this->owner_id = $vehicle->owner_id;
-                $this->expires_at = $vehicle->expires_at ? Carbon::parse($vehicle->expires_at)->format('Y-m-d') : '';
+                $this->expires_at = isset($vehicle->expires_at) && $vehicle->expires_at ? Carbon::parse($vehicle->expires_at)->format('Y-m-d') : '';
             }
         } else {
             $this->resetForm();
@@ -120,9 +120,13 @@ class VehicleManager extends Component
                 'vehicle_type' => $this->vehicle_type,
                 'rfid_tag' => $this->rfid_tag,
                 'owner_id' => $this->owner_id,
-                'expires_at' => $this->expires_at ?: null,
                 'updated_at' => now(),
             ];
+
+            // Only add expires_at if column exists
+            if ($this->columnExists('vehicles', 'expires_at')) {
+                $data['expires_at'] = $this->expires_at ?: null;
+            }
 
             if ($this->editingId) {
                 DB::table('vehicles')->where('id', $this->editingId)->update($data);
@@ -144,6 +148,11 @@ class VehicleManager extends Component
     {
         if (!auth()->user()->canManageCars()) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
+            return;
+        }
+
+        if (!$this->columnExists('vehicles', 'expires_at')) {
+            $this->dispatch('show-alert', type: 'error', message: 'Expiry feature not available. Please contact administrator.');
             return;
         }
 
@@ -210,7 +219,7 @@ class VehicleManager extends Component
             return 'Inactive';
         }
 
-        if ($vehicle->expires_at) {
+        if (isset($vehicle->expires_at) && $vehicle->expires_at) {
             $expiryDate = Carbon::parse($vehicle->expires_at);
             $now = Carbon::now();
 
@@ -239,9 +248,9 @@ class VehicleManager extends Component
 
     public function getRowClass($vehicle)
     {
-        if ($this->isExpired($vehicle->expires_at)) {
+        if (isset($vehicle->expires_at) && $this->isExpired($vehicle->expires_at)) {
             return 'table-danger';
-        } elseif ($this->isExpiringSoon($vehicle->expires_at)) {
+        } elseif (isset($vehicle->expires_at) && $this->isExpiringSoon($vehicle->expires_at)) {
             return 'table-warning';
         }
         return '';
@@ -272,6 +281,16 @@ class VehicleManager extends Component
         if (!$expiresAt) return false;
         $expiryDate = Carbon::parse($expiresAt);
         return $expiryDate->isFuture() && $expiryDate->diffInDays(Carbon::now()) <= 30;
+    }
+
+    private function columnExists($table, $column)
+    {
+        try {
+            $columns = DB::select("SHOW COLUMNS FROM {$table} LIKE '{$column}'");
+            return !empty($columns);
+        } catch (\Exception $e) {
+            return false;
+        }
     }
 
     private function resetForm()
@@ -308,7 +327,8 @@ class VehicleManager extends Component
             });
         }
 
-        if ($this->statusFilter !== 'all') {
+        // Only apply expiry-based filters if expires_at column exists
+        if ($this->statusFilter !== 'all' && $this->columnExists('vehicles', 'expires_at')) {
             switch ($this->statusFilter) {
                 case 'active':
                     $query->where('vehicles.is_active', true)
@@ -323,6 +343,16 @@ class VehicleManager extends Component
                 case 'expiring_soon':
                     $query->where('vehicles.expires_at', '>', now())
                           ->where('vehicles.expires_at', '<=', now()->addDays(30));
+                    break;
+                case 'inactive':
+                    $query->where('vehicles.is_active', false);
+                    break;
+            }
+        } elseif ($this->statusFilter !== 'all') {
+            // Fallback for tables without expires_at column
+            switch ($this->statusFilter) {
+                case 'active':
+                    $query->where('vehicles.is_active', true);
                     break;
                 case 'inactive':
                     $query->where('vehicles.is_active', false);
@@ -343,19 +373,11 @@ class VehicleManager extends Component
 
     private function getVehicleStats()
     {
-        $totalQuery = DB::table('vehicles');
-        $activeQuery = DB::table('vehicles')->where('is_active', true);
-        
-        return [
-            'total' => $totalQuery->count(),
-            'active' => $activeQuery->whereNull('expires_at')
-                                   ->orWhere('expires_at', '>', now())
-                                   ->count(),
-            'expired' => DB::table('vehicles')->where('expires_at', '<', now())->count(),
-            'expiring_soon' => DB::table('vehicles')
-                                 ->where('expires_at', '>', now())
-                                 ->where('expires_at', '<=', now()->addDays(30))
-                                 ->count(),
+        $stats = [
+            'total' => DB::table('vehicles')->count(),
+            'active' => DB::table('vehicles')->where('is_active', true)->count(),
+            'expired' => 0,
+            'expiring_soon' => 0,
             'by_type' => DB::table('vehicles')
                 ->select('vehicle_type')
                 ->selectRaw('COUNT(*) as count')
@@ -363,10 +385,33 @@ class VehicleManager extends Component
                 ->pluck('count', 'vehicle_type')
                 ->toArray(),
         ];
+
+        // Only calculate expiry stats if expires_at column exists
+        if ($this->columnExists('vehicles', 'expires_at')) {
+            $stats['active'] = DB::table('vehicles')
+                ->where('is_active', true)
+                ->where(function($q) {
+                    $q->whereNull('expires_at')
+                      ->orWhere('expires_at', '>', now());
+                })
+                ->count();
+            
+            $stats['expired'] = DB::table('vehicles')
+                ->where('expires_at', '<', now())
+                ->count();
+            
+            $stats['expiring_soon'] = DB::table('vehicles')
+                ->where('expires_at', '>', now())
+                ->where('expires_at', '<=', now()->addDays(30))
+                ->count();
+        }
+
+        return $stats;
     }
 
     private function ensureVehicleTableExists()
     {
+        // Create table if it doesn't exist
         DB::statement("CREATE TABLE IF NOT EXISTS vehicles (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             plate_number VARCHAR(20) UNIQUE NOT NULL,
@@ -376,15 +421,23 @@ class VehicleManager extends Component
             vehicle_type ENUM('car', 'motorcycle', 'suv', 'truck', 'van') DEFAULT 'car',
             rfid_tag VARCHAR(50) UNIQUE NOT NULL,
             owner_id BIGINT UNSIGNED NOT NULL,
-            expires_at DATETIME NULL,
             is_active BOOLEAN DEFAULT TRUE,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_plate_number (plate_number),
             INDEX idx_rfid_tag (rfid_tag),
             INDEX idx_owner_id (owner_id),
-            INDEX idx_expires_at (expires_at),
             FOREIGN KEY (owner_id) REFERENCES sys_users(id) ON DELETE CASCADE
         ) ENGINE=InnoDB");
+
+        // Add expires_at column if it doesn't exist
+        if (!$this->columnExists('vehicles', 'expires_at')) {
+            try {
+                DB::statement("ALTER TABLE vehicles ADD COLUMN expires_at DATETIME NULL AFTER owner_id");
+                DB::statement("ALTER TABLE vehicles ADD INDEX idx_expires_at (expires_at)");
+            } catch (\Exception $e) {
+                // Column might already exist or other issue, continue
+            }
+        }
     }
 }
