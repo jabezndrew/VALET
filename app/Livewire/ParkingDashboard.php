@@ -80,16 +80,18 @@ class ParkingDashboard extends Component
         $this->loadSelectedFloorData();
         $this->showModal = true;
     }
+
+    // FIXED: Verify Vehicle Modal Methods
     public function openVerifyModal()
-{
-    if (auth()->user()->role === 'user') {
-        return;
+    {
+        if (auth()->user()->role === 'user') {
+            return;
+        }
+        
+        $this->verifyRfidTag = '';
+        $this->verifyResult = null;
+        $this->showVerifyModal = true;
     }
-    
-    $this->verifyRfidTag = '';
-    $this->verifyResult = null;
-    $this->showVerifyModal = true;
-}
 
     public function closeVerifyModal()
     {
@@ -98,6 +100,7 @@ class ParkingDashboard extends Component
         $this->verifyResult = null;
     }
 
+    // FIXED: Verify Vehicle Method with Simplified Logic
     public function verifyVehicle()
     {
         if (auth()->user()->role === 'user') {
@@ -125,61 +128,41 @@ class ParkingDashboard extends Component
             return;
         }
 
-        $status = $this->getVehicleStatus($vehicle);
-        
-        $this->verifyResult = [
-            'status' => $status,
-            'vehicle' => $vehicle,
-            'message' => $this->getVerifyMessage($status),
-            'color' => $this->getVerifyColor($status)
-        ];
-    }
-
-    private function getVehicleStatus($vehicle)
-    {
+        // Use simplified status logic - only Active or Inactive
         if (!$vehicle->is_active) {
-            return 'Inactive';
+            $this->verifyResult = [
+                'status' => 'Inactive',
+                'vehicle' => $vehicle,
+                'message' => 'Vehicle is deactivated. Contact administrator.',
+                'color' => 'danger'
+            ];
+            return;
         }
 
+        // Check expiry date
         if (isset($vehicle->expires_at) && $vehicle->expires_at) {
             $expiryDate = Carbon::parse($vehicle->expires_at);
-            $now = Carbon::now();
-
+            
             if ($expiryDate->isPast()) {
-                return 'Expired';
-            } 
-            
-            $daysUntilExpiry = $now->diffInDays($expiryDate, false);
-            
-            if ($daysUntilExpiry >= 0 && $daysUntilExpiry <= 30) {
-                return 'Expiring Soon';
+                $this->verifyResult = [
+                    'status' => 'Inactive',
+                    'vehicle' => $vehicle,
+                    'message' => 'Vehicle registration expired on ' . $expiryDate->format('M j, Y') . '. Renewal required.',
+                    'color' => 'danger'
+                ];
+                return;
             }
         }
 
-        return 'Active';
+        // Vehicle is active
+        $this->verifyResult = [
+            'status' => 'Active',
+            'vehicle' => $vehicle,
+            'message' => 'Vehicle is active and authorized for parking.',
+            'color' => 'success'
+        ];
     }
 
-    private function getVerifyMessage($status)
-    {
-        return match($status) {
-            'Active' => 'Vehicle is active and authorized for parking.',
-            'Expired' => 'Vehicle registration has expired. Renewal required.',
-            'Expiring Soon' => 'Vehicle registration expires soon. Please renew.',
-            'Inactive' => 'Vehicle is inactive. Contact administrator.',
-            default => 'Unknown status.'
-        };
-    }
-
-    private function getVerifyColor($status)
-    {
-        return match($status) {
-            'Active' => 'success',
-            'Expired' => 'danger',
-            'Expiring Soon' => 'warning',
-            'Inactive' => 'secondary',
-            default => 'secondary'
-        };
-    }
     public function goToFloor($floorLevel)
     {
         $hasData = collect($this->allSpaces)->where('floor_level', $floorLevel)->count() > 0;
@@ -273,6 +256,41 @@ class ParkingDashboard extends Component
     {
         $this->loadParkingData();
         session()->flash('message', 'Dashboard refreshed successfully');
+    }
+
+    // SIMPLIFIED: Vehicle Status Helper Methods
+    private function getVehicleStatus($vehicle)
+    {
+        if (!$vehicle->is_active) {
+            return 'Inactive';
+        }
+
+        if (isset($vehicle->expires_at) && $vehicle->expires_at) {
+            $expiryDate = Carbon::parse($vehicle->expires_at);
+            if ($expiryDate->isPast()) {
+                return 'Inactive';
+            }
+        }
+
+        return 'Active';
+    }
+
+    private function getVerifyMessage($status)
+    {
+        return match($status) {
+            'Active' => 'Vehicle is active and authorized for parking.',
+            'Inactive' => 'Vehicle is inactive or expired. Contact administrator.',
+            default => 'Unknown status.'
+        };
+    }
+
+    private function getVerifyColor($status)
+    {
+        return match($status) {
+            'Active' => 'success',
+            'Inactive' => 'danger',
+            default => 'secondary'
+        };
     }
 
     private function updateAvailableFloors()

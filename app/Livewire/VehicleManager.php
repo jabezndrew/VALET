@@ -111,13 +111,13 @@ class VehicleManager extends Component
             return;
         }
 
-        // Check if vehicle is active and not expired
+        // Use simplified status logic - only Active or Inactive
         if (!$vehicle->is_active) {
             $this->verifyResult = [
-                'status' => 'INACTIVE',
-                'message' => 'Vehicle is deactivated',
+                'status' => 'Inactive',
+                'message' => 'Vehicle is deactivated. Contact administrator.',
                 'vehicle' => $vehicle,
-                'color' => 'warning'
+                'color' => 'danger'
             ];
             return;
         }
@@ -128,28 +128,18 @@ class VehicleManager extends Component
             
             if ($expiryDate->isPast()) {
                 $this->verifyResult = [
-                    'status' => 'EXPIRED',
-                    'message' => 'Vehicle registration expired on ' . $expiryDate->format('M j, Y'),
+                    'status' => 'Inactive',
+                    'message' => 'Vehicle registration expired on ' . $expiryDate->format('M j, Y') . '. Renewal required.',
                     'vehicle' => $vehicle,
                     'color' => 'danger'
-                ];
-                return;
-            }
-            
-            if ($expiryDate->diffInDays(Carbon::now()) <= 30) {
-                $this->verifyResult = [
-                    'status' => 'EXPIRING_SOON',
-                    'message' => 'Vehicle expires on ' . $expiryDate->format('M j, Y') . ' (' . $expiryDate->diffForHumans() . ')',
-                    'vehicle' => $vehicle,
-                    'color' => 'warning'
                 ];
                 return;
             }
         }
 
         $this->verifyResult = [
-            'status' => 'ACTIVE',
-            'message' => 'Vehicle is active and valid',
+            'status' => 'Active',
+            'message' => 'Vehicle is active and authorized for parking.',
             'vehicle' => $vehicle,
             'color' => 'success'
         ];
@@ -309,41 +299,33 @@ class VehicleManager extends Component
         $this->dispatch('show-alert', type: 'info', message: 'Export feature coming soon.');
     }
 
-    // Helper methods for UI display - FIXED STATUS DETECTION
+    // SIMPLIFIED: Only Active/Inactive status
     public function getVehicleStatus($vehicle)
     {
+        // If vehicle is manually deactivated
         if (!$vehicle->is_active) {
             return 'Inactive';
         }
 
+        // If vehicle has expiry date and it's past
         if (!empty($vehicle->expires_at)) {
             $expiryDate = Carbon::parse($vehicle->expires_at);
-            $now = Carbon::now();
-
             if ($expiryDate->isPast()) {
-                return 'Expired';
-            } 
-            
-            // FIXED: Use correct method to calculate days until expiry
-            $daysUntilExpiry = $expiryDate->diffInDays($now);
-            
-            if ($daysUntilExpiry <= 30) {
-                return 'Expiring Soon';
+                return 'Inactive';
             }
         }
 
+        // Otherwise it's active
         return 'Active';
     }
 
-    // ADDED: Missing methods that Blade view is calling
+    // UPDATED: Simplified methods for UI display
     public function getRowClass($vehicle)
     {
         $status = $this->getVehicleStatus($vehicle);
         
         return match($status) {
-            'Expired' => 'table-danger',
-            'Expiring Soon' => 'table-warning', 
-            'Inactive' => 'table-secondary',
+            'Inactive' => 'table-danger',
             'Active' => '',
             default => ''
         };
@@ -354,9 +336,7 @@ class VehicleManager extends Component
         $status = $this->getVehicleStatus($vehicle);
         
         return match($status) {
-            'Expired' => 'badge bg-danger',
-            'Expiring Soon' => 'badge bg-warning',
-            'Inactive' => 'badge bg-secondary', 
+            'Inactive' => 'badge bg-danger',
             'Active' => 'badge bg-success',
             default => 'badge bg-secondary'
         };
@@ -372,9 +352,7 @@ class VehicleManager extends Component
         $status = $this->getVehicleStatus($vehicle);
         
         return match($status) {
-            'Expired' => 'fas fa-times-circle',
-            'Expiring Soon' => 'fas fa-exclamation-triangle',
-            'Inactive' => 'fas fa-pause-circle',
+            'Inactive' => 'fas fa-times-circle',
             'Active' => 'fas fa-check-circle',
             default => 'fas fa-question-circle'
         };
@@ -450,8 +428,8 @@ class VehicleManager extends Component
             });
         }
 
-        // Only apply expiry-based filters if expires_at column exists
-        if ($this->statusFilter !== 'all' && $this->columnExists('vehicles', 'expires_at')) {
+        // UPDATED: Simplified status filtering
+        if ($this->statusFilter !== 'all') {
             switch ($this->statusFilter) {
                 case 'active':
                     $query->where('vehicles.is_active', true)
@@ -460,25 +438,11 @@ class VehicleManager extends Component
                                 ->orWhere('vehicles.expires_at', '>', now());
                           });
                     break;
-                case 'expired':
-                    $query->where('vehicles.expires_at', '<', now());
-                    break;
-                case 'expiring_soon':
-                    $query->where('vehicles.expires_at', '>', now())
-                          ->where('vehicles.expires_at', '<=', now()->addDays(30));
-                    break;
                 case 'inactive':
-                    $query->where('vehicles.is_active', false);
-                    break;
-            }
-        } elseif ($this->statusFilter !== 'all') {
-            // Fallback for tables without expires_at column
-            switch ($this->statusFilter) {
-                case 'active':
-                    $query->where('vehicles.is_active', true);
-                    break;
-                case 'inactive':
-                    $query->where('vehicles.is_active', false);
+                    $query->where(function($q) {
+                        $q->where('vehicles.is_active', false)
+                          ->orWhere('vehicles.expires_at', '<', now());
+                    });
                     break;
             }
         }
@@ -498,9 +462,8 @@ class VehicleManager extends Component
     {
         $stats = [
             'total' => DB::table('vehicles')->count(),
-            'active' => DB::table('vehicles')->where('is_active', true)->count(),
-            'expired' => 0,
-            'expiring_soon' => 0,
+            'active' => 0,
+            'inactive' => 0,
             'by_type' => DB::table('vehicles')
                 ->select('vehicle_type')
                 ->selectRaw('COUNT(*) as count')
@@ -509,7 +472,7 @@ class VehicleManager extends Component
                 ->toArray(),
         ];
 
-        // Only calculate expiry stats if expires_at column exists
+        // UPDATED: Simplified stats calculation
         if ($this->columnExists('vehicles', 'expires_at')) {
             $stats['active'] = DB::table('vehicles')
                 ->where('is_active', true)
@@ -519,14 +482,15 @@ class VehicleManager extends Component
                 })
                 ->count();
             
-            $stats['expired'] = DB::table('vehicles')
-                ->where('expires_at', '<', now())
+            $stats['inactive'] = DB::table('vehicles')
+                ->where(function($q) {
+                    $q->where('is_active', false)
+                      ->orWhere('expires_at', '<', now());
+                })
                 ->count();
-            
-            $stats['expiring_soon'] = DB::table('vehicles')
-                ->where('expires_at', '>', now())
-                ->where('expires_at', '<=', now()->addDays(30))
-                ->count();
+        } else {
+            $stats['active'] = DB::table('vehicles')->where('is_active', true)->count();
+            $stats['inactive'] = DB::table('vehicles')->where('is_active', false)->count();
         }
 
         return $stats;
