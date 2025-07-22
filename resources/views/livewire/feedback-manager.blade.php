@@ -246,7 +246,7 @@
                             @error('message') <div class="text-danger small">{{ $message }}</div> @enderror
                         </div>
 
-                        {{-- FIXED: Now properly reactive with wire:model.live --}}
+                        {{-- FIXED: Rating only for general feedback --}}
                         @if($type === 'general')
                         <div class="mb-3" wire:key="rating-field">
                             <label class="form-label fw-bold">Rating <small class="text-muted">(Optional)</small></label>
@@ -306,11 +306,11 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
-                        <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled">
-                            <span wire:loading.remove">
+                        <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled" wire:target="submitFeedback">
+                            <span wire:loading.remove wire:target="submitFeedback">
                                 Submit Feedback
                             </span>
-                            <span wire:loading>
+                            <span wire:loading wire:target="submitFeedback">
                                 <i class="fas fa-spinner fa-spin me-2"></i>
                                 Submitting...
                             </span>
