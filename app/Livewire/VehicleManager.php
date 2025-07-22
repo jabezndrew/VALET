@@ -309,7 +309,7 @@ class VehicleManager extends Component
         $this->dispatch('show-alert', type: 'info', message: 'Export feature coming soon.');
     }
 
-    // FIXED: Helper methods for UI display - CORRECTED STATUS DETECTION
+    // Helper methods for UI display - FIXED STATUS DETECTION
     public function getVehicleStatus($vehicle)
     {
         if (!$vehicle->is_active) {
@@ -335,7 +335,7 @@ class VehicleManager extends Component
         return 'Active';
     }
 
-    // ADDED: Missing getRowClass method that was causing the error
+    // ADDED: Missing methods that Blade view is calling
     public function getRowClass($vehicle)
     {
         $status = $this->getVehicleStatus($vehicle);
@@ -346,6 +346,37 @@ class VehicleManager extends Component
             'Inactive' => 'table-secondary',
             'Active' => '',
             default => ''
+        };
+    }
+
+    public function getStatusBadgeClass($vehicle)
+    {
+        $status = $this->getVehicleStatus($vehicle);
+        
+        return match($status) {
+            'Expired' => 'badge bg-danger',
+            'Expiring Soon' => 'badge bg-warning',
+            'Inactive' => 'badge bg-secondary', 
+            'Active' => 'badge bg-success',
+            default => 'badge bg-secondary'
+        };
+    }
+
+    public function getStatusText($vehicle)
+    {
+        return $this->getVehicleStatus($vehicle);
+    }
+
+    public function getStatusIcon($vehicle) 
+    {
+        $status = $this->getVehicleStatus($vehicle);
+        
+        return match($status) {
+            'Expired' => 'fas fa-times-circle',
+            'Expiring Soon' => 'fas fa-exclamation-triangle',
+            'Inactive' => 'fas fa-pause-circle',
+            'Active' => 'fas fa-check-circle',
+            default => 'fas fa-question-circle'
         };
     }
 
