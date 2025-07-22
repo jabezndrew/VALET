@@ -96,11 +96,6 @@
                             <option value="admin">Admin</option>
                         </select>
                     </div>
-                    <div class="col-md-2">
-                        <button wire:click="exportVehicles" class="btn btn-outline-secondary w-100">
-                            <i class="fas fa-download me-1"></i> Export
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>

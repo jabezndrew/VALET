@@ -293,11 +293,7 @@ class VehicleManager extends Component
         }
     }
 
-    public function exportVehicles()
-    {
-        // This would export vehicles to CSV - implement as needed
-        $this->dispatch('show-alert', type: 'info', message: 'Export feature coming soon.');
-    }
+    // REMOVED: Export functionality completely removed
 
     // SIMPLIFIED: Only Active/Inactive status
     public function getVehicleStatus($vehicle)
@@ -428,7 +424,7 @@ class VehicleManager extends Component
             });
         }
 
-        // UPDATED: Simplified status filtering
+        // FIXED: Updated status filtering to handle all expected filter values
         if ($this->statusFilter !== 'all') {
             switch ($this->statusFilter) {
                 case 'active':
@@ -439,10 +435,14 @@ class VehicleManager extends Component
                           });
                     break;
                 case 'inactive':
-                    $query->where(function($q) {
-                        $q->where('vehicles.is_active', false)
-                          ->orWhere('vehicles.expires_at', '<', now());
-                    });
+                    $query->where('vehicles.is_active', false);
+                    break;
+                case 'expired':
+                    $query->where('vehicles.expires_at', '<', now());
+                    break;
+                case 'expiring_soon':
+                    // This filter will return no results since we don't use this status anymore
+                    $query->where('vehicles.id', '=', -1); // Force empty result
                     break;
             }
         }
@@ -458,12 +458,15 @@ class VehicleManager extends Component
         return $query->orderBy('vehicles.created_at', 'desc')->get();
     }
 
+    // FIXED: Updated stats to include all expected keys
     private function getVehicleStats()
     {
         $stats = [
             'total' => DB::table('vehicles')->count(),
             'active' => 0,
             'inactive' => 0,
+            'expired' => 0,        // Keep this for Blade compatibility
+            'expiring_soon' => 0,  // Keep this for Blade compatibility
             'by_type' => DB::table('vehicles')
                 ->select('vehicle_type')
                 ->selectRaw('COUNT(*) as count')
@@ -472,8 +475,9 @@ class VehicleManager extends Component
                 ->toArray(),
         ];
 
-        // UPDATED: Simplified stats calculation
+        // Calculate stats with simplified logic
         if ($this->columnExists('vehicles', 'expires_at')) {
+            // Active: is_active = true AND (no expiry OR expiry in future)
             $stats['active'] = DB::table('vehicles')
                 ->where('is_active', true)
                 ->where(function($q) {
@@ -482,15 +486,25 @@ class VehicleManager extends Component
                 })
                 ->count();
             
-            $stats['inactive'] = DB::table('vehicles')
-                ->where(function($q) {
-                    $q->where('is_active', false)
-                      ->orWhere('expires_at', '<', now());
-                })
+            // Expired: has expiry date and it's in the past
+            $stats['expired'] = DB::table('vehicles')
+                ->where('expires_at', '<', now())
                 ->count();
+                
+            // Inactive: manually deactivated (regardless of expiry)
+            $stats['inactive'] = DB::table('vehicles')
+                ->where('is_active', false)
+                ->count();
+            
+            // Expiring Soon: set to 0 since we're not using this anymore
+            $stats['expiring_soon'] = 0;
+            
         } else {
+            // Fallback for tables without expires_at column
             $stats['active'] = DB::table('vehicles')->where('is_active', true)->count();
             $stats['inactive'] = DB::table('vehicles')->where('is_active', false)->count();
+            $stats['expired'] = 0;
+            $stats['expiring_soon'] = 0;
         }
 
         return $stats;
