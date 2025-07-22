@@ -7,11 +7,12 @@ use Illuminate\Support\Facades\DB;
 
 class FeedbackManager extends Component
 {
-    // Form properties
+    // Form properties - UPDATED FOR MOBILE SCHEMA
     public $type = '';
-    public $subject = '';
     public $message = '';
-    public $parking_location = '';
+    public $rating = null;
+    public $email = '';
+    public $issues = [];
     
     // Filter properties
     public $statusFilter = 'all';
@@ -27,15 +28,17 @@ class FeedbackManager extends Component
     public $newStatus = '';
 
     protected $rules = [
-        'type' => 'required|in:bug,suggestion,complaint,compliment,general',
-        'subject' => 'required|string|max:255',
+        'type' => 'required|in:general,bug,feature,parking',
         'message' => 'required|string|max:2000',
-        'parking_location' => 'nullable|string|max:100',
+        'rating' => 'nullable|integer|min:1|max:5',
+        'email' => 'nullable|email|max:255',
+        'issues' => 'nullable|array',
     ];
 
     public function mount()
     {
         $this->ensureFeedbackTableExists();
+        $this->migrateToMobileSchema(); // RUN ONCE THEN COMMENT OUT AFTER DEPLOYMENT
     }
 
     public function render()
@@ -47,6 +50,50 @@ class FeedbackManager extends Component
             'feedbacks' => $feedbacks,
             'stats' => $stats
         ])->layout('layouts.app');
+    }
+
+    // MIGRATION METHOD - RUN ONCE THEN COMMENT OUT
+    private function migrateToMobileSchema(): void
+    {
+        try {
+            // Add new columns
+            $columns = DB::select("SHOW COLUMNS FROM feedbacks");
+            $columnNames = array_column($columns, 'Field');
+            
+            if (!in_array('rating', $columnNames)) {
+                DB::statement("ALTER TABLE feedbacks ADD COLUMN rating INT NULL AFTER message");
+            }
+            if (!in_array('email', $columnNames)) {
+                DB::statement("ALTER TABLE feedbacks ADD COLUMN email VARCHAR(255) NULL AFTER rating");
+            }
+            if (!in_array('issues', $columnNames)) {
+                DB::statement("ALTER TABLE feedbacks ADD COLUMN issues JSON NULL AFTER email");
+            }
+            if (!in_array('device_info', $columnNames)) {
+                DB::statement("ALTER TABLE feedbacks ADD COLUMN device_info JSON NULL AFTER issues");
+            }
+            if (!in_array('admin_id', $columnNames)) {
+                DB::statement("ALTER TABLE feedbacks ADD COLUMN admin_id BIGINT UNSIGNED NULL AFTER admin_response");
+            }
+            if (!in_array('responded_at', $columnNames)) {
+                DB::statement("ALTER TABLE feedbacks ADD COLUMN responded_at TIMESTAMP NULL AFTER admin_id");
+            }
+            
+            // Update ENUM values for type and status
+            DB::statement("ALTER TABLE feedbacks MODIFY COLUMN type ENUM('general', 'bug', 'feature', 'parking') NOT NULL");
+            DB::statement("ALTER TABLE feedbacks MODIFY COLUMN status ENUM('pending', 'reviewed', 'resolved') DEFAULT 'pending'");
+            
+            // Drop old columns
+            if (in_array('subject', $columnNames)) {
+                DB::statement("ALTER TABLE feedbacks DROP COLUMN subject");
+            }
+            if (in_array('parking_location', $columnNames)) {
+                DB::statement("ALTER TABLE feedbacks DROP COLUMN parking_location");
+            }
+            
+        } catch (\Exception $e) {
+            // Migration might have already run or column doesn't exist
+        }
     }
 
     // Modal methods for submit feedback
@@ -67,9 +114,10 @@ class FeedbackManager extends Component
     private function resetForm()
     {
         $this->type = '';
-        $this->subject = '';
         $this->message = '';
-        $this->parking_location = '';
+        $this->rating = null;
+        $this->email = '';
+        $this->issues = [];
         $this->resetErrorBag();
     }
 
@@ -86,10 +134,17 @@ class FeedbackManager extends Component
         DB::table('feedbacks')->insert([
             'user_id' => auth()->id(),
             'type' => $this->type,
-            'subject' => $this->subject,
             'message' => $this->message,
-            'parking_location' => $this->parking_location,
-            'status' => 'new',
+            'rating' => $this->rating,
+            'email' => $this->email,
+            'issues' => json_encode($this->issues ?? []),
+            'device_info' => json_encode([
+                'platform' => 'web',
+                'version' => 'browser',
+                'model' => request()->header('User-Agent'),
+                'appVersion' => '1.0.0',
+            ]),
+            'status' => 'pending',
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -148,7 +203,7 @@ class FeedbackManager extends Component
         }
 
         $this->validate([
-            'newStatus' => 'required|in:new,in_progress,resolved,closed',
+            'newStatus' => 'required|in:pending,reviewed,resolved',
             'adminResponse' => 'nullable|string|max:1000',
         ]);
 
@@ -157,6 +212,8 @@ class FeedbackManager extends Component
             ->update([
                 'status' => $this->newStatus,
                 'admin_response' => $this->adminResponse,
+                'admin_id' => auth()->id(),
+                'responded_at' => now(),
                 'updated_at' => now(),
             ]);
 
@@ -204,10 +261,9 @@ class FeedbackManager extends Component
 
         return [
             'total' => (clone $baseQuery)->count(),
-            'new' => (clone $baseQuery)->where('status', 'new')->count(),
-            'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
+            'reviewed' => (clone $baseQuery)->where('status', 'reviewed')->count(),
             'resolved' => (clone $baseQuery)->where('status', 'resolved')->count(),
-            'closed' => (clone $baseQuery)->where('status', 'closed')->count(),
             'by_type' => (clone $baseQuery)
                 ->select('type')
                 ->selectRaw('COUNT(*) as count')
@@ -222,12 +278,16 @@ class FeedbackManager extends Component
         DB::statement("CREATE TABLE IF NOT EXISTS feedbacks (
             id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
             user_id BIGINT UNSIGNED NOT NULL,
-            type ENUM('bug', 'suggestion', 'complaint', 'compliment', 'general') NOT NULL,
-            subject VARCHAR(255) NOT NULL,
+            type ENUM('general', 'bug', 'feature', 'parking') NOT NULL,
             message TEXT NOT NULL,
-            parking_location VARCHAR(100) NULL,
-            status ENUM('new', 'in_progress', 'resolved', 'closed') DEFAULT 'new',
+            rating INT NULL,
+            email VARCHAR(255) NULL,
+            issues JSON NULL,
+            device_info JSON NULL,
+            status ENUM('pending', 'reviewed', 'resolved') DEFAULT 'pending',
             admin_response TEXT NULL,
+            admin_id BIGINT UNSIGNED NULL,
+            responded_at TIMESTAMP NULL,
             created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
             updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
             INDEX idx_user_id (user_id),

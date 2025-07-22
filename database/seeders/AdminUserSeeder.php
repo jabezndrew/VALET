@@ -33,5 +33,27 @@ class AdminUserSeeder extends Seeder
                 'is_active' => true,
             ]);
         }
+        if (SysUser::where('role', 'ssd')->count() === 0) {
+            SysUser::create([
+                'name' => 'SSD User',
+                'email' => 'ssd@valet.com',
+                'password' => Hash::make('password123'),
+                'role' => 'ssd',
+                'employee_id' => 'SSD001',
+                'department' => 'SSD Department',
+                'is_active' => true,
+            ]);
+        }
+        if (SysUser::where('role', 'security')->count() === 0) {
+            SysUser::create([
+                'name' => 'Ahh Chip',
+                'email' => 'security@valet.com',
+                'password' => Hash::make('password123'),
+                'role' => 'security',
+                'employee_id' => 'SECURITY001',
+                'department' => 'Security Department',
+                'is_active' => true,
+            ]);
+        }
     }
 }

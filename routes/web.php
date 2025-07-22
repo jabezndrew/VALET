@@ -10,7 +10,6 @@ Route::get('/', function () {
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', App\Livewire\Auth\Login::class)->name('login');
-    // REMOVED: Route::get('/register', App\Livewire\Auth\Register::class)->name('register');
 });
 
 Route::middleware(['auth', 'role:user'])->group(function () {

@@ -16,8 +16,8 @@
                         @if(auth()->user()->canManageUsers())
                         <!-- Admin Stats -->
                         <div class="text-end">
-                            <span class="badge badge-new me-2">{{ $stats['new'] }} New</span>
-                            <span class="badge badge-in-progress me-2">{{ $stats['in_progress'] }} In Progress</span>
+                            <span class="badge badge-pending me-2">{{ $stats['pending'] }} Pending</span>
+                            <span class="badge badge-reviewed me-2">{{ $stats['reviewed'] }} Reviewed</span>
                             <span class="badge badge-resolved">{{ $stats['resolved'] }} Resolved</span>
                         </div>
                         @else
@@ -50,18 +50,16 @@
                         <div class="d-flex gap-2">
                             <select wire:model.live="statusFilter" class="form-select form-select-sm">
                                 <option value="all">All Status</option>
-                                <option value="new">New</option>
-                                <option value="in_progress">In Progress</option>
+                                <option value="pending">Pending</option>
+                                <option value="reviewed">Reviewed</option>
                                 <option value="resolved">Resolved</option>
-                                <option value="closed">Closed</option>
                             </select>
                             <select wire:model.live="typeFilter" class="form-select form-select-sm">
                                 <option value="all">All Types</option>
-                                <option value="bug">Bug</option>
-                                <option value="suggestion">Suggestion</option>
-                                <option value="complaint">Complaint</option>
-                                <option value="compliment">Compliment</option>
                                 <option value="general">General</option>
+                                <option value="bug">Bug</option>
+                                <option value="feature">Feature</option>
+                                <option value="parking">Parking</option>
                             </select>
                         </div>
                         @endif
@@ -73,33 +71,28 @@
                                     <div class="d-flex align-items-center">
                                         <span class="badge me-2 
                                             @switch($feedback->type)
+                                                @case('general') badge-general @break
                                                 @case('bug') badge-bug @break
-                                                @case('suggestion') badge-suggestion @break
-                                                @case('complaint') @break
-                                                @case('compliment') badge-compliment @break
-                                                @default badge-general
+                                                @case('feature') badge-suggestion @break
+                                                @case('parking') badge-compliment @break
                                             @endswitch
-                                        " style="
-                                            @if($feedback->type === 'complaint') background-color: #fd7e14; color: white; @endif
                                         ">
                                             @switch($feedback->type)
+                                                @case('general') 💬 General @break
                                                 @case('bug') 🐛 Bug @break
-                                                @case('suggestion') 💡 Suggestion @break
-                                                @case('complaint') 😠 Complaint @break
-                                                @case('compliment') 😊 Compliment @break
-                                                @default 💬 General
+                                                @case('feature') 💡 Feature @break
+                                                @case('parking') 🅿️ Parking @break
                                             @endswitch
                                         </span>
                                         
                                         <span class="badge 
                                             @switch($feedback->status)
-                                                @case('new') badge-new @break
-                                                @case('in_progress') badge-in-progress @break
+                                                @case('pending') badge-new @break
+                                                @case('reviewed') badge-in-progress @break
                                                 @case('resolved') badge-resolved @break
-                                                @case('closed') badge-types @break
                                             @endswitch
                                         ">
-                                            {{ ucfirst(str_replace('_', ' ', $feedback->status)) }}
+                                            {{ ucfirst($feedback->status) }}
                                         </span>
                                     </div>
                                     
@@ -108,13 +101,36 @@
                                     </small>
                                 </div>
 
-                                <h6 class="fw-bold mb-2">{{ $feedback->subject }}</h6>
                                 <p class="mb-2 text-break">{{ $feedback->message }}</p>
 
-                                @if($feedback->parking_location)
+                                @if($feedback->rating)
+                                    <div class="mb-2">
+                                        <small class="text-muted">Rating: </small>
+                                        @for($i = 1; $i <= 5; $i++)
+                                            <i class="fas fa-star {{ $i <= $feedback->rating ? 'text-warning' : 'text-muted' }}"></i>
+                                        @endfor
+                                        <span class="text-muted">({{ $feedback->rating }}/5)</span>
+                                    </div>
+                                @endif
+
+                                @if($feedback->email)
                                     <p class="mb-2">
-                                        <small class="text-muted">Location: {{ $feedback->parking_location }}</small>
+                                        <small class="text-muted">Contact: {{ $feedback->email }}</small>
                                     </p>
+                                @endif
+
+                                @if($feedback->issues)
+                                    @php
+                                        $issuesArray = json_decode($feedback->issues, true) ?? [];
+                                    @endphp
+                                    @if(!empty($issuesArray))
+                                        <div class="mb-2">
+                                            <small class="text-muted">Issues: </small>
+                                            @foreach($issuesArray as $issue)
+                                                <span class="badge bg-secondary me-1">{{ $issue }}</span>
+                                            @endforeach
+                                        </div>
+                                    @endif
                                 @endif
 
                                 <div class="d-flex justify-content-between align-items-center">
@@ -125,14 +141,9 @@
                                         <span class="badge badge-sm ms-1 
                                             @switch($feedback->user_role)
                                                 @case('admin') bg-danger @break
-                                                @case('ssd') @break
+                                                @case('ssd') bg-valet-charcoal @break
                                                 @case('security') bg-warning @break
-                                                @default
-                                            @endswitch
-                                        " style="
-                                            @switch($feedback->user_role)
-                                                @case('ssd') background-color: #3A3A3C; color: white; @break
-                                                @default background-color: #A0A0A0; color: white;
+                                                @default bg-valet-gray
                                             @endswitch
                                         ">
                                             {{ ucfirst($feedback->user_role) }}
@@ -147,10 +158,10 @@
 
                                     @if(auth()->user()->canManageUsers())
                                         <div class="btn-group btn-group-sm">
-                                            @if($feedback->status !== 'in_progress')
-                                            <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'in_progress')" 
+                                            @if($feedback->status !== 'reviewed')
+                                            <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'reviewed')" 
                                                     class="btn btn-outline-warning btn-sm">
-                                                <i class="fas fa-clock"></i>
+                                                <i class="fas fa-eye"></i>
                                             </button>
                                             @endif
                                             
@@ -175,6 +186,11 @@
                                             Admin Response:
                                         </small>
                                         <p class="mb-0 mt-1">{{ $feedback->admin_response }}</p>
+                                        @if($feedback->responded_at)
+                                            <small class="text-muted">
+                                                Responded {{ \Carbon\Carbon::parse($feedback->responded_at)->diffForHumans() }}
+                                            </small>
+                                        @endif
                                     </div>
                                 @endif
                             </div>
@@ -213,20 +229,12 @@
                             <label class="form-label fw-bold">Feedback Type</label>
                             <select wire:model="type" class="form-select" required>
                                 <option value="">Select type...</option>
-                                <option value="bug">🐛 Bug Report</option>
-                                <option value="suggestion">💡 Suggestion</option>
-                                <option value="complaint">😠 Complaint</option>
-                                <option value="compliment">😊 Compliment</option>
                                 <option value="general">💬 General Feedback</option>
+                                <option value="bug">🐛 Bug Report</option>
+                                <option value="feature">💡 Feature Request</option>
+                                <option value="parking">🅿️ Parking Issue</option>
                             </select>
                             @error('type') <div class="text-danger small">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Subject</label>
-                            <input type="text" wire:model="subject" class="form-control" 
-                                   placeholder="Brief description..." maxlength="255" required>
-                            @error('subject') <div class="text-danger small">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="mb-3">
@@ -238,10 +246,58 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label fw-bold">Parking Location <small class="text-muted">(Optional)</small></label>
-                            <input type="text" wire:model="parking_location" class="form-control" 
-                                   placeholder="e.g., 4th Floor, Section A" maxlength="100">
-                            @error('parking_location') <div class="text-danger small">{{ $message }}</div> @enderror
+                            <label class="form-label fw-bold">Rating <small class="text-muted">(Optional)</small></label>
+                            <select wire:model="rating" class="form-select">
+                                <option value="">Select rating...</option>
+                                <option value="5">⭐⭐⭐⭐⭐ Excellent (5)</option>
+                                <option value="4">⭐⭐⭐⭐ Good (4)</option>
+                                <option value="3">⭐⭐⭐ Average (3)</option>
+                                <option value="2">⭐⭐ Poor (2)</option>
+                                <option value="1">⭐ Very Poor (1)</option>
+                            </select>
+                            @error('rating') <div class="text-danger small">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Contact Email <small class="text-muted">(Optional)</small></label>
+                            <input type="email" wire:model="email" class="form-control" 
+                                   placeholder="your.email@example.com" maxlength="255">
+                            <small class="text-muted">We'll only use this to follow up if needed</small>
+                            @error('email') <div class="text-danger small">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Related Issues <small class="text-muted">(Optional)</small></label>
+                            <div class="row">
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input wire:model="issues" class="form-check-input" type="checkbox" value="login_issues" id="issue1">
+                                        <label class="form-check-label" for="issue1">Login Issues</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input wire:model="issues" class="form-check-input" type="checkbox" value="parking_detection" id="issue2">
+                                        <label class="form-check-label" for="issue2">Parking Detection</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input wire:model="issues" class="form-check-input" type="checkbox" value="app_crashes" id="issue3">
+                                        <label class="form-check-label" for="issue3">App Crashes</label>
+                                    </div>
+                                </div>
+                                <div class="col-6">
+                                    <div class="form-check">
+                                        <input wire:model="issues" class="form-check-input" type="checkbox" value="slow_loading" id="issue4">
+                                        <label class="form-check-label" for="issue4">Slow Loading</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input wire:model="issues" class="form-check-input" type="checkbox" value="wrong_data" id="issue5">
+                                        <label class="form-check-label" for="issue5">Wrong Data</label>
+                                    </div>
+                                    <div class="form-check">
+                                        <input wire:model="issues" class="form-check-input" type="checkbox" value="ui_problems" id="issue6">
+                                        <label class="form-check-label" for="issue6">UI Problems</label>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="modal-footer">
@@ -276,10 +332,9 @@
                     <div class="mb-3">
                         <label class="form-label">Status</label>
                         <select wire:model="newStatus" class="form-select">
-                            <option value="new">New</option>
-                            <option value="in_progress">In Progress</option>
+                            <option value="pending">Pending</option>
+                            <option value="reviewed">Reviewed</option>
                             <option value="resolved">Resolved</option>
-                            <option value="closed">Closed</option>
                         </select>
                     </div>
                     <div class="mb-3">
@@ -297,6 +352,13 @@
     </div>
     <div class="modal-backdrop fade show"></div>
     @endif
+
+    <!-- CSS for new badge styles -->
+    <style>
+        .badge-pending { background-color: #3A3A3C; color: white; }
+        .badge-reviewed { background-color: #fd7e14; color: white; }
+        .badge-resolved { background-color: #2F623D; color: white; }
+    </style>
 
     <!-- Alert handling script -->
     <script>
