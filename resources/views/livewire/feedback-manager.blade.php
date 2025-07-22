@@ -103,7 +103,8 @@
 
                                 <p class="mb-2 text-break">{{ $feedback->message }}</p>
 
-                                @if($feedback->rating)
+                                {{-- UPDATED: Only show rating for general feedback type --}}
+                                @if($feedback->type === 'general' && $feedback->rating)
                                     <div class="mb-2">
                                         <small class="text-muted">Rating: </small>
                                         @for($i = 1; $i <= 5; $i++)
@@ -127,7 +128,7 @@
                                         <div class="mb-2">
                                             <small class="text-muted">Issues: </small>
                                             @foreach($issuesArray as $issue)
-                                                <span class="badge bg-secondary me-1">{{ $issue }}</span>
+                                                <span class="badge bg-secondary me-1">{{ str_replace('_', ' ', $issue) }}</span>
                                             @endforeach
                                         </div>
                                     @endif
@@ -245,6 +246,8 @@
                             @error('message') <div class="text-danger small">{{ $message }}</div> @enderror
                         </div>
 
+                        {{-- UPDATED: Only show rating field for general feedback --}}
+                        @if($type === 'general')
                         <div class="mb-3">
                             <label class="form-label fw-bold">Rating <small class="text-muted">(Optional)</small></label>
                             <select wire:model="rating" class="form-select">
@@ -257,6 +260,7 @@
                             </select>
                             @error('rating') <div class="text-danger small">{{ $message }}</div> @enderror
                         </div>
+                        @endif
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Contact Email <small class="text-muted">(Optional)</small></label>
@@ -303,7 +307,7 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
                         <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled">
-                            <span wire:loading.remove>
+                            <span wire:loading.remove">
                                 Submit Feedback
                             </span>
                             <span wire:loading>

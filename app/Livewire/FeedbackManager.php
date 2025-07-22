@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class FeedbackManager extends Component
 {
-    // Form properties - UPDATED FOR MOBILE SCHEMA
+    // Form properties - MOBILE SCHEMA
     public $type = '';
     public $message = '';
     public $rating = null;
@@ -38,7 +38,6 @@ class FeedbackManager extends Component
     public function mount()
     {
         $this->ensureFeedbackTableExists();
-        $this->migrateToMobileSchema(); // RUN ONCE THEN COMMENT OUT AFTER DEPLOYMENT
     }
 
     public function render()
@@ -52,47 +51,11 @@ class FeedbackManager extends Component
         ])->layout('layouts.app');
     }
 
-    // MIGRATION METHOD - RUN ONCE THEN COMMENT OUT
-    private function migrateToMobileSchema(): void
+    // UPDATED: Clear rating when type changes from general to something else
+    public function updatedType($value)
     {
-        try {
-            // Add new columns
-            $columns = DB::select("SHOW COLUMNS FROM feedbacks");
-            $columnNames = array_column($columns, 'Field');
-            
-            if (!in_array('rating', $columnNames)) {
-                DB::statement("ALTER TABLE feedbacks ADD COLUMN rating INT NULL AFTER message");
-            }
-            if (!in_array('email', $columnNames)) {
-                DB::statement("ALTER TABLE feedbacks ADD COLUMN email VARCHAR(255) NULL AFTER rating");
-            }
-            if (!in_array('issues', $columnNames)) {
-                DB::statement("ALTER TABLE feedbacks ADD COLUMN issues JSON NULL AFTER email");
-            }
-            if (!in_array('device_info', $columnNames)) {
-                DB::statement("ALTER TABLE feedbacks ADD COLUMN device_info JSON NULL AFTER issues");
-            }
-            if (!in_array('admin_id', $columnNames)) {
-                DB::statement("ALTER TABLE feedbacks ADD COLUMN admin_id BIGINT UNSIGNED NULL AFTER admin_response");
-            }
-            if (!in_array('responded_at', $columnNames)) {
-                DB::statement("ALTER TABLE feedbacks ADD COLUMN responded_at TIMESTAMP NULL AFTER admin_id");
-            }
-            
-            // Update ENUM values for type and status
-            DB::statement("ALTER TABLE feedbacks MODIFY COLUMN type ENUM('general', 'bug', 'feature', 'parking') NOT NULL");
-            DB::statement("ALTER TABLE feedbacks MODIFY COLUMN status ENUM('pending', 'reviewed', 'resolved') DEFAULT 'pending'");
-            
-            // Drop old columns
-            if (in_array('subject', $columnNames)) {
-                DB::statement("ALTER TABLE feedbacks DROP COLUMN subject");
-            }
-            if (in_array('parking_location', $columnNames)) {
-                DB::statement("ALTER TABLE feedbacks DROP COLUMN parking_location");
-            }
-            
-        } catch (\Exception $e) {
-            // Migration might have already run or column doesn't exist
+        if ($value !== 'general') {
+            $this->rating = null;
         }
     }
 
@@ -131,11 +94,14 @@ class FeedbackManager extends Component
 
         $this->validate();
 
+        // UPDATED: Only save rating for general feedback
+        $ratingToSave = ($this->type === 'general') ? $this->rating : null;
+
         DB::table('feedbacks')->insert([
             'user_id' => auth()->id(),
             'type' => $this->type,
             'message' => $this->message,
-            'rating' => $this->rating,
+            'rating' => $ratingToSave,
             'email' => $this->email,
             'issues' => json_encode($this->issues ?? []),
             'device_info' => json_encode([
