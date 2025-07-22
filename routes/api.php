@@ -20,6 +20,8 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::post('/logout', [AuthController::class, 'logout']);
     Route::get('/profile', [AuthController::class, 'profile']);
     Route::get('/validate', [AuthController::class, 'validate']);
+    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
+    Route::post('/set-default-passwords', [AuthController::class, 'setDefaultPasswords']);
     
     // Feedbacks
     Route::get('/feedbacks', [FeedbackController::class, 'index']);

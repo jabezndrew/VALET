@@ -6,134 +6,118 @@ use App\Http\Controllers\Controller;
 use App\Models\SysUser;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
 
-class AuthController extends Controller
+class SysUserController extends Controller
 {
     /**
-     * Login and get API token (ADMIN ONLY)
+     * Get all registered users
      */
-    public function login(Request $request): JsonResponse
+    public function index(Request $request): JsonResponse
     {
         try {
-            $request->validate([
-                'email' => 'required|email',
-                'password' => 'required|string',
-            ]);
+            $search = $request->get('search');
+            $role = $request->get('role');
+            $status = $request->get('status'); // active, inactive, all
 
-            $user = SysUser::where('email', $request->email)->first();
+            $query = SysUser::query();
 
-            if (!$user || !Hash::check($request->password, $user->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid credentials'
-                ], 401);
+            // Search by name, email, or employee_id
+            if ($search) {
+                $query->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('employee_id', 'like', "%{$search}%");
+                });
             }
 
-            if (!$user->is_active) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Account deactivated'
-                ], 401);
+            // Filter by role
+            if ($role && $role !== 'all') {
+                $query->where('role', $role);
             }
 
-            if (!$user->isAdmin()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Not admin'
-                ], 403);
+            // Filter by status
+            if ($status === 'active') {
+                $query->where('is_active', true);
+            } elseif ($status === 'inactive') {
+                $query->where('is_active', false);
             }
 
-            // Check if user already has a valid token
-            $existingToken = $user->tokens()->where('name', 'valet-api')->first();
-            
-            if ($existingToken) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Already logged in',
-                    'token' => $existingToken->token, // This won't work as token is hashed
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'role' => $user->role,
-                    ]
-                ]);
-            }
+            // Get users - INCLUDING PASSWORD
+            $users = $query->select([
+                'id',
+                'name', 
+                'email',
+                'password', // Added password field
+                'role',
+                'employee_id',
+                'department',
+                'is_active',
+                'created_at'
+            ])->latest()->get();
 
-            // Create new token
-            $token = $user->createToken('valet-api');
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Login successful',
-                'token' => $token->plainTextToken,
-                'user' => [
+            // Transform the data to include role display name
+            $transformedUsers = $users->map(function ($user) {
+                return [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
+                    'password' => $user->password, // 'password' => password123
                     'role' => $user->role,
-                ]
+                    'role_display' => $user->getRoleDisplayName(),
+                    'employee_id' => $user->employee_id,
+                    'department' => $user->department,
+                    'is_active' => $user->is_active,
+                    'created_at' => $user->created_at->format('Y-m-d H:i:s'),
+                ];
+            });
+
+            return response()->json([
+                'success' => true,
+                'users' => $transformedUsers
             ]);
 
-        } catch (ValidationException $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Validation failed',
-                'errors' => $e->errors()
-            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Login failed'
+                'message' => 'Failed to retrieve users'
             ], 500);
         }
     }
 
     /**
-     * Validate token
+     * Get user statistics
      */
-    public function validate(Request $request): JsonResponse
+    public function stats(): JsonResponse
     {
-        return response()->json([
-            'success' => true,
-            'message' => 'Token valid',
-            'user' => [
-                'id' => $request->user()->id,
-                'name' => $request->user()->name,
-                'role' => $request->user()->role,
-            ]
-        ]);
-    }
+        try {
+            $stats = [
+                'total_users' => SysUser::count(),
+                'active_users' => SysUser::where('is_active', true)->count(),
+                'inactive_users' => SysUser::where('is_active', false)->count(),
+                'by_role' => [
+                    'admin' => SysUser::where('role', 'admin')->count(),
+                    'ssd' => SysUser::where('role', 'ssd')->count(),
+                    'security' => SysUser::where('role', 'security')->count(),
+                    'user' => SysUser::where('role', 'user')->count(),
+                ],
+                'recent_registrations' => SysUser::where('created_at', '>=', now()->subDays(30))->count(),
+                'by_department' => SysUser::whereNotNull('department')
+                    ->groupBy('department')
+                    ->selectRaw('department, count(*) as count')
+                    ->pluck('count', 'department')
+                    ->toArray(),
+            ];
 
-    /**
-     * Logout
-     */
-    public function logout(Request $request): JsonResponse
-    {
-        $request->user()->currentAccessToken()->delete();
-        return response()->json([
-            'success' => true,
-            'message' => 'Logged out'
-        ]);
-    }
+            return response()->json([
+                'success' => true,
+                'stats' => $stats
+            ]);
 
-    /**
-     * Get profile
-     */
-    public function profile(Request $request): JsonResponse
-    {
-        $user = $request->user();
-        return response()->json([
-            'success' => true,
-            'user' => [
-                'id' => $user->id,
-                'name' => $user->name,
-                'email' => $user->email,
-                'role' => $user->role,
-                'employee_id' => $user->employee_id,
-            ]
-        ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve statistics'
+            ], 500);
+        }
     }
 }
