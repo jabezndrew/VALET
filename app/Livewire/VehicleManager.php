@@ -309,26 +309,45 @@ class VehicleManager extends Component
         $this->dispatch('show-alert', type: 'info', message: 'Export feature coming soon.');
     }
 
-    // Helper methods for UI display - FIXED STATUS DETECTION
+    // FIXED: Helper methods for UI display - CORRECTED STATUS DETECTION
     public function getVehicleStatus($vehicle)
-{
-    if (!$vehicle->is_active) {
-        return 'Inactive';
-    }
-
-    if (!empty($vehicle->expires_at)) {
-        $expiryDate = Carbon::parse($vehicle->expires_at);
-        $now = Carbon::now();
-
-        if ($expiryDate->isPast()) {
-            return 'Expired';
-        } elseif ($now->diffInDays($expiryDate, false) <= 30 && $expiryDate->isFuture()) {
-            return 'Expiring Soon';
+    {
+        if (!$vehicle->is_active) {
+            return 'Inactive';
         }
+
+        if (!empty($vehicle->expires_at)) {
+            $expiryDate = Carbon::parse($vehicle->expires_at);
+            $now = Carbon::now();
+
+            if ($expiryDate->isPast()) {
+                return 'Expired';
+            } 
+            
+            // FIXED: Use correct method to calculate days until expiry
+            $daysUntilExpiry = $expiryDate->diffInDays($now);
+            
+            if ($daysUntilExpiry <= 30) {
+                return 'Expiring Soon';
+            }
+        }
+
+        return 'Active';
     }
 
-    return 'Active';
-}
+    // ADDED: Missing getRowClass method that was causing the error
+    public function getRowClass($vehicle)
+    {
+        $status = $this->getVehicleStatus($vehicle);
+        
+        return match($status) {
+            'Expired' => 'table-danger',
+            'Expiring Soon' => 'table-warning', 
+            'Inactive' => 'table-secondary',
+            'Active' => '',
+            default => ''
+        };
+    }
 
     public function getDaysUntilExpiry($expiresAt)
     {
@@ -513,6 +532,4 @@ class VehicleManager extends Component
             }
         }
     }
-
-    
 }
