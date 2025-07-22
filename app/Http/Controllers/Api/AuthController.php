@@ -24,15 +24,13 @@ class AuthController extends Controller
 
             $user = SysUser::where('email', $request->email)->first();
 
-            // Check if user exists
-            if (!$user) {
+            if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid credentials'
                 ], 401);
             }
 
-            // Check if user is active
             if (!$user->is_active) {
                 return response()->json([
                     'success' => false,
@@ -40,42 +38,42 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            // Check password
-            if (!Hash::check($request->password, $user->password)) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Invalid credentials'
-                ], 401);
-            }
-
-            // ONLY ADMINS CAN GET API TOKENS
             if (!$user->isAdmin()) {
                 return response()->json([
                     'success' => false,
-                    'message' => 'Not admin - API access restricted to administrators only'
+                    'message' => 'Not admin'
                 ], 403);
             }
 
-            // Revoke existing tokens for this user
-            $user->tokens()->delete();
-
-            // Create new token with 7-day expiration
-            $token = $user->createToken('valet-api-token', ['*'], now()->addDays(7));
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Login successful',
-                'data' => [
+            // Check if user already has a valid token
+            $existingToken = $user->tokens()->where('name', 'valet-api')->first();
+            
+            if ($existingToken) {
+                return response()->json([
+                    'success' => true,
+                    'message' => 'Already logged in',
+                    'token' => $existingToken->token, // This won't work as token is hashed
                     'user' => [
                         'id' => $user->id,
                         'name' => $user->name,
                         'email' => $user->email,
                         'role' => $user->role,
-                        'employee_id' => $user->employee_id,
-                    ],
-                    'token' => $token->plainTextToken,
-                    'token_type' => 'Bearer',
-                    'expires_at' => now()->addDays(7)->toISOString(),
+                    ]
+                ]);
+            }
+
+            // Create new token
+            $token = $user->createToken('valet-api');
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Login successful',
+                'token' => $token->plainTextToken,
+                'user' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
                 ]
             ]);
 
@@ -88,124 +86,54 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Login failed',
-                'error' => $e->getMessage()
+                'message' => 'Login failed'
             ], 500);
         }
     }
 
     /**
-     * Logout and revoke token
+     * Validate token
+     */
+    public function validate(Request $request): JsonResponse
+    {
+        return response()->json([
+            'success' => true,
+            'message' => 'Token valid',
+            'user' => [
+                'id' => $request->user()->id,
+                'name' => $request->user()->name,
+                'role' => $request->user()->role,
+            ]
+        ]);
+    }
+
+    /**
+     * Logout
      */
     public function logout(Request $request): JsonResponse
     {
-        try {
-            // Revoke current token
-            $request->user()->currentAccessToken()->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Logged out successfully'
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Logout failed',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        $request->user()->currentAccessToken()->delete();
+        return response()->json([
+            'success' => true,
+            'message' => 'Logged out'
+        ]);
     }
 
     /**
-     * Get current user profile
+     * Get profile
      */
     public function profile(Request $request): JsonResponse
     {
-        try {
-            $user = $request->user();
-
-            return response()->json([
-                'success' => true,
-                'data' => [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'role' => $user->role,
-                    'role_display' => $user->getRoleDisplayName(),
-                    'employee_id' => $user->employee_id,
-                    'department' => $user->department,
-                    'is_active' => $user->is_active,
-                    'created_at' => $user->created_at->toISOString(),
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to retrieve profile',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Revoke all tokens for current user
-     */
-    public function revokeAllTokens(Request $request): JsonResponse
-    {
-        try {
-            $user = $request->user();
-            $tokenCount = $user->tokens()->count();
-            
-            $user->tokens()->delete();
-
-            return response()->json([
-                'success' => true,
-                'message' => "Successfully revoked {$tokenCount} token(s)"
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Failed to revoke tokens',
-                'error' => $e->getMessage()
-            ], 500);
-        }
-    }
-
-    /**
-     * Check token validity
-     */
-    public function checkToken(Request $request): JsonResponse
-    {
-        try {
-            $user = $request->user();
-            $token = $request->user()->currentAccessToken();
-
-            return response()->json([
-                'success' => true,
-                'message' => 'Token is valid',
-                'data' => [
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'role' => $user->role,
-                    ],
-                    'token_name' => $token->name,
-                    'created_at' => $token->created_at->toISOString(),
-                    'last_used_at' => $token->last_used_at?->toISOString(),
-                    'expires_at' => $token->expires_at?->toISOString(),
-                ]
-            ]);
-
-        } catch (\Exception $e) {
-            return response()->json([
-                'success' => false,
-                'message' => 'Token check failed',
-                'error' => $e->getMessage()
-            ], 500);
-        }
+        $user = $request->user();
+        return response()->json([
+            'success' => true,
+            'user' => [
+                'id' => $user->id,
+                'name' => $user->name,
+                'email' => $user->email,
+                'role' => $user->role,
+                'employee_id' => $user->employee_id,
+            ]
+        ]);
     }
 }
