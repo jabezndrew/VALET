@@ -513,4 +513,27 @@ class VehicleManager extends Component
             }
         }
     }
+
+     public function getRowClass($vehicle)
+    {
+        if (!$vehicle->is_active) {
+            return 'table-secondary';
+        }
+
+        if (!empty($vehicle->expires_at)) {
+            $expiryDate = Carbon::parse($vehicle->expires_at);
+            $now = Carbon::now();
+
+            if ($expiryDate->isPast()) {
+                return 'table-danger';
+            }
+
+            if ($expiryDate->between($now, $now->copy()->addDays(30))) {
+                return 'table-warning';
+            }
+        }
+
+        return '';
+    }
+    
 }
