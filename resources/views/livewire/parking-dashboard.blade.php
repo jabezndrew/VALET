@@ -1,5 +1,10 @@
 <div wire:poll.3s="loadParkingData">
     <div class="container mt-4">
+        <!-- Added: Total Available Parking Space Header -->
+        <div class="text-center mb-2">
+            <h2 class="fw-bold text-muted" style="font-size: 1.5rem; letter-spacing: 1px;">TOTAL AVAILABLE PARKING SPACE</h2>
+        </div>
+        
         <div class="campus-section">
             <h4 class="mb-4 fw-bold text-center">USJ-R Quadricentennial Campus</h4>
             
@@ -107,7 +112,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-building me-2"></i>
                         {{ $selectedFloor }} Details
                     </h5>
                     <button type="button" class="btn-close" wire:click="closeModal"></button>
@@ -115,7 +119,7 @@
                 <div class="modal-body">
                     <div class="row text-center mb-4">
                         <div class="col-3">
-                            <div class="stat-number text-primary">{{ $selectedFloorStats['total'] ?? 0 }}</div>
+                            <div class="stat-number text-secondary">{{ $selectedFloorStats['total'] ?? 0 }}</div>
                             <small class="text-muted">Total Spots</small>
                         </div>
                         <div class="col-3">

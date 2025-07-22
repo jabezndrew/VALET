@@ -7,14 +7,12 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold mb-1">
-                    <i class="fas fa-car text-primary me-2"></i>
                     Vehicle Management
                 </h2>
                 <p class="text-muted mb-0">Manage registered vehicles and RFID tags</p>
             </div>
             @if(auth()->user()->canManageCars())
-            <button wire:click="openModal" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>
+            <button wire:click="openModal" class="btn btn-valet-charcoal">
                 Register Vehicle
             </button>
             @endif
@@ -151,7 +149,7 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <button wire:click="openModal({{ $vehicle->id }})" 
-                                                    class="btn btn-outline-primary">
+                                                    class="btn btn-outline-secondary">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button wire:click="toggleStatus({{ $vehicle->id }})" 
@@ -190,7 +188,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-car me-2"></i>
                         {{ $editingId ? 'Edit Vehicle' : 'Register New Vehicle' }}
                     </h5>
                     <button type="button" class="btn-close" wire:click="closeModal"></button>
@@ -274,9 +271,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
+                        <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled">
                             <span wire:loading.remove>
-                                <i class="fas fa-save me-2"></i>
                                 {{ $editingId ? 'Update Vehicle' : 'Register Vehicle' }}
                             </span>
                             <span wire:loading>

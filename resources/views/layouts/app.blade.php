@@ -368,25 +368,75 @@ main, .container, .valet-header + * {
     font-weight: bold;
 }
 
-/* New color scheme for cards */
+/* NEW VALET COLOR SCHEME - Updated according to provided palette */
 .card-total {
-    background-color: #3A3A3C !important;
+    background-color: #3A3A3C !important; /* Charcoal Gray */
     color: white !important;
 }
 
 .card-active {
-    background-color: #2F623D !important;
+    background-color: #2F623D !important; /* Forest Green */
     color: white !important;
 }
 
 .card-inactive {
-    background-color: #B22020 !important;
+    background-color: #B22020 !important; /* Keep as is (Red) */
     color: white !important;
 }
 
 .card-types {
-    background-color: #A0A0A0 !important;
+    background-color: #A0A0A0 !important; /* Warm Gray */
     color: white !important;
+}
+
+/* New Button Classes for VALET Color Scheme */
+.btn-valet-charcoal {
+    background-color: #3A3A3C;
+    border-color: #3A3A3C;
+    color: white;
+}
+
+.btn-valet-charcoal:hover {
+    background-color: #2d2d2f;
+    border-color: #2d2d2f;
+    color: white;
+}
+
+.btn-valet-forest {
+    background-color: #2F623D;
+    border-color: #2F623D;
+    color: white;
+}
+
+.btn-valet-forest:hover {
+    background-color: #255030;
+    border-color: #255030;
+    color: white;
+}
+
+.btn-valet-gray {
+    background-color: #A0A0A0;
+    border-color: #A0A0A0;
+    color: white;
+}
+
+.btn-valet-gray:hover {
+    background-color: #8a8a8a;
+    border-color: #8a8a8a;
+    color: white;
+}
+
+/* Card Header Colors */
+.bg-valet-charcoal {
+    background-color: #3A3A3C !important;
+}
+
+.bg-valet-forest {
+    background-color: #2F623D !important;
+}
+
+.bg-valet-gray {
+    background-color: #A0A0A0 !important;
 }
 
 /* Loading states */
@@ -452,14 +502,14 @@ main, .container, .valet-header + * {
                         <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" 
                            href="{{ route('dashboard') }}" 
                            wire:navigate>
-                            <i class="fas fa-home me-1"></i> Dashboard
+                            Dashboard
                         </a>
                         
                         @if(auth()->user()->canViewCars())
                         <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" 
                            href="{{ route('cars.index') }}" 
                            wire:navigate>
-                            <i class="fas fa-car me-1"></i> Vehicles
+                            Vehicles
                         </a>
                         @endif
                         
@@ -467,7 +517,7 @@ main, .container, .valet-header + * {
                         <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" 
                            href="{{ route('admin.users') }}" 
                            wire:navigate>
-                            <i class="fas fa-users me-1"></i> Users
+                            Users
                         </a>
                         @endif
                         
@@ -475,26 +525,24 @@ main, .container, .valet-header + * {
                         <a class="nav-link feedback-btn {{ request()->routeIs('feedback.*') ? 'active' : '' }}" 
                            href="{{ route('feedback.index') }}" 
                            wire:navigate>
-                            <i class="fas fa-comment-dots me-1"></i> Feedback
+                            Feedback
                         </a>
                     </nav>
                     
                     <!-- User Dropdown - SIMPLIFIED VERSION -->
                     <div class="user-dropdown-wrapper">
                         <button class="user-dropdown" onclick="toggleUserDropdown()">
-                            <i class="fas fa-user me-2"></i>
                             {{ auth()->user()->name }}
                             <i class="fas fa-chevron-down ms-2"></i>
                         </button>
                         
                         <div class="user-dropdown-menu" id="userDropdownMenu">
                             <div class="dropdown-role-info">
-                                <i class="fas fa-id-badge me-2"></i>
                                 <strong>{{ auth()->user()->getRoleDisplayName() }}</strong>
                             </div>
                             <div class="dropdown-divider"></div>
                             <button onclick="logout()" class="dropdown-item logout-btn">
-                                <i class="fas fa-sign-out-alt me-2"></i> Logout
+                                Logout
                             </button>
                         </div>
                     </div>
@@ -502,7 +550,7 @@ main, .container, .valet-header + * {
                 @else
                 <div class="d-flex">
                     <a href="{{ route('login') }}" class="btn btn-outline-light">
-                        <i class="fas fa-sign-in-alt me-2"></i> Login
+                        Login
                     </a>
                 </div>
                 @endauth

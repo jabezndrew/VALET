@@ -8,7 +8,6 @@
                 <div class="d-flex justify-content-between align-items-center mb-4">
                     <div>
                         <h2 class="fw-bold mb-1">
-                            <i class="fas fa-comment-dots text-primary me-2"></i>
                             Feedback & Support
                         </h2>
                         <p class="text-muted mb-0">Help us improve VALET Smart Parking system</p>
@@ -28,9 +27,8 @@
             <!-- Submit Feedback Form -->
             <div class="col-lg-4 mb-4">
                 <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-primary text-white">
+                    <div class="card-header bg-valet-charcoal text-white">
                         <h5 class="mb-0">
-                            <i class="fas fa-edit me-2"></i>
                             Submit Feedback
                         </h5>
                     </div>
@@ -71,9 +69,8 @@
                                 @error('parking_location') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
 
-                            <button type="submit" class="btn btn-primary w-100" wire:loading.attr="disabled">
+                            <button type="submit" class="btn btn-valet-charcoal w-100" wire:loading.attr="disabled">
                                 <span wire:loading.remove>
-                                    <i class="fas fa-paper-plane me-2"></i>
                                     Submit Feedback
                                 </span>
                                 <span wire:loading>
@@ -91,7 +88,6 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            <i class="fas fa-list me-2"></i>
                             Recent Feedback
                             <span class="badge badge-total ms-2">{{ $stats['total'] }} Total</span>
                         </h5>
@@ -164,14 +160,12 @@
 
                                 @if($feedback->parking_location)
                                     <p class="mb-2">
-                                        <i class="fas fa-map-marker-alt text-primary me-1"></i>
                                         <small class="text-muted">Location: {{ $feedback->parking_location }}</small>
                                     </p>
                                 @endif
 
                                 <div class="d-flex justify-content-between align-items-center">
                                     <small class="text-muted">
-                                        <i class="fas fa-user me-1"></i>
                                         {{ $feedback->user_name }} 
                                         <span class="badge badge-sm ms-1 
                                             @switch($feedback->user_role)
@@ -207,7 +201,7 @@
                                             @endif
                                             
                                             <button wire:click="openResponseModal({{ $feedback->id }})" 
-                                                    class="btn btn-outline-primary btn-sm">
+                                                    class="btn btn-outline-secondary btn-sm">
                                                 <i class="fas fa-reply"></i>
                                             </button>
                                         </div>
@@ -216,8 +210,7 @@
 
                                 @if($feedback->admin_response)
                                     <div class="mt-3 p-2 bg-light rounded">
-                                        <small class="fw-bold text-primary">
-                                            <i class="fas fa-reply me-1"></i>
+                                        <small class="fw-bold text-secondary">
                                             Admin Response:
                                         </small>
                                         <p class="mb-0 mt-1">{{ $feedback->admin_response }}</p>
@@ -264,7 +257,7 @@
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" wire:click="closeResponseModal">Cancel</button>
-                    <button type="button" class="btn btn-primary" wire:click="saveAdminResponse">Save</button>
+                    <button type="button" class="btn btn-valet-charcoal" wire:click="saveAdminResponse">Save</button>
                 </div>
             </div>
         </div>

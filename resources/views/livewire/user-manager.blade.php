@@ -7,13 +7,11 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
                 <h2 class="fw-bold mb-1">
-                    <i class="fas fa-users text-primary me-2"></i>
                     User Management
                 </h2>
                 <p class="text-muted mb-0">Manage system users and their roles</p>
             </div>
-            <button wire:click="openModal" class="btn btn-primary">
-                <i class="fas fa-plus me-2"></i>
+            <button wire:click="openModal" class="btn btn-valet-charcoal">
                 Add New User
             </button>
         </div>
@@ -140,7 +138,7 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <button wire:click="openModal({{ $user->id }})" 
-                                                    class="btn btn-outline-primary">
+                                                    class="btn btn-outline-secondary">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button wire:click="toggleStatus({{ $user->id }})" 
@@ -180,7 +178,6 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-user me-2"></i>
                         {{ $editingId ? 'Edit User' : 'Add New User' }}
                     </h5>
                     <button type="button" class="btn-close" wire:click="closeModal"></button>
@@ -274,9 +271,8 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
-                        <button type="submit" class="btn btn-primary" wire:loading.attr="disabled">
-                            <span wire:loading.remove>
-                                <i class="fas fa-save me-2"></i>
+                        <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled">
+                            <span wire:loading.remove">
                                 {{ $editingId ? 'Update User' : 'Create User' }}
                             </span>
                             <span wire:loading>
@@ -304,7 +300,7 @@
                         <div id="${alertId}" class="alert alert-${event.type} alert-dismissible fade show" role="alert">
                             <i class="fas fa-${event.type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
                             ${event.message}
-                            <button type="button" class="btn-close" onclick="document.getElementById('${alertId}').remove()"></button>
+                            <button type="type" class="btn-close" onclick="document.getElementById('${alertId}').remove()"></button>
                         </div>
                     </div>
                 `;
