@@ -17,6 +17,9 @@ class FeedbackManager extends Component
     public $statusFilter = 'all';
     public $typeFilter = 'all';
     
+    // Submit feedback modal (for non-admin users)
+    public $showModal = false;
+    
     // Admin response modal
     public $showResponseModal = false;
     public $selectedFeedbackId = null;
@@ -46,8 +49,38 @@ class FeedbackManager extends Component
         ])->layout('layouts.app');
     }
 
+    // Modal methods for submit feedback
+    public function openModal()
+    {
+        if (!auth()->user()->canManageUsers()) {
+            $this->resetForm();
+            $this->showModal = true;
+        }
+    }
+
+    public function closeModal()
+    {
+        $this->showModal = false;
+        $this->resetForm();
+    }
+
+    private function resetForm()
+    {
+        $this->type = '';
+        $this->subject = '';
+        $this->message = '';
+        $this->parking_location = '';
+        $this->resetErrorBag();
+    }
+
     public function submitFeedback()
     {
+        // Prevent admins from submitting feedback
+        if (auth()->user()->canManageUsers()) {
+            $this->dispatch('show-alert', type: 'error', message: 'Administrators cannot submit feedback.');
+            return;
+        }
+
         $this->validate();
 
         DB::table('feedbacks')->insert([
@@ -61,9 +94,7 @@ class FeedbackManager extends Component
             'updated_at' => now(),
         ]);
 
-        // Reset form
-        $this->reset(['type', 'subject', 'message', 'parking_location']);
-        
+        $this->closeModal();
         $this->dispatch('show-alert', type: 'success', message: 'Thank you for your feedback! We appreciate your input.');
     }
 
@@ -143,13 +174,20 @@ class FeedbackManager extends Component
                 'sys_users.role as user_role'
             );
 
-        // Apply filters
-        if ($this->statusFilter !== 'all') {
-            $query->where('feedbacks.status', $this->statusFilter);
+        // Non-admin users can only see their own feedback
+        if (!auth()->user()->canManageUsers()) {
+            $query->where('feedbacks.user_id', auth()->id());
         }
 
-        if ($this->typeFilter !== 'all') {
-            $query->where('feedbacks.type', $this->typeFilter);
+        // Apply filters (admin only)
+        if (auth()->user()->canManageUsers()) {
+            if ($this->statusFilter !== 'all') {
+                $query->where('feedbacks.status', $this->statusFilter);
+            }
+
+            if ($this->typeFilter !== 'all') {
+                $query->where('feedbacks.type', $this->typeFilter);
+            }
         }
 
         return $query->orderBy('feedbacks.created_at', 'desc')->get();
@@ -157,13 +195,20 @@ class FeedbackManager extends Component
 
     private function getFeedbackStats()
     {
+        $baseQuery = DB::table('feedbacks');
+        
+        // Non-admin users see only their own stats
+        if (!auth()->user()->canManageUsers()) {
+            $baseQuery->where('user_id', auth()->id());
+        }
+
         return [
-            'total' => DB::table('feedbacks')->count(),
-            'new' => DB::table('feedbacks')->where('status', 'new')->count(),
-            'in_progress' => DB::table('feedbacks')->where('status', 'in_progress')->count(),
-            'resolved' => DB::table('feedbacks')->where('status', 'resolved')->count(),
-            'closed' => DB::table('feedbacks')->where('status', 'closed')->count(),
-            'by_type' => DB::table('feedbacks')
+            'total' => (clone $baseQuery)->count(),
+            'new' => (clone $baseQuery)->where('status', 'new')->count(),
+            'in_progress' => (clone $baseQuery)->where('status', 'in_progress')->count(),
+            'resolved' => (clone $baseQuery)->where('status', 'resolved')->count(),
+            'closed' => (clone $baseQuery)->where('status', 'closed')->count(),
+            'by_type' => (clone $baseQuery)
                 ->select('type')
                 ->selectRaw('COUNT(*) as count')
                 ->groupBy('type')

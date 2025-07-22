@@ -1,4 +1,3 @@
-<!-- resources/views/components/layouts/app.blade.php -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -216,16 +215,6 @@ main, .container, .valet-header + * {
 .nav-link:hover, .nav-link.active {
     background: rgba(255,255,255,0.1);
     color: white !important;
-}
-
-.nav-link.feedback-btn {
-    background: rgba(255,255,255,0.15);
-    border: 1px solid rgba(255,255,255,0.3);
-}
-
-.nav-link.feedback-btn:hover {
-    background: rgba(255,255,255,0.25);
-    transform: translateY(-1px);
 }
 
 .user-dropdown-wrapper {
@@ -521,15 +510,15 @@ main, .container, .valet-header + * {
                         </a>
                         @endif
                         
-                        <!-- Feedback Button - Available to all authenticated users -->
-                        <a class="nav-link feedback-btn {{ request()->routeIs('feedback.*') ? 'active' : '' }}" 
+                        <!-- Feedback Button - Now matches other nav items -->
+                        <a class="nav-link {{ request()->routeIs('feedback.*') ? 'active' : '' }}" 
                            href="{{ route('feedback.index') }}" 
                            wire:navigate>
                             Feedback
                         </a>
                     </nav>
                     
-                    <!-- User Dropdown - SIMPLIFIED VERSION -->
+                    <!-- User Dropdown - ONLY this has button styling -->
                     <div class="user-dropdown-wrapper">
                         <button class="user-dropdown" onclick="toggleUserDropdown()">
                             {{ auth()->user()->name }}

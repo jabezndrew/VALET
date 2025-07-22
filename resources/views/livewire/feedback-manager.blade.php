@@ -12,87 +12,40 @@
                         </h2>
                         <p class="text-muted mb-0">Help us improve VALET Smart Parking system</p>
                     </div>
-                    @if(auth()->user()->canManageUsers())
-                    <div class="text-end">
-                        <span class="badge badge-new me-2">{{ $stats['new'] }} New</span>
-                        <span class="badge badge-in-progress me-2">{{ $stats['in_progress'] }} In Progress</span>
-                        <span class="badge badge-resolved">{{ $stats['resolved'] }} Resolved</span>
+                    <div class="d-flex align-items-center gap-3">
+                        @if(auth()->user()->canManageUsers())
+                        <!-- Admin Stats -->
+                        <div class="text-end">
+                            <span class="badge badge-new me-2">{{ $stats['new'] }} New</span>
+                            <span class="badge badge-in-progress me-2">{{ $stats['in_progress'] }} In Progress</span>
+                            <span class="badge badge-resolved">{{ $stats['resolved'] }} Resolved</span>
+                        </div>
+                        @else
+                        <!-- Submit Feedback Button (Non-Admin Users Only) -->
+                        <button wire:click="openModal" class="btn btn-valet-charcoal">
+                            Submit Feedback
+                        </button>
+                        @endif
                     </div>
-                    @endif
                 </div>
             </div>
         </div>
 
+        <!-- Feedback List (Full Width) -->
         <div class="row">
-            <!-- Submit Feedback Form -->
-            <div class="col-lg-4 mb-4">
-                <div class="card border-0 shadow-sm">
-                    <div class="card-header bg-valet-charcoal text-white">
-                        <h5 class="mb-0">
-                            Submit Feedback
-                        </h5>
-                    </div>
-                    <div class="card-body">
-                        <form wire:submit="submitFeedback">
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Feedback Type</label>
-                                <select wire:model="type" class="form-select" required>
-                                    <option value="">Select type...</option>
-                                    <option value="bug">🐛 Bug Report</option>
-                                    <option value="suggestion">💡 Suggestion</option>
-                                    <option value="complaint">😠 Complaint</option>
-                                    <option value="compliment">😊 Compliment</option>
-                                    <option value="general">💬 General Feedback</option>
-                                </select>
-                                @error('type') <div class="text-danger small">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Subject</label>
-                                <input type="text" wire:model="subject" class="form-control" 
-                                       placeholder="Brief description..." maxlength="255" required>
-                                @error('subject') <div class="text-danger small">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Message</label>
-                                <textarea wire:model="message" class="form-control" rows="4" 
-                                          placeholder="Tell us more details..." maxlength="2000" required></textarea>
-                                <small class="text-muted">Maximum 2000 characters</small>
-                                @error('message') <div class="text-danger small">{{ $message }}</div> @enderror
-                            </div>
-
-                            <div class="mb-3">
-                                <label class="form-label fw-bold">Parking Location <small class="text-muted">(Optional)</small></label>
-                                <input type="text" wire:model="parking_location" class="form-control" 
-                                       placeholder="e.g., 4th Floor, Section A" maxlength="100">
-                                @error('parking_location') <div class="text-danger small">{{ $message }}</div> @enderror
-                            </div>
-
-                            <button type="submit" class="btn btn-valet-charcoal w-100" wire:loading.attr="disabled">
-                                <span wire:loading.remove>
-                                    Submit Feedback
-                                </span>
-                                <span wire:loading>
-                                    <i class="fas fa-spinner fa-spin me-2"></i>
-                                    Submitting...
-                                </span>
-                            </button>
-                        </form>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Feedback List -->
-            <div class="col-lg-8">
+            <div class="col-12">
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            Recent Feedback
+                            @if(auth()->user()->canManageUsers())
+                                All Feedback & Support Requests
+                            @else
+                                Your Feedback History
+                            @endif
                             <span class="badge badge-total ms-2">{{ $stats['total'] }} Total</span>
                         </h5>
                         
-                        <!-- Filters -->
+                        <!-- Filters (Admin Only) -->
                         @if(auth()->user()->canManageUsers())
                         <div class="d-flex gap-2">
                             <select wire:model.live="statusFilter" class="form-select form-select-sm">
@@ -165,6 +118,8 @@
                                 @endif
 
                                 <div class="d-flex justify-content-between align-items-center">
+                                    @if(auth()->user()->canManageUsers())
+                                    <!-- Show user info for admins -->
                                     <small class="text-muted">
                                         {{ $feedback->user_name }} 
                                         <span class="badge badge-sm ms-1 
@@ -183,6 +138,12 @@
                                             {{ ucfirst($feedback->user_role) }}
                                         </span>
                                     </small>
+                                    @else
+                                    <!-- Show submission info for users -->
+                                    <small class="text-muted">
+                                        Submitted by you
+                                    </small>
+                                    @endif
 
                                     @if(auth()->user()->canManageUsers())
                                         <div class="btn-group btn-group-sm">
@@ -220,8 +181,13 @@
                         @empty
                             <div class="text-center py-5">
                                 <i class="fas fa-comment-slash text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
-                                <h5 class="text-muted">No feedback yet</h5>
-                                <p class="text-muted">Be the first to submit feedback!</p>
+                                @if(auth()->user()->canManageUsers())
+                                    <h5 class="text-muted">No feedback received yet</h5>
+                                    <p class="text-muted">Users haven't submitted any feedback yet.</p>
+                                @else
+                                    <h5 class="text-muted">No feedback submitted yet</h5>
+                                    <p class="text-muted">Click "Submit Feedback" to share your thoughts!</p>
+                                @endif
                             </div>
                         @endforelse
                     </div>
@@ -230,8 +196,75 @@
         </div>
     </div>
 
-    <!-- Admin Response Modal -->
-    @if($showResponseModal)
+    <!-- Submit Feedback Modal (Non-Admin Users Only) -->
+    @if($showModal && !auth()->user()->canManageUsers())
+    <div class="modal fade show" style="display: block;" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">
+                        Submit Feedback
+                    </h5>
+                    <button type="button" class="btn-close" wire:click="closeModal"></button>
+                </div>
+                <form wire:submit="submitFeedback">
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Feedback Type</label>
+                            <select wire:model="type" class="form-select" required>
+                                <option value="">Select type...</option>
+                                <option value="bug">🐛 Bug Report</option>
+                                <option value="suggestion">💡 Suggestion</option>
+                                <option value="complaint">😠 Complaint</option>
+                                <option value="compliment">😊 Compliment</option>
+                                <option value="general">💬 General Feedback</option>
+                            </select>
+                            @error('type') <div class="text-danger small">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Subject</label>
+                            <input type="text" wire:model="subject" class="form-control" 
+                                   placeholder="Brief description..." maxlength="255" required>
+                            @error('subject') <div class="text-danger small">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Message</label>
+                            <textarea wire:model="message" class="form-control" rows="4" 
+                                      placeholder="Tell us more details..." maxlength="2000" required></textarea>
+                            <small class="text-muted">Maximum 2000 characters</small>
+                            @error('message') <div class="text-danger small">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Parking Location <small class="text-muted">(Optional)</small></label>
+                            <input type="text" wire:model="parking_location" class="form-control" 
+                                   placeholder="e.g., 4th Floor, Section A" maxlength="100">
+                            @error('parking_location') <div class="text-danger small">{{ $message }}</div> @enderror
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
+                        <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled">
+                            <span wire:loading.remove>
+                                Submit Feedback
+                            </span>
+                            <span wire:loading>
+                                <i class="fas fa-spinner fa-spin me-2"></i>
+                                Submitting...
+                            </span>
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+    @endif
+
+    <!-- Admin Response Modal (Admin Only) -->
+    @if($showResponseModal && auth()->user()->canManageUsers())
     <div class="modal fade show" style="display: block;" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
