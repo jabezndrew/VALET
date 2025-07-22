@@ -49,7 +49,7 @@ class SysUserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'password' => user->password, // DEFAULT TEST PASSWORD
+                    'password' => $user->password, // DEFAULT TEST PASSWORD
                     'role' => $user->role,
                     'role_display' => $user->getRoleDisplayName(),
                     'employee_id' => $user->employee_id,
