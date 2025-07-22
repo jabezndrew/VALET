@@ -228,7 +228,7 @@
                     <div class="modal-body">
                         <div class="mb-3">
                             <label class="form-label fw-bold">Feedback Type</label>
-                            <select wire:model="type" class="form-select" required>
+                            <select wire:model.live="type" class="form-select" required>
                                 <option value="">Select type...</option>
                                 <option value="general">💬 General Feedback</option>
                                 <option value="bug">🐛 Bug Report</option>
@@ -246,9 +246,9 @@
                             @error('message') <div class="text-danger small">{{ $message }}</div> @enderror
                         </div>
 
-                        {{-- UPDATED: Only show rating field for general feedback --}}
+                        {{-- FIXED: Now properly reactive with wire:model.live --}}
                         @if($type === 'general')
-                        <div class="mb-3">
+                        <div class="mb-3" wire:key="rating-field">
                             <label class="form-label fw-bold">Rating <small class="text-muted">(Optional)</small></label>
                             <select wire:model="rating" class="form-select">
                                 <option value="">Select rating...</option>
