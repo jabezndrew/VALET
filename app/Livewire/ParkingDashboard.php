@@ -29,7 +29,7 @@ class ParkingDashboard extends Component
     public $selectedFloorSpaces = [];
     public $selectedFloorStats = [];
     
-    // COPIED EXACTLY FROM VEHICLEMANAGER: Verify vehicle modal
+    // Verify modal properties
     public $showVerifyModal = false;
     public $verifyRfid = '';
     public $verifyResult = null;
@@ -63,6 +63,11 @@ class ParkingDashboard extends Component
             $this->updateStatistics();
             $this->updateFloorStats();
             
+            // FIXED: Also refresh modal data if modal is open
+            if ($this->showModal && $this->selectedFloor) {
+                $this->loadSelectedFloorData();
+            }
+            
             $this->lastUpdate = now()->format('H:i:s');
             
         } catch (\Exception $e) {
@@ -83,7 +88,7 @@ class ParkingDashboard extends Component
         $this->showModal = true;
     }
 
-    // COPIED EXACTLY FROM VEHICLEMANAGER: VERIFY VEHICLE METHODS
+    // VERIFY VEHICLE METHODS - EXACT COPY FROM VEHICLEMANAGER
     public function openVerifyModal()
     {
         if (auth()->user()->role === 'user') {
@@ -104,85 +109,66 @@ class ParkingDashboard extends Component
     }
 
     public function verifyVehicle()
-{
-    if (auth()->user()->role === 'user') {
-        $this->verifyResult = [
-            'status' => 'ACCESS_DENIED',
-            'message' => 'Access denied. Only security personnel can verify vehicles.',
-            'color' => 'warning'
-        ];
-        return;
-    }
+    {
+        if (auth()->user()->role === 'user') {
+            $this->dispatch('show-alert', type: 'error', message: 'Access denied.');
+            return;
+        }
 
-    // Clear any previous results first
-    $this->verifyResult = null;
-    
-    // Reset validation errors
-    $this->resetErrorBag();
-
-    try {
         $this->validate(['verifyRfid' => 'required|string']);
-    } catch (\Exception $e) {
-        $this->verifyResult = [
-            'status' => 'ERROR',
-            'message' => 'Please enter an RFID tag.',
-            'color' => 'danger'
-        ];
-        return;
-    }
 
-    $vehicle = DB::table('vehicles')
-        ->leftJoin('sys_users', 'vehicles.owner_id', '=', 'sys_users.id')
-        ->select(
-            'vehicles.*',
-            'sys_users.name as owner_name',
-            'sys_users.role as owner_role'
-        )
-        ->where('vehicles.rfid_tag', trim($this->verifyRfid))
-        ->first();
+        $vehicle = DB::table('vehicles')
+            ->leftJoin('sys_users', 'vehicles.owner_id', '=', 'sys_users.id')
+            ->select(
+                'vehicles.*',
+                'sys_users.name as owner_name',
+                'sys_users.role as owner_role'
+            )
+            ->where('vehicles.rfid_tag', $this->verifyRfid)
+            ->first();
 
-    if (!$vehicle) {
-        $this->verifyResult = [
-            'status' => 'NOT_FOUND',
-            'message' => 'Vehicle not found in system',
-            'color' => 'danger'
-        ];
-        return;
-    }
+        if (!$vehicle) {
+            $this->verifyResult = [
+                'status' => 'NOT_FOUND',
+                'message' => 'Vehicle not found in system',
+                'color' => 'danger'
+            ];
+            return;
+        }
 
-    // Use simplified status logic - only Active or Inactive
-    if (!$vehicle->is_active) {
-        $this->verifyResult = [
-            'status' => 'Inactive',
-            'message' => 'Vehicle is deactivated. Contact administrator.',
-            'vehicle' => $vehicle,
-            'color' => 'danger'
-        ];
-        return;
-    }
-
-    // Check expiry if column exists
-    if ($this->columnExists('vehicles', 'expires_at') && $vehicle->expires_at) {
-        $expiryDate = Carbon::parse($vehicle->expires_at);
-        
-        if ($expiryDate->isPast()) {
+        // Use simplified status logic - only Active or Inactive
+        if (!$vehicle->is_active) {
             $this->verifyResult = [
                 'status' => 'Inactive',
-                'message' => 'Vehicle registration expired on ' . $expiryDate->format('M j, Y') . '. Renewal required.',
+                'message' => 'Vehicle is deactivated. Contact administrator.',
                 'vehicle' => $vehicle,
                 'color' => 'danger'
             ];
             return;
         }
-    }
 
-    $this->verifyResult = [
-        'status' => 'Active',
-        'message' => 'Vehicle is active and authorized for parking.',
-        'vehicle' => $vehicle,
-        'color' => 'success'
-    ];
-}
+        // Check expiry if column exists
+        if ($this->columnExists('vehicles', 'expires_at') && $vehicle->expires_at) {
+            $expiryDate = Carbon::parse($vehicle->expires_at);
+            
+            if ($expiryDate->isPast()) {
+                $this->verifyResult = [
+                    'status' => 'Inactive',
+                    'message' => 'Vehicle registration expired on ' . $expiryDate->format('M j, Y') . '. Renewal required.',
+                    'vehicle' => $vehicle,
+                    'color' => 'danger'
+                ];
+                return;
+            }
+        }
+
+        $this->verifyResult = [
+            'status' => 'Active',
+            'message' => 'Vehicle is active and authorized for parking.',
+            'vehicle' => $vehicle,
+            'color' => 'success'
+        ];
+    }
 
     public function goToFloor($floorLevel)
     {
@@ -279,7 +265,7 @@ class ParkingDashboard extends Component
         session()->flash('message', 'Dashboard refreshed successfully');
     }
 
-    // COPIED FROM VEHICLEMANAGER: Helper method for column checking
+    // Helper method for column checking
     private function columnExists($table, $column)
     {
         try {
