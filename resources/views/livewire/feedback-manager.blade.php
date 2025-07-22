@@ -1,3 +1,6 @@
+<div>
+    <!-- Alert container for dynamic alerts -->
+    <div id="alert-container"></div>
 
     <div class="container mt-4">
         <div class="row">
@@ -12,31 +15,14 @@
                     </div>
                     @if(auth()->user()->canManageUsers())
                     <div class="text-end">
-                        <span class="badge bg-info me-2">{{ $stats['new'] }} New</span>
-                        <span class="badge bg-warning me-2">{{ $stats['in_progress'] }} In Progress</span>
-                        <span class="badge bg-success">{{ $stats['resolved'] }} Resolved</span>
+                        <span class="badge badge-new me-2">{{ $stats['new'] }} New</span>
+                        <span class="badge badge-in-progress me-2">{{ $stats['in_progress'] }} In Progress</span>
+                        <span class="badge badge-resolved">{{ $stats['resolved'] }} Resolved</span>
                     </div>
                     @endif
                 </div>
             </div>
         </div>
-
-        <!-- Flash Messages -->
-        @if (session()->has('success'))
-            <div class="alert alert-success alert-dismissible fade show" role="alert">
-                <i class="fas fa-check-circle me-2"></i>
-                {{ session('success') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
-
-        @if (session()->has('error'))
-            <div class="alert alert-danger alert-dismissible fade show" role="alert">
-                <i class="fas fa-exclamation-circle me-2"></i>
-                {{ session('error') }}
-                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-            </div>
-        @endif
 
         <div class="row">
             <!-- Submit Feedback Form -->
@@ -107,7 +93,7 @@
                         <h5 class="mb-0">
                             <i class="fas fa-list me-2"></i>
                             Recent Feedback
-                            <span class="badge bg-secondary ms-2">{{ $stats['total'] }} Total</span>
+                            <span class="badge badge-total ms-2">{{ $stats['total'] }} Total</span>
                         </h5>
                         
                         <!-- Filters -->
@@ -138,12 +124,14 @@
                                     <div class="d-flex align-items-center">
                                         <span class="badge me-2 
                                             @switch($feedback->type)
-                                                @case('bug') bg-danger @break
-                                                @case('suggestion') bg-info @break
-                                                @case('complaint') bg-warning @break
-                                                @case('compliment') bg-success @break
-                                                @default bg-secondary
+                                                @case('bug') badge-bug @break
+                                                @case('suggestion') badge-suggestion @break
+                                                @case('complaint') @break
+                                                @case('compliment') badge-compliment @break
+                                                @default badge-general
                                             @endswitch
+                                        " style="
+                                            @if($feedback->type === 'complaint') background-color: #fd7e14; color: white; @endif
                                         ">
                                             @switch($feedback->type)
                                                 @case('bug') 🐛 Bug @break
@@ -156,10 +144,10 @@
                                         
                                         <span class="badge 
                                             @switch($feedback->status)
-                                                @case('new') bg-primary @break
-                                                @case('in_progress') bg-warning @break
-                                                @case('resolved') bg-success @break
-                                                @case('closed') bg-secondary @break
+                                                @case('new') badge-new @break
+                                                @case('in_progress') badge-in-progress @break
+                                                @case('resolved') badge-resolved @break
+                                                @case('closed') badge-types @break
                                             @endswitch
                                         ">
                                             {{ ucfirst(str_replace('_', ' ', $feedback->status)) }}
@@ -188,9 +176,14 @@
                                         <span class="badge badge-sm ms-1 
                                             @switch($feedback->user_role)
                                                 @case('admin') bg-danger @break
-                                                @case('ssd') bg-primary @break
+                                                @case('ssd') @break
                                                 @case('security') bg-warning @break
-                                                @default bg-secondary
+                                                @default
+                                            @endswitch
+                                        " style="
+                                            @switch($feedback->user_role)
+                                                @case('ssd') background-color: #3A3A3C; color: white; @break
+                                                @default background-color: #A0A0A0; color: white;
                                             @endswitch
                                         ">
                                             {{ ucfirst($feedback->user_role) }}
@@ -278,4 +271,31 @@
     </div>
     <div class="modal-backdrop fade show"></div>
     @endif
+
+    <!-- Alert handling script -->
+    <script>
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('show-alert', (event) => {
+                const alertContainer = document.getElementById('alert-container');
+                const alertId = 'alert-' + Date.now();
+                
+                const alertHtml = `
+                    <div class="container mt-3">
+                        <div id="${alertId}" class="alert alert-${event.type} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-${event.type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                            ${event.message}
+                            <button type="button" class="btn-close" onclick="document.getElementById('${alertId}').remove()"></button>
+                        </div>
+                    </div>
+                `;
+                
+                alertContainer.innerHTML = alertHtml;
+                
+                setTimeout(() => {
+                    const alert = document.getElementById(alertId);
+                    if (alert) alert.remove();
+                }, 5000);
+            });
+        });
+    </script>
 </div>

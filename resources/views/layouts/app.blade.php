@@ -13,352 +13,419 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
     
     <style>
-    body {
-        background-color: #f8f9fa;
-        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    }
-    
-    .valet-header {
-        background-color: #B22020;
-        padding: 20px 0;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-    }
-    
-    .valet-logo-container {
-        width: 50px;
-        height: 50px;
-        background: white;
-        border-radius: 10px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    
-    .valet-logo {
-        width: 35px;
-        height: 35px;
-        object-fit: contain;
-    }
-    
-    .campus-section {
-        background: white;
-        padding: 30px;
-        border-radius: 20px;
-        box-shadow: 0 4px 20px rgba(0,0,0,0.1);
-    }
-    
-    .stat-circle {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        margin: 0 auto 15px;
-        position: relative;
-        /* REMOVED static backgrounds - now dynamic */
-    }
-    
-    .stat-circle .stat-number {
-        background: white;
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        font-size: 1.8rem;
-    }
-    
-    .floor-section {
-        margin-top: 30px;
-    }
-    
-    .live-badge {
-        background: #28a745;
-        color: white;
-        padding: 8px 16px;
-        border-radius: 15px;
-        font-size: 0.9rem;
-        font-weight: bold;
-    }
-    
-    .floor-card {
-        background: white;
-        border-radius: 20px;
-        padding: 25px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.1);
-        transition: transform 0.3s ease;
-        height: 100%;
-    }
-    
-    .floor-card:hover {
-        transform: translateY(-5px);
-    }
-    
-    .available-badge {
-        background: #28a745;
-        color: white;
-        padding: 6px 12px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: bold;
-    }
-    
-    .limited-badge {
-        background: #fd7e14;
-        color: white;
-        padding: 6px 12px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: bold;
-    }
-    
-    .full-badge {
-        background: #dc3545;
-        color: white;
-        padding: 6px 12px;
-        border-radius: 12px;
-        font-size: 0.8rem;
-        font-weight: bold;
-    }
-    
-    .floor-number {
-        font-size: 2rem;
-        font-weight: bold;
-        margin-bottom: 5px;
-    }
-    
-    .available-color { color: #28a745; }
-    .occupied-color { color: #dc3545; }
-    .total-color { color: #007bff; }
-    
-    .progress {
-        height: 10px;
-        border-radius: 5px;
-        background-color: #e9ecef;
-    }
-    
-    .progress-bar {
-        border-radius: 5px;
-    }
-
-    .parking-space-card {
-        background: white;
-        border-radius: 15px;
-        padding: 20px;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        border-left: 4px solid;
-        height: 100%;
-    }
-    
-    .parking-space-card.available {
-        border-left-color: #28a745;
-    }
-    
-    .parking-space-card.occupied {
-        border-left-color: #dc3545;
-    }
-
-    .status-badge-small {
-        padding: 4px 8px;
-        border-radius: 8px;
-        font-size: 0.7rem;
-        font-weight: bold;
-    }
-
-    .badge-available {
-        background: #28a745;
-        color: white;
-    }
-
-    .badge-occupied {
-        background: #dc3545;
-        color: white;
-    }
-    
-    .navbar-nav {
-        gap: 15px;
-    }
-    
-    .nav-link {
-        color: rgba(255,255,255,0.9) !important;
-        font-weight: 500;
-        border-radius: 8px;
-        padding: 8px 16px !important;
-        transition: all 0.3s ease;
-        text-decoration: none;
-        cursor: pointer;
-    }
-    
-    .nav-link:hover, .nav-link.active {
-        background: rgba(255,255,255,0.1);
-        color: white !important;
-    }
-    
-    .nav-link.feedback-btn {
-        background: rgba(255,255,255,0.15);
-        border: 1px solid rgba(255,255,255,0.3);
-    }
-    
-    .nav-link.feedback-btn:hover {
-        background: rgba(255,255,255,0.25);
-        transform: translateY(-1px);
-    }
-    
-    /* Simple User Dropdown */
-    .user-dropdown-wrapper {
-        position: relative;
-    }
-
-    .user-dropdown {
-        background: rgba(255,255,255,0.1);
-        border: 1px solid rgba(255,255,255,0.2);
-        border-radius: 12px;
-        padding: 8px 16px;
-        color: white;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .user-dropdown:hover {
-        background: rgba(255,255,255,0.2);
-    }
-
-    .user-dropdown-menu {
-        position: absolute;
-        top: 100%;
-        right: 0;
-        background: white;
-        border-radius: 12px;
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
-        min-width: 200px;
-        opacity: 0;
-        visibility: hidden;
-        transform: translateY(-10px);
-        transition: all 0.3s ease;
-        z-index: 1000;
-        margin-top: 5px;
-    }
-
-    .user-dropdown-menu.show {
-        opacity: 1;
-        visibility: visible;
-        transform: translateY(0);
-    }
-
-    .dropdown-item {
-        display: block;
-        padding: 10px 20px;
-        color: #333;
-        text-decoration: none;
-        border-radius: 8px;
-        margin: 2px 8px;
-        transition: background 0.3s ease;
-        cursor: pointer;
-    }
-
-    .dropdown-item:hover {
-        background: #f8f9fa;
-        color: #333;
-    }
-
-    .logout-btn {
-        background: none;
-        border: none;
-        width: 100%;
-        text-align: left;
-        color: #dc3545;
-    }
-
-    .logout-btn:hover {
-        background: #f8f9fa;
-        color: #dc3545;
-    }
-
-    .dropdown-divider {
-        height: 1px;
-        background: #e9ecef;
-        margin: 8px 0;
-    }
-    
-    .role-badge {
-        font-size: 0.7rem;
-        padding: 2px 8px;
-        border-radius: 10px;
-        margin-left: 8px;
-    }
-    
-    .dropdown-role-info {
-        padding: 8px 20px;
-        background: #f8f9fa;
-        border-radius: 8px;
-        margin: 2px 8px;
-        font-size: 0.85rem;
-        color: #6c757d;
-    }
-    
-    /* Alert styles */
-    .alert {
-        border-radius: 12px;
-        border: none;
-        margin-bottom: 20px;
-    }
-    
-    .alert-success {
-        background: #d4edda;
-        color: #155724;
-    }
-    
-    .alert-danger {
-        background: #f8d7da;
-        color: #721c24;
-    }
-    html, body {
+    /* Anti-flash CSS */
+html {
     background-color: #f8f9fa !important;
 }
 
-[wire\:loading] {
-    opacity: 0.6;
+body {
+    background-color: #f8f9fa !important;
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    transition: none !important;
+    opacity: 1 !important;
 }
-    .alert-warning {
-        background: #fff3cd;
-        color: #856404;
-    }
-    
-    .alert-info {
-        background: #d1ecf1;
-        color: #0c5460;
-    }
-    
-    /* Floor card no-data styles */
-    .floor-card.no-data {
-        opacity: 0.6;
-        border: 2px dashed #dee2e6;
-        background: #f8f9fa;
-        cursor: not-allowed !important;
-    }
-    
-    .no-data-badge {
-        background: #6c757d;
-        color: white;
-        padding: 4px 8px;
-        border-radius: 12px;
-        font-size: 0.75rem;
-        font-weight: bold;
-    }
-    
-    .stat-number {
-        font-size: 1.5rem;
-        font-weight: bold;
-    }
 
-    /* Loading overlay for smooth navigation */
-    .nav-loading {
-        opacity: 0.7;
-        pointer-events: none;
-    }
+/* Prevent white flash during navigation */
+[wire\:loading], [wire\:loading\.delay], [wire\:loading\.inline-block], [wire\:loading\.flex] {
+    background-color: #f8f9fa !important;
+}
+
+.livewire-loading, .nav-loading {
+    background-color: #f8f9fa !important;
+    opacity: 0.8;
+    transition: opacity 0.2s ease;
+}
+
+main, .container, .valet-header + * {
+    background-color: transparent;
+}
+
+.valet-header {
+    background-color: #B22020;
+    padding: 20px 0;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+}
+
+.valet-logo-container {
+    width: 50px;
+    height: 50px;
+    background: white;
+    border-radius: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.valet-logo {
+    width: 35px;
+    height: 35px;
+    object-fit: contain;
+}
+
+.campus-section {
+    background: white;
+    padding: 30px;
+    border-radius: 20px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+}
+
+.stat-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto 15px;
+    position: relative;
+}
+
+.stat-circle .stat-number {
+    background: white;
+    width: 90px;
+    height: 90px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: bold;
+    font-size: 1.8rem;
+}
+
+.floor-section {
+    margin-top: 30px;
+}
+
+.live-badge {
+    background: #28a745;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 15px;
+    font-size: 0.9rem;
+    font-weight: bold;
+}
+
+.floor-card {
+    background: white;
+    border-radius: 20px;
+    padding: 25px;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+    transition: transform 0.3s ease;
+    height: 100%;
+}
+
+.floor-card:hover {
+    transform: translateY(-5px);
+}
+
+.available-badge {
+    background: #2F623D;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.limited-badge {
+    background: #fd7e14;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.full-badge {
+    background: #B22020;
+    color: white;
+    padding: 6px 12px;
+    border-radius: 12px;
+    font-size: 0.8rem;
+    font-weight: bold;
+}
+
+.floor-number {
+    font-size: 2rem;
+    font-weight: bold;
+    margin-bottom: 5px;
+}
+
+.available-color { color: #2F623D; }
+.occupied-color { color: #B22020; }
+.total-color { color: #3A3A3C; }
+
+.progress {
+    height: 10px;
+    border-radius: 5px;
+    background-color: #e9ecef;
+}
+
+.progress-bar {
+    border-radius: 5px;
+}
+
+.parking-space-card {
+    background: white;
+    border-radius: 15px;
+    padding: 20px;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    border-left: 4px solid;
+    height: 100%;
+}
+
+.parking-space-card.available {
+    border-left-color: #2F623D;
+}
+
+.parking-space-card.occupied {
+    border-left-color: #B22020;
+}
+
+.status-badge-small {
+    padding: 4px 8px;
+    border-radius: 8px;
+    font-size: 0.7rem;
+    font-weight: bold;
+}
+
+.badge-available {
+    background: #2F623D;
+    color: white;
+}
+
+.badge-occupied {
+    background: #B22020;
+    color: white;
+}
+
+.navbar-nav {
+    gap: 15px;
+}
+
+.nav-link {
+    color: rgba(255,255,255,0.9) !important;
+    font-weight: 500;
+    border-radius: 8px;
+    padding: 8px 16px !important;
+    transition: all 0.3s ease;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.nav-link:hover, .nav-link.active {
+    background: rgba(255,255,255,0.1);
+    color: white !important;
+}
+
+.nav-link.feedback-btn {
+    background: rgba(255,255,255,0.15);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.nav-link.feedback-btn:hover {
+    background: rgba(255,255,255,0.25);
+    transform: translateY(-1px);
+}
+
+.user-dropdown-wrapper {
+    position: relative;
+}
+
+.user-dropdown {
+    background: rgba(255,255,255,0.1);
+    border: 1px solid rgba(255,255,255,0.2);
+    border-radius: 12px;
+    padding: 8px 16px;
+    color: white;
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.user-dropdown:hover {
+    background: rgba(255,255,255,0.2);
+}
+
+.user-dropdown-menu {
+    position: absolute;
+    top: 100%;
+    right: 0;
+    background: white;
+    border-radius: 12px;
+    box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    min-width: 200px;
+    opacity: 0;
+    visibility: hidden;
+    transform: translateY(-10px);
+    transition: all 0.3s ease;
+    z-index: 1000;
+    margin-top: 5px;
+}
+
+.user-dropdown-menu.show {
+    opacity: 1;
+    visibility: visible;
+    transform: translateY(0);
+}
+
+.dropdown-item {
+    display: block;
+    padding: 10px 20px;
+    color: #333;
+    text-decoration: none;
+    border-radius: 8px;
+    margin: 2px 8px;
+    transition: background 0.3s ease;
+    cursor: pointer;
+}
+
+.dropdown-item:hover {
+    background: #f8f9fa;
+    color: #333;
+}
+
+.logout-btn {
+    background: none;
+    border: none;
+    width: 100%;
+    text-align: left;
+    color: #dc3545;
+}
+
+.logout-btn:hover {
+    background: #f8f9fa;
+    color: #dc3545;
+}
+
+.dropdown-divider {
+    height: 1px;
+    background: #e9ecef;
+    margin: 8px 0;
+}
+
+.role-badge {
+    font-size: 0.7rem;
+    padding: 2px 8px;
+    border-radius: 10px;
+    margin-left: 8px;
+}
+
+.dropdown-role-info {
+    padding: 8px 20px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 2px 8px;
+    font-size: 0.85rem;
+    color: #6c757d;
+}
+
+/* Alert styles */
+.alert {
+    border-radius: 12px;
+    border: none;
+    margin-bottom: 20px;
+}
+
+.alert-success {
+    background: #d4edda;
+    color: #155724;
+}
+
+.alert-danger {
+    background: #f8d7da;
+    color: #721c24;
+}
+
+.alert-warning {
+    background: #fff3cd;
+    color: #856404;
+}
+
+.alert-info {
+    background: #d1ecf1;
+    color: #0c5460;
+}
+
+/* Floor card no-data styles */
+.floor-card.no-data {
+    opacity: 0.6;
+    border: 2px dashed #dee2e6;
+    background: #f8f9fa;
+    cursor: not-allowed !important;
+}
+
+.no-data-badge {
+    background: #A0A0A0;
+    color: white;
+    padding: 4px 8px;
+    border-radius: 12px;
+    font-size: 0.75rem;
+    font-weight: bold;
+}
+
+.stat-number {
+    font-size: 1.5rem;
+    font-weight: bold;
+}
+
+/* New color scheme for cards */
+.card-total {
+    background-color: #3A3A3C !important;
+    color: white !important;
+}
+
+.card-active {
+    background-color: #2F623D !important;
+    color: white !important;
+}
+
+.card-inactive {
+    background-color: #B22020 !important;
+    color: white !important;
+}
+
+.card-types {
+    background-color: #A0A0A0 !important;
+    color: white !important;
+}
+
+/* Loading states */
+.nav-loading {
+    opacity: 0.8;
+    pointer-events: none;
+}
+
+/* Progress bar animation */
+@keyframes progress {
+    0% { transform: translateX(-100%); }
+    50% { transform: translateX(0%); }
+    100% { transform: translateX(100%); }
+}
+
+/* Badges with new colors */
+.badge-total { background-color: #3A3A3C; color: white; }
+.badge-active { background-color: #2F623D; color: white; }
+.badge-inactive { background-color: #B22020; color: white; }
+.badge-types { background-color: #A0A0A0; color: white; }
+
+/* Progress bars with new colors */
+.progress-bar-total { background-color: #3A3A3C; }
+.progress-bar-active { background-color: #2F623D; }
+.progress-bar-inactive { background-color: #B22020; }
+.progress-bar-types { background-color: #A0A0A0; }
+
+/* Feedback type badges */
+.badge-bug { background-color: #B22020; }
+.badge-suggestion { background-color: #3A3A3C; }
+.badge-complaint { background-color: #fd7e14; }
+.badge-compliment { background-color: #2F623D; }
+.badge-general { background-color: #A0A0A0; }
+
+/* Status badges */
+.badge-new { background-color: #3A3A3C; }
+.badge-in-progress { background-color: #fd7e14; }
+.badge-resolved { background-color: #2F623D; }
+.badge-closed { background-color: #A0A0A0; }
 </style>
     @livewireStyles
 </head>
