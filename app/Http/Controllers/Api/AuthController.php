@@ -6,117 +6,205 @@ use App\Http\Controllers\Controller;
 use App\Models\SysUser;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Hash;
+use Illuminate\Validation\ValidationException;
 
-class SysUserController extends Controller
+class AuthController extends Controller
 {
     /**
-     * Get all registered users
+     * Login and get API token (ADMIN ONLY)
      */
-    public function index(Request $request): JsonResponse
+    public function login(Request $request): JsonResponse
     {
         try {
-            $search = $request->get('search');
-            $role = $request->get('role');
-            $status = $request->get('status'); // active, inactive, all
+            $request->validate([
+                'email' => 'required|email',
+                'password' => 'required|string',
+            ]);
 
-            $query = SysUser::query();
+            $user = SysUser::where('email', $request->email)->first();
 
-            // Search by name, email, or employee_id
-            if ($search) {
-                $query->where(function ($q) use ($search) {
-                    $q->where('name', 'like', "%{$search}%")
-                      ->orWhere('email', 'like', "%{$search}%")
-                      ->orWhere('employee_id', 'like', "%{$search}%");
-                });
+            // Check if user exists
+            if (!$user) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid credentials'
+                ], 401);
             }
 
-            // Filter by role
-            if ($role && $role !== 'all') {
-                $query->where('role', $role);
+            // Check if user is active
+            if (!$user->is_active) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Account deactivated'
+                ], 401);
             }
 
-            // Filter by status
-            if ($status === 'active') {
-                $query->where('is_active', true);
-            } elseif ($status === 'inactive') {
-                $query->where('is_active', false);
+            // Check password
+            if (!Hash::check($request->password, $user->password)) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Invalid credentials'
+                ], 401);
             }
 
-            // Get users - INCLUDING PASSWORD
-            $users = $query->select([
-                'id',
-                'name', 
-                'email',
-                'password', // Added password field
-                'role',
-                'employee_id',
-                'department',
-                'is_active',
-                'created_at'
-            ])->latest()->get();
+            // ONLY ADMINS CAN GET API TOKENS
+            if (!$user->isAdmin()) {
+                return response()->json([
+                    'success' => false,
+                    'message' => 'Not admin - API access restricted to administrators only'
+                ], 403);
+            }
 
-            // Transform the data to include role display name
-            $transformedUsers = $users->map(function ($user) {
-                return [
-                    'id' => $user->id,
-                    'name' => $user->name,
-                    'email' => $user->email,
-                    'password' => $user->password, // 'password' => password123
-                    'role' => $user->role,
-                    'role_display' => $user->getRoleDisplayName(),
-                    'employee_id' => $user->employee_id,
-                    'department' => $user->department,
-                    'is_active' => $user->is_active,
-                    'created_at' => $user->created_at->format('Y-m-d H:i:s'),
-                ];
-            });
+            // Revoke existing tokens for this user
+            $user->tokens()->delete();
+
+            // Create new token with 7-day expiration
+            $token = $user->createToken('valet-api-token', ['*'], now()->addDays(7));
 
             return response()->json([
                 'success' => true,
-                'users' => $transformedUsers
+                'message' => 'Login successful',
+                'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                        'employee_id' => $user->employee_id,
+                    ],
+                    'token' => $token->plainTextToken,
+                    'token_type' => 'Bearer',
+                    'expires_at' => now()->addDays(7)->toISOString(),
+                ]
             ]);
 
+        } catch (ValidationException $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $e->errors()
+            ], 422);
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve users'
+                'message' => 'Login failed',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
 
     /**
-     * Get user statistics
+     * Logout and revoke token
      */
-    public function stats(): JsonResponse
+    public function logout(Request $request): JsonResponse
     {
         try {
-            $stats = [
-                'total_users' => SysUser::count(),
-                'active_users' => SysUser::where('is_active', true)->count(),
-                'inactive_users' => SysUser::where('is_active', false)->count(),
-                'by_role' => [
-                    'admin' => SysUser::where('role', 'admin')->count(),
-                    'ssd' => SysUser::where('role', 'ssd')->count(),
-                    'security' => SysUser::where('role', 'security')->count(),
-                    'user' => SysUser::where('role', 'user')->count(),
-                ],
-                'recent_registrations' => SysUser::where('created_at', '>=', now()->subDays(30))->count(),
-                'by_department' => SysUser::whereNotNull('department')
-                    ->groupBy('department')
-                    ->selectRaw('department, count(*) as count')
-                    ->pluck('count', 'department')
-                    ->toArray(),
-            ];
+            // Revoke current token
+            $request->user()->currentAccessToken()->delete();
 
             return response()->json([
                 'success' => true,
-                'stats' => $stats
+                'message' => 'Logged out successfully'
             ]);
 
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Failed to retrieve statistics'
+                'message' => 'Logout failed',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Get current user profile
+     */
+    public function profile(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+
+            return response()->json([
+                'success' => true,
+                'data' => [
+                    'id' => $user->id,
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'role_display' => $user->getRoleDisplayName(),
+                    'employee_id' => $user->employee_id,
+                    'department' => $user->department,
+                    'is_active' => $user->is_active,
+                    'created_at' => $user->created_at->toISOString(),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to retrieve profile',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Revoke all tokens for current user
+     */
+    public function revokeAllTokens(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $tokenCount = $user->tokens()->count();
+            
+            $user->tokens()->delete();
+
+            return response()->json([
+                'success' => true,
+                'message' => "Successfully revoked {$tokenCount} token(s)"
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Failed to revoke tokens',
+                'error' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
+     * Check token validity
+     */
+    public function checkToken(Request $request): JsonResponse
+    {
+        try {
+            $user = $request->user();
+            $token = $request->user()->currentAccessToken();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Token is valid',
+                'data' => [
+                    'user' => [
+                        'id' => $user->id,
+                        'name' => $user->name,
+                        'email' => $user->email,
+                        'role' => $user->role,
+                    ],
+                    'token_name' => $token->name,
+                    'created_at' => $token->created_at->toISOString(),
+                    'last_used_at' => $token->last_used_at?->toISOString(),
+                    'expires_at' => $token->expires_at?->toISOString(),
+                ]
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Token check failed',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
