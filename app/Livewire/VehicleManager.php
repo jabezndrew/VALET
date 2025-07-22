@@ -311,47 +311,24 @@ class VehicleManager extends Component
 
     // Helper methods for UI display - FIXED STATUS DETECTION
     public function getVehicleStatus($vehicle)
-    {
-        if (!$vehicle->is_active) {
-            return 'Inactive';
-        }
-
-        if (isset($vehicle->expires_at) && $vehicle->expires_at) {
-            $expiryDate = Carbon::parse($vehicle->expires_at);
-            $now = Carbon::now();
-
-            if ($expiryDate->isPast()) {
-                return 'Expired';
-            } elseif ($expiryDate->diffInDays($now) <= 30 && $expiryDate->isFuture()) {
-                return 'Expiring Soon';
-            }
-        }
-
-        return 'Active';
+{
+    if (!$vehicle->is_active) {
+        return 'Inactive';
     }
 
-    public function getStatusBadgeClass($vehicle)
-    {
-        $status = $this->getVehicleStatus($vehicle);
-        
-        return match($status) {
-            'Active' => 'badge-active',
-            'Expired' => 'badge-inactive',
-            'Expiring Soon' => 'bg-warning text-dark',
-            'Inactive' => 'badge-types',
-            default => 'badge-types'
-        };
+    if (!empty($vehicle->expires_at)) {
+        $expiryDate = Carbon::parse($vehicle->expires_at);
+        $now = Carbon::now();
+
+        if ($expiryDate->isPast()) {
+            return 'Expired';
+        } elseif ($now->diffInDays($expiryDate, false) <= 30 && $expiryDate->isFuture()) {
+            return 'Expiring Soon';
+        }
     }
 
-    public function getRowClass($vehicle)
-    {
-        if (isset($vehicle->expires_at) && $this->isExpired($vehicle->expires_at)) {
-            return 'table-danger';
-        } elseif (isset($vehicle->expires_at) && $this->isExpiringSoon($vehicle->expires_at)) {
-            return 'table-warning';
-        }
-        return '';
-    }
+    return 'Active';
+}
 
     public function getDaysUntilExpiry($expiresAt)
     {
