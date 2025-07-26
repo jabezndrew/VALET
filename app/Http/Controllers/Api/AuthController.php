@@ -38,13 +38,6 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            if (!$user->isAdmin()) {
-                return response()->json([
-                    'success' => false,
-                    'message' => 'Not admin'
-                ], 403);
-            }
-
             // Check if user already has a valid token
             $existingToken = $user->tokens()->where('name', 'valet-api')->first();
             
