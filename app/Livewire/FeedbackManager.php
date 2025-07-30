@@ -62,7 +62,8 @@ class FeedbackManager extends Component
     // Modal methods for submit feedback
     public function openModal()
     {
-        if (!auth()->user()->canManageUsers()) {
+        // FIXED: Only admins cannot submit feedback, SSD can submit
+        if (!auth()->user()->isAdmin()) {
             $this->resetForm();
             $this->showModal = true;
         }
@@ -86,8 +87,8 @@ class FeedbackManager extends Component
 
     public function submitFeedback()
     {
-        // Prevent admins from submitting feedback
-        if (auth()->user()->canManageUsers()) {
+        // FIXED: Prevent only admins from submitting feedback, allow SSD
+        if (auth()->user()->isAdmin()) {
             $this->dispatch('show-alert', type: 'error', message: 'Administrators cannot submit feedback.');
             return;
         }
@@ -121,7 +122,8 @@ class FeedbackManager extends Component
 
     public function quickUpdateStatus($feedbackId, $status)
     {
-        if (!auth()->user()->canManageUsers()) {
+        // FIXED: Only admins can manage feedback, not SSD
+        if (!auth()->user()->isAdmin()) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
@@ -138,7 +140,8 @@ class FeedbackManager extends Component
 
     public function openResponseModal($feedbackId)
     {
-        if (!auth()->user()->canManageUsers()) {
+        // FIXED: Only admins can manage feedback, not SSD
+        if (!auth()->user()->isAdmin()) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
@@ -163,7 +166,8 @@ class FeedbackManager extends Component
 
     public function saveAdminResponse()
     {
-        if (!auth()->user()->canManageUsers() || !$this->selectedFeedbackId) {
+        // FIXED: Only admins can manage feedback, not SSD
+        if (!auth()->user()->isAdmin() || !$this->selectedFeedbackId) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
@@ -197,13 +201,13 @@ class FeedbackManager extends Component
                 'sys_users.role as user_role'
             );
 
-        // Non-admin users can only see their own feedback
-        if (!auth()->user()->canManageUsers()) {
+        // FIXED: Non-admin users (including SSD) can only see their own feedback
+        if (!auth()->user()->isAdmin()) {
             $query->where('feedbacks.user_id', auth()->id());
         }
 
-        // Apply filters (admin only)
-        if (auth()->user()->canManageUsers()) {
+        // FIXED: Apply filters (admin only, not SSD)
+        if (auth()->user()->isAdmin()) {
             if ($this->statusFilter !== 'all') {
                 $query->where('feedbacks.status', $this->statusFilter);
             }
@@ -220,8 +224,8 @@ class FeedbackManager extends Component
     {
         $baseQuery = DB::table('feedbacks');
         
-        // Non-admin users see only their own stats
-        if (!auth()->user()->canManageUsers()) {
+        // FIXED: Non-admin users (including SSD) see only their own stats
+        if (!auth()->user()->isAdmin()) {
             $baseQuery->where('user_id', auth()->id());
         }
 
