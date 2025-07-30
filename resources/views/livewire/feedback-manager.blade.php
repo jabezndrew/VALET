@@ -13,7 +13,7 @@
                         <p class="text-muted mb-0">Help us improve VALET Smart Parking system</p>
                     </div>
                     <div class="d-flex align-items-center gap-3">
-                        @if(auth()->user()->canManageUsers())
+                        @if(auth()->user()->isAdmin())
                         <!-- Admin Stats -->
                         <div class="text-end">
                             <span class="badge badge-pending me-2">{{ $stats['pending'] }} Pending</span>
@@ -37,7 +37,7 @@
                 <div class="card border-0 shadow-sm">
                     <div class="card-header bg-light d-flex justify-content-between align-items-center">
                         <h5 class="mb-0">
-                            @if(auth()->user()->canManageUsers())
+                            @if(auth()->user()->isAdmin())
                                 All Feedback & Support Requests
                             @else
                                 Your Feedback History
@@ -46,7 +46,7 @@
                         </h5>
                         
                         <!-- Filters (Admin Only) -->
-                        @if(auth()->user()->canManageUsers())
+                        @if(auth()->user()->isAdmin())
                         <div class="d-flex gap-2">
                             <select wire:model.live="statusFilter" class="form-select form-select-sm">
                                 <option value="all">All Status</option>
@@ -135,7 +135,7 @@
                                 @endif
 
                                 <div class="d-flex justify-content-between align-items-center">
-                                    @if(auth()->user()->canManageUsers())
+                                    @if(auth()->user()->isAdmin())
                                     <!-- Show user info for admins -->
                                     <small class="text-muted">
                                         {{ $feedback->user_name }} 
@@ -157,7 +157,7 @@
                                     </small>
                                     @endif
 
-                                    @if(auth()->user()->canManageUsers())
+                                    @if(auth()->user()->isAdmin())
                                         <div class="btn-group btn-group-sm">
                                             @if($feedback->status !== 'reviewed')
                                             <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'reviewed')" 
@@ -198,7 +198,7 @@
                         @empty
                             <div class="text-center py-5">
                                 <i class="fas fa-comment-slash text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
-                                @if(auth()->user()->canManageUsers())
+                                @if(auth()->user()->isAdmin())
                                     <h5 class="text-muted">No feedback received yet</h5>
                                     <p class="text-muted">Users haven't submitted any feedback yet.</p>
                                 @else
@@ -214,7 +214,7 @@
     </div>
 
     <!-- Submit Feedback Modal (Non-Admin Users Only) -->
-    @if($showModal && !auth()->user()->canManageUsers())
+    @if($showModal && !auth()->user()->isAdmin())
     <div class="modal fade show" style="display: block;" tabindex="-1">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
@@ -324,7 +324,7 @@
     @endif
 
     <!-- Admin Response Modal (Admin Only) -->
-    @if($showResponseModal && auth()->user()->canManageUsers())
+    @if($showResponseModal && auth()->user()->isAdmin())
     <div class="modal fade show" style="display: block;" tabindex="-1">
         <div class="modal-dialog">
             <div class="modal-content">
