@@ -191,19 +191,19 @@ class ParkingDashboard extends Component
         $this->dispatch('modal-closed');
     }
 
+    
     public function getSensorDisplayName($sensorId)
     {
         $mapping = [
-            1 => 'A1',
-            2 => 'A2', 
-            3 => 'A3',
-            4 => 'A4',
-            5 => 'B1'
+            1 => 'B1',
+            2 => 'B2', 
+            3 => 'B3',
+            4 => 'B4',
+            5 => 'C1'
         ];
         
         return $mapping[$sensorId] ?? $sensorId;
     }
-
     public function getRelativeTime($timestamp)
     {
         return Carbon::parse($timestamp)->diffForHumans();

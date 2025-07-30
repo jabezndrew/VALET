@@ -150,7 +150,7 @@
                             <div class="col-md-6 col-lg-4 mb-3">
                                 <div class="parking-space-card {{ $space->is_occupied ? 'occupied' : 'available' }}">
                                     <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0 fw-bold">Sensor {{ $space->sensor_id }}</h6>
+                                        <h6 class="mb-0 fw-bold">{{ $this->getSensorDisplayName($space->sensor_id) }}</h6>
                                         <span class="status-badge-small {{ $space->is_occupied ? 'badge-occupied' : 'badge-available' }}">
                                             {{ $space->is_occupied ? 'Occupied' : 'Available' }}
                                         </span>

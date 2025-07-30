@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\SysUser;
 use Illuminate\Support\Facades\Hash;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 
 class UserManager extends Component
@@ -60,10 +61,12 @@ class UserManager extends Component
     {
         $users = $this->getUsers();
         $stats = $this->getUserStats();
+        $pendingCount = $this->getPendingAccountsCount();
         
         return view('livewire.user-manager', [
             'users' => $users,
-            'stats' => $stats
+            'stats' => $stats,
+            'pendingCount' => $pendingCount
         ])->layout('layouts.app');
     }
 
@@ -139,8 +142,28 @@ class UserManager extends Component
                 
                 $this->dispatch('show-alert', type: 'success', message: 'User updated successfully.');
             } else {
-                SysUser::create($data);
-                $this->dispatch('show-alert', type: 'success', message: 'User created successfully.');
+                // NEW LOGIC: Admin creates directly, SSD creates as pending
+                if (auth()->user()->isAdmin()) {
+                    // Admin creates user directly
+                    SysUser::create($data);
+                    $this->dispatch('show-alert', type: 'success', message: 'User created successfully.');
+                } else {
+                    // SSD creates pending account
+                    DB::table('pending_accounts')->insert([
+                        'name' => $data['name'],
+                        'email' => $data['email'],
+                        'password' => $data['password'],
+                        'role' => $data['role'],
+                        'employee_id' => $data['employee_id'],
+                        'department' => $data['department'],
+                        'is_active' => $data['is_active'],
+                        'created_by' => auth()->id(),
+                        'status' => 'pending',
+                        'created_at' => now(),
+                        'updated_at' => now(),
+                    ]);
+                    $this->dispatch('show-alert', type: 'success', message: 'Account created and sent for admin approval.');
+                }
             }
 
             $this->closeModal();
@@ -257,5 +280,15 @@ class UserManager extends Component
                 'user' => SysUser::where('role', 'user')->count(),
             ],
         ];
+    }
+
+    // NEW: Get pending accounts count for admin
+    private function getPendingAccountsCount()
+    {
+        if (!auth()->user()->canApprovePendingAccounts()) {
+            return 0;
+        }
+        
+        return DB::table('pending_accounts')->where('status', 'pending')->count();
     }
 }

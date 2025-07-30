@@ -11,9 +11,16 @@
                 </h2>
                 <p class="text-muted mb-0">Manage system users and their access</p>
             </div>
-            <button wire:click="openModal" class="btn btn-valet-charcoal">
-                Add New User
-            </button>
+            <div class="d-flex gap-2">
+                @if(auth()->user()->canApprovePendingAccounts() && $pendingCount > 0)
+                <a href="{{ route('admin.pending-accounts') }}" class="btn btn-warning" wire:navigate>
+                    <i class="fas fa-clock me-1"></i> Pending Accounts ({{ $pendingCount }})
+                </a>
+                @endif
+                <button wire:click="openModal" class="btn btn-valet-charcoal">
+                    {{ auth()->user()->isAdmin() ? 'Add New User' : 'Request New User' }}
+                </button>
+            </div>
         </div>
 
         <!-- Stats -->
@@ -178,7 +185,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        {{ $editingId ? 'Edit User' : 'Add New User' }}
+                        {{ $editingId ? 'Edit User' : (auth()->user()->isAdmin() ? 'Add New User' : 'Request New User') }}
                     </h5>
                     <button type="button" class="btn-close" wire:click="closeModal"></button>
                 </div>
@@ -273,7 +280,7 @@
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
                         <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled">
                             <span wire:loading.remove">
-                                {{ $editingId ? 'Update User' : 'Create User' }}
+                                {{ $editingId ? 'Update User' : (auth()->user()->isAdmin() ? 'Create User' : 'Submit for Approval') }}
                             </span>
                             <span wire:loading>
                                 <i class="fas fa-spinner fa-spin me-2"></i>

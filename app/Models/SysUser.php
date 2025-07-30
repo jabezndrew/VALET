@@ -63,7 +63,14 @@ class SysUser extends Authenticatable
         return $this->isSSD();
     }
 
+    // UPDATED: Allow both admin and SSD to manage users
     public function canManageUsers(): bool
+    {
+        return $this->isSSD(); // This includes both ssd and admin
+    }
+
+    // NEW: Only admin can approve pending accounts
+    public function canApprovePendingAccounts(): bool
     {
         return $this->isAdmin();
     }
