@@ -12,7 +12,7 @@ use Illuminate\Validation\ValidationException;
 class AuthController extends Controller
 {
     /**
-     * Login and get API token (ADMIN ONLY)
+     * Login and get API token (ALL ROLES)
      */
     public function login(Request $request): JsonResponse
     {
@@ -38,22 +38,8 @@ class AuthController extends Controller
                 ], 401);
             }
 
-            // Check if user already has a valid token
-            $existingToken = $user->tokens()->where('name', 'valet-api')->first();
-            
-            if ($existingToken) {
-                return response()->json([
-                    'success' => true,
-                    'message' => 'Already logged in',
-                    'token' => $existingToken->token, // This won't work as token is hashed
-                    'user' => [
-                        'id' => $user->id,
-                        'name' => $user->name,
-                        'email' => $user->email,
-                        'role' => $user->role,
-                    ]
-                ]);
-            }
+            // Delete any existing tokens for this user to avoid duplicates
+            $user->tokens()->delete();
 
             // Create new token
             $token = $user->createToken('valet-api');
@@ -67,6 +53,7 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role,
+                    'employee_id' => $user->employee_id,
                 ]
             ]);
 
@@ -79,7 +66,8 @@ class AuthController extends Controller
         } catch (\Exception $e) {
             return response()->json([
                 'success' => false,
-                'message' => 'Login failed'
+                'message' => 'Login failed',
+                'error' => $e->getMessage()
             ], 500);
         }
     }
@@ -129,5 +117,4 @@ class AuthController extends Controller
             ]
         ]);
     }
-    //
 }
