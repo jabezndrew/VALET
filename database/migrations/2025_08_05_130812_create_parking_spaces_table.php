@@ -16,11 +16,12 @@ return new class extends Migration
             $table->integer('sensor_id')->unique();
             $table->boolean('is_occupied')->default(false);
             $table->integer('distance_cm')->nullable();
-            $table->string('location')->nullable(); // For future use
+            $table->string('floor_level')->default('4th Floor');
             $table->timestamps();
-            
+
             $table->index('sensor_id');
             $table->index('is_occupied');
+            $table->index('floor_level');
         });
     }
 

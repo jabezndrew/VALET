@@ -46,8 +46,6 @@ class ParkingDashboard extends Component
     public function loadParkingData()
     {
         try {
-            $this->ensureTableExists();
-            
             $this->allSpaces = DB::table('parking_spaces')
                 ->orderBy('sensor_id')
                 ->get()
@@ -63,7 +61,6 @@ class ParkingDashboard extends Component
             $this->updateStatistics();
             $this->updateFloorStats();
             
-            // FIXED: Also refresh modal data if modal is open
             if ($this->showModal && $this->selectedFloor) {
                 $this->loadSelectedFloorData();
             }
@@ -88,7 +85,7 @@ class ParkingDashboard extends Component
         $this->showModal = true;
     }
 
-    // VERIFY VEHICLE METHODS - EXACT COPY FROM VEHICLEMANAGER
+    // VERIFY VEHICLE METHODS
     public function openVerifyModal()
     {
         if (auth()->user()->role === 'user') {
@@ -136,7 +133,7 @@ class ParkingDashboard extends Component
             return;
         }
 
-        // Use simplified status logic - only Active or Inactive
+        // Status check for vehicles
         if (!$vehicle->is_active) {
             $this->verifyResult = [
                 'status' => 'Inactive',
@@ -369,24 +366,6 @@ class ParkingDashboard extends Component
             return 'Vehicle Present';
         }
         return 'Space Available';
-    }
-
-    private function ensureTableExists()
-    {
-        DB::statement("CREATE TABLE IF NOT EXISTS parking_spaces (
-            id INT AUTO_INCREMENT PRIMARY KEY,
-            sensor_id INT UNIQUE NOT NULL,
-            is_occupied BOOLEAN NOT NULL DEFAULT FALSE,
-            distance_cm INT,
-            floor_level VARCHAR(255) DEFAULT '4th Floor',
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB");
-        
-        $columnExists = DB::select("SHOW COLUMNS FROM parking_spaces LIKE 'floor_level'");
-        if (empty($columnExists)) {
-            DB::statement("ALTER TABLE parking_spaces ADD COLUMN floor_level VARCHAR(255) DEFAULT '4th Floor' AFTER distance_cm");
-        }
     }
 
     public function render()

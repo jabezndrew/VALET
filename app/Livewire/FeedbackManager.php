@@ -35,11 +35,6 @@ class FeedbackManager extends Component
         'issues' => 'nullable|array',
     ];
 
-    public function mount()
-    {
-        $this->ensureFeedbackTableExists();
-    }
-
     public function render()
     {
         $feedbacks = $this->getFeedbacks();
@@ -241,29 +236,5 @@ class FeedbackManager extends Component
                 ->pluck('count', 'type')
                 ->toArray(),
         ];
-    }
-
-    private function ensureFeedbackTableExists(): void
-    {
-        DB::statement("CREATE TABLE IF NOT EXISTS feedbacks (
-            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            user_id BIGINT UNSIGNED NOT NULL,
-            type ENUM('general', 'bug', 'feature', 'parking') NOT NULL,
-            message TEXT NOT NULL,
-            rating INT NULL,
-            email VARCHAR(255) NULL,
-            issues JSON NULL,
-            device_info JSON NULL,
-            status ENUM('pending', 'reviewed', 'resolved') DEFAULT 'pending',
-            admin_response TEXT NULL,
-            admin_id BIGINT UNSIGNED NULL,
-            responded_at TIMESTAMP NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX idx_user_id (user_id),
-            INDEX idx_status (status),
-            INDEX idx_type (type),
-            FOREIGN KEY (user_id) REFERENCES sys_users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB");
     }
 }

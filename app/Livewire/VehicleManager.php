@@ -45,11 +45,6 @@ class VehicleManager extends Component
         'expires_at' => 'nullable|date|after_or_equal:today',
     ];
 
-    public function mount()
-    {
-        $this->ensureVehicleTableExists();
-    }
-
     public function render()
     {
         $vehicles = $this->getVehicles();
@@ -293,8 +288,6 @@ class VehicleManager extends Component
         }
     }
 
-    // REMOVED: Export functionality completely removed
-
     // SIMPLIFIED: Only Active/Inactive status
     public function getVehicleStatus($vehicle)
     {
@@ -508,37 +501,5 @@ class VehicleManager extends Component
         }
 
         return $stats;
-    }
-
-    private function ensureVehicleTableExists()
-    {
-        // Create table if it doesn't exist (REMOVED MOTORCYCLE)
-        DB::statement("CREATE TABLE IF NOT EXISTS vehicles (
-            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            plate_number VARCHAR(20) UNIQUE NOT NULL,
-            vehicle_make VARCHAR(50) NOT NULL,
-            vehicle_model VARCHAR(50) NOT NULL,
-            vehicle_color VARCHAR(30) NOT NULL,
-            vehicle_type ENUM('car', 'suv', 'truck', 'van') DEFAULT 'car',
-            rfid_tag VARCHAR(50) UNIQUE NOT NULL,
-            owner_id BIGINT UNSIGNED NOT NULL,
-            is_active BOOLEAN DEFAULT TRUE,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX idx_plate_number (plate_number),
-            INDEX idx_rfid_tag (rfid_tag),
-            INDEX idx_owner_id (owner_id),
-            FOREIGN KEY (owner_id) REFERENCES sys_users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB");
-
-        // Add expires_at column if it doesn't exist
-        if (!$this->columnExists('vehicles', 'expires_at')) {
-            try {
-                DB::statement("ALTER TABLE vehicles ADD COLUMN expires_at DATETIME NULL AFTER owner_id");
-                DB::statement("ALTER TABLE vehicles ADD INDEX idx_expires_at (expires_at)");
-            } catch (\Exception $e) {
-                // Column might already exist or other issue, continue
-            }
-        }
     }
 }
