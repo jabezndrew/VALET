@@ -10,8 +10,10 @@ return new class extends Migration
      * Run the migrations.
      */
     public function up(): void
-    {
-        Schema::create('feedbacks', function (Blueprint $table) {
+    { 
+        if (!Schema::hasTable('feedbacks'))
+        {
+            Schema::create('feedbacks', function (Blueprint $table) {
             $table->id();
             $table->unsignedBigInteger('user_id');
             $table->enum('type', ['general', 'bug', 'feature', 'parking']);
@@ -32,6 +34,8 @@ return new class extends Migration
             $table->foreign('user_id')->references('id')->on('sys_users')->onDelete('cascade');
             $table->foreign('admin_id')->references('id')->on('sys_users')->onDelete('set null');
         });
+        }
+        
     }
 
     /**

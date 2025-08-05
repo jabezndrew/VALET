@@ -11,6 +11,10 @@ return new class extends Migration
      */
     public function up(): void
     {
+        if (Schema::hasTable('pending_accounts')) {
+            return; 
+        }
+        
         Schema::create('pending_accounts', function (Blueprint $table) {
             $table->id();
             $table->string('name');

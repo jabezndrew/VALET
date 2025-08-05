@@ -11,7 +11,8 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('parking_spaces', function (Blueprint $table) {
+        if (!Schema::hasTable('parking_spaces')){
+            Schema::create('parking_spaces', function (Blueprint $table) {
             $table->id();
             $table->integer('sensor_id')->unique();
             $table->boolean('is_occupied')->default(false);
@@ -23,6 +24,8 @@ return new class extends Migration
             $table->index('is_occupied');
             $table->index('floor_level');
         });
+        }
+        
     }
 
     /**
