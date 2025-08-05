@@ -195,10 +195,10 @@ class ParkingDashboard extends Component
     public function getSensorDisplayName($sensorId)
     {
         $mapping = [
-            1 => 'B1',
-            2 => 'B2', 
-            3 => 'B3',
-            4 => 'B4',
+            1 => 'B4',
+            2 => 'B3', 
+            3 => 'B2',
+            4 => 'B1',
             5 => 'C1'
         ];
         
