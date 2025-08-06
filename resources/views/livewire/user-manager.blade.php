@@ -1,14 +1,11 @@
 <div>
-    <!-- Alert container for dynamic alerts -->
     <div id="alert-container"></div>
 
     <div class="container mt-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2 class="fw-bold mb-1">
-                    User Management
-                </h2>
+                <h2 class="fw-bold mb-1">User Management</h2>
                 <p class="text-muted mb-0">Manage system users and their access</p>
             </div>
             <div class="d-flex gap-2">
@@ -18,6 +15,7 @@
                 </a>
                 @endif
                 <button wire:click="openModal" class="btn btn-valet-charcoal">
+                    <i class="fas fa-{{ auth()->user()->isAdmin() ? 'plus' : 'paper-plane' }} me-1"></i>
                     {{ auth()->user()->isAdmin() ? 'Add New User' : 'Request New User' }}
                 </button>
             </div>
@@ -114,26 +112,20 @@
                                         </div>
                                     </td>
                                     <td>
-                                        <span class="badge 
-                                            @switch($user->role)
-                                                @case('admin') bg-danger @break
-                                                @case('ssd') @break
-                                                @case('security') bg-warning @break
-                                                @default
-                                            @endswitch
-                                        " style="
-                                            @switch($user->role)
-                                                @case('ssd') background-color: #3A3A3C; color: white; @break
-                                                @default background-color: #A0A0A0; color: white;
-                                            @endswitch
-                                        ">
+                                        <span class="badge {{ match($user->role) {
+                                            'admin' => 'bg-danger',
+                                            'ssd' => 'bg-valet-charcoal text-white',
+                                            'security' => 'bg-warning',
+                                            default => 'bg-valet-gray'
+                                        } }}">
                                             {{ $user->getRoleDisplayName() }}
                                         </span>
                                     </td>
                                     <td class="font-monospace">{{ $user->employee_id ?: '-' }}</td>
                                     <td>{{ $user->department ?: '-' }}</td>
                                     <td>
-                                        <span class="badge {{ $user->is_active ? 'badge-active' : 'badge-inactive' }}">
+                                        <span class="badge {{ $user->is_active ? 'bg-success' : 'bg-danger' }}">
+                                            <i class="fas fa-{{ $user->is_active ? 'check-circle' : 'times-circle' }} me-1"></i>
                                             {{ $user->is_active ? 'Active' : 'Inactive' }}
                                         </span>
                                     </td>
@@ -145,17 +137,20 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <button wire:click="openModal({{ $user->id }})" 
-                                                    class="btn btn-outline-secondary">
+                                                    class="btn btn-outline-secondary"
+                                                    title="Edit user">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             <button wire:click="toggleStatus({{ $user->id }})" 
-                                                    class="btn btn-outline-{{ $user->is_active ? 'warning' : 'success' }}">
+                                                    class="btn btn-outline-{{ $user->is_active ? 'warning' : 'success' }}"
+                                                    title="{{ $user->is_active ? 'Deactivate' : 'Activate' }} user">
                                                 <i class="fas fa-{{ $user->is_active ? 'pause' : 'play' }}"></i>
                                             </button>
                                             @if($user->id !== auth()->id())
                                             <button wire:click="delete({{ $user->id }})" 
-                                                    wire:confirm="Are you sure you want to delete this user?"
-                                                    class="btn btn-outline-danger">
+                                                    wire:confirm="Are you sure you want to delete this user? This action cannot be undone."
+                                                    class="btn btn-outline-danger"
+                                                    title="Delete user">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                             @endif
@@ -167,7 +162,13 @@
                                     <td colspan="7" class="text-center py-5">
                                         <i class="fas fa-users text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
                                         <h5 class="text-muted">No users found</h5>
-                                        <p class="text-muted">Try adjusting your search filters</p>
+                                        <p class="text-muted">
+                                            @if($search || $roleFilter !== 'all' || $statusFilter !== 'all')
+                                                Try adjusting your search filters
+                                            @else
+                                                Start by adding your first user
+                                            @endif
+                                        </p>
                                     </td>
                                 </tr>
                             @endforelse
@@ -204,7 +205,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Email Address</label>
                                     <input wire:model="email" type="email" class="form-control" 
-                                           placeholder="e.g. john.doe@gmail.com" required>
+                                           placeholder="e.g. john.doe@valet.com" required>
                                     @error('email') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -217,7 +218,7 @@
                                         Password {{ $editingId ? '(Leave blank to keep current)' : '' }}
                                     </label>
                                     <input wire:model="password" type="password" class="form-control" 
-                                           placeholder="Password" {{ $isPasswordRequired ? 'required' : '' }}>
+                                           placeholder="Password" {{ !$editingId ? 'required' : '' }}>
                                     @error('password') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -226,6 +227,7 @@
                                     <label class="form-label fw-bold">Confirm Password</label>
                                     <input wire:model="password_confirmation" type="password" class="form-control" 
                                            placeholder="Confirm Password">
+                                    @error('password_confirmation') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
                         </div>
@@ -245,9 +247,9 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">User ID <small class="text-muted">(Optional)</small></label>
+                                    <label class="form-label fw-bold">Employee ID <small class="text-muted">(Optional)</small></label>
                                     <input wire:model="employee_id" type="text" class="form-control" 
-                                           placeholder="e.g. USER001, STU001, EMP001">
+                                           placeholder="e.g. EMP001, STU2024001">
                                     @error('employee_id') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -256,35 +258,43 @@
                         <div class="row">
                             <div class="col-md-8">
                                 <div class="mb-3">
-                                    <label class="form-label fw-bold">Category <small class="text-muted">(Optional)</small></label>
+                                    <label class="form-label fw-bold">Department <small class="text-muted">(Optional)</small></label>
                                     <input wire:model="department" type="text" class="form-control" 
-                                           placeholder="e.g. Student, Parent, IT Department, General User">
+                                           placeholder="e.g. IT Department, Computer Studies, Security">
                                     @error('department') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
                             <div class="col-md-4">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Status</label>
-                                    <div class="form-check form-switch">
+                                    <div class="form-check form-switch mt-2">
                                         <input wire:model="is_active" class="form-check-input" 
                                                type="checkbox" id="is_active">
                                         <label class="form-check-label" for="is_active">
-                                            {{ $is_active ? 'Active' : 'Inactive' }}
+                                            <span class="badge {{ $is_active ? 'bg-success' : 'bg-danger' }}">
+                                                {{ $is_active ? 'Active' : 'Inactive' }}
+                                            </span>
                                         </label>
                                     </div>
                                 </div>
                             </div>
                         </div>
+
+                        @if(!auth()->user()->isAdmin())
+                        <div class="alert alert-info">
+                            <i class="fas fa-info-circle me-2"></i>
+                            <strong>Note:</strong> As an SSD user, this account will be submitted for admin approval before activation.
+                        </div>
+                        @endif
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
                         <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled">
-                            <span wire:loading.remove">
+                            <span wire:loading.remove>
                                 {{ $editingId ? 'Update User' : (auth()->user()->isAdmin() ? 'Create User' : 'Submit for Approval') }}
                             </span>
                             <span wire:loading>
-                                <i class="fas fa-spinner fa-spin me-2"></i>
-                                Saving...
+                                <i class="fas fa-spinner fa-spin me-2"></i>Saving...
                             </span>
                         </button>
                     </div>
@@ -295,7 +305,6 @@
     <div class="modal-backdrop fade show"></div>
     @endif
 
-    <!-- Alert handling script -->
     <script>
         document.addEventListener('livewire:init', () => {
             Livewire.on('show-alert', (event) => {

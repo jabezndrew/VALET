@@ -7,7 +7,7 @@ use Illuminate\Support\Facades\DB;
 
 class FeedbackManager extends Component
 {
-    // Form properties - MOBILE SCHEMA
+    // Form properties
     public $type = '';
     public $message = '';
     public $rating = null;
@@ -18,10 +18,8 @@ class FeedbackManager extends Component
     public $statusFilter = 'all';
     public $typeFilter = 'all';
     
-    // Submit feedback modal (for non-admin users)
+    // Modal properties
     public $showModal = false;
-    
-    // Admin response modal
     public $showResponseModal = false;
     public $selectedFeedbackId = null;
     public $adminResponse = '';
@@ -35,18 +33,39 @@ class FeedbackManager extends Component
         'issues' => 'nullable|array',
     ];
 
+    protected $messages = [
+        'type.required' => 'Please select a feedback type.',
+        'message.required' => 'Please enter your feedback message.',
+        'message.max' => 'Feedback message cannot exceed 2000 characters.',
+        'rating.min' => 'Rating must be at least 1 star.',
+        'rating.max' => 'Rating cannot exceed 5 stars.',
+    ];
+
     public function render()
     {
-        $feedbacks = $this->getFeedbacks();
-        $stats = $this->getFeedbackStats();
-        
         return view('livewire.feedback-manager', [
-            'feedbacks' => $feedbacks,
-            'stats' => $stats
+            'feedbacks' => $this->getFeedbacks(),
+            'stats' => $this->getFeedbackStats()
         ])->layout('layouts.app');
     }
 
-    // UPDATED: Clear rating when type changes from general to something else
+    // Computed properties
+    public function getCanSubmitFeedbackProperty()
+    {
+        return !auth()->user()->isAdmin();
+    }
+
+    public function getCanManageFeedbackProperty()
+    {
+        return auth()->user()->isAdmin();
+    }
+
+    public function getIsOwnFeedbackOnlyProperty()
+    {
+        return !auth()->user()->isAdmin();
+    }
+
+    // Form handlers
     public function updatedType($value)
     {
         if ($value !== 'general') {
@@ -54,115 +73,108 @@ class FeedbackManager extends Component
         }
     }
 
-    // Modal methods for submit feedback
     public function openModal()
     {
-        // FIXED: Only admins cannot submit feedback, SSD can submit
-        if (!auth()->user()->isAdmin()) {
-            $this->resetForm();
-            $this->showModal = true;
+        if (!$this->canSubmitFeedback) {
+            $this->dispatch('show-alert', type: 'error', message: 'Administrators cannot submit feedback.');
+            return;
         }
+        
+        $this->resetForm();
+        $this->showModal = true;
     }
 
     public function closeModal()
     {
-        $this->showModal = false;
+        $this->reset(['showModal']);
         $this->resetForm();
-    }
-
-    private function resetForm()
-    {
-        $this->type = '';
-        $this->message = '';
-        $this->rating = null;
-        $this->email = '';
-        $this->issues = [];
-        $this->resetErrorBag();
     }
 
     public function submitFeedback()
     {
-        // FIXED: Prevent only admins from submitting feedback, allow SSD
-        if (auth()->user()->isAdmin()) {
+        if (!$this->canSubmitFeedback) {
             $this->dispatch('show-alert', type: 'error', message: 'Administrators cannot submit feedback.');
             return;
         }
 
         $this->validate();
 
-        // UPDATED: Only save rating for general feedback
-        $ratingToSave = ($this->type === 'general') ? $this->rating : null;
+        try {
+            DB::table('feedbacks')->insert([
+                'user_id' => auth()->id(),
+                'type' => $this->type,
+                'message' => $this->message,
+                'rating' => $this->type === 'general' ? $this->rating : null,
+                'email' => $this->email ?: null,
+                'issues' => json_encode($this->issues ?? []),
+                'device_info' => json_encode($this->getDeviceInfo()),
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
 
-        DB::table('feedbacks')->insert([
-            'user_id' => auth()->id(),
-            'type' => $this->type,
-            'message' => $this->message,
-            'rating' => $ratingToSave,
-            'email' => $this->email,
-            'issues' => json_encode($this->issues ?? []),
-            'device_info' => json_encode([
-                'platform' => 'web',
-                'version' => 'browser',
-                'model' => request()->header('User-Agent'),
-                'appVersion' => '1.0.0',
-            ]),
-            'status' => 'pending',
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
-        $this->closeModal();
-        $this->dispatch('show-alert', type: 'success', message: 'Thank you for your feedback! We appreciate your input.');
+            $this->closeModal();
+            $this->dispatch('show-alert', type: 'success', message: 'Thank you for your feedback! We appreciate your input.');
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to submit feedback. Please try again.');
+        }
     }
 
+    // Admin management methods
     public function quickUpdateStatus($feedbackId, $status)
     {
-        // FIXED: Only admins can manage feedback, not SSD
-        if (!auth()->user()->isAdmin()) {
+        if (!$this->canManageFeedback) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
 
-        DB::table('feedbacks')
-            ->where('id', $feedbackId)
-            ->update([
-                'status' => $status,
-                'updated_at' => now(),
-            ]);
+        if (!in_array($status, ['pending', 'reviewed', 'resolved'])) {
+            $this->dispatch('show-alert', type: 'error', message: 'Invalid status.');
+            return;
+        }
 
-        $this->dispatch('show-alert', type: 'success', message: 'Feedback status updated successfully.');
+        try {
+            DB::table('feedbacks')
+                ->where('id', $feedbackId)
+                ->update([
+                    'status' => $status,
+                    'updated_at' => now(),
+                ]);
+
+            $this->dispatch('show-alert', type: 'success', message: 'Feedback status updated successfully.');
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to update status.');
+        }
     }
 
     public function openResponseModal($feedbackId)
     {
-        // FIXED: Only admins can manage feedback, not SSD
-        if (!auth()->user()->isAdmin()) {
+        if (!$this->canManageFeedback) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
 
-        $this->selectedFeedbackId = $feedbackId;
-        $feedback = DB::table('feedbacks')->where('id', $feedbackId)->first();
+        $feedback = DB::table('feedbacks')->find($feedbackId);
         
-        if ($feedback) {
-            $this->adminResponse = $feedback->admin_response ?? '';
-            $this->newStatus = $feedback->status;
-            $this->showResponseModal = true;
+        if (!$feedback) {
+            $this->dispatch('show-alert', type: 'error', message: 'Feedback not found.');
+            return;
         }
+
+        $this->selectedFeedbackId = $feedbackId;
+        $this->adminResponse = $feedback->admin_response ?? '';
+        $this->newStatus = $feedback->status;
+        $this->showResponseModal = true;
     }
 
     public function closeResponseModal()
     {
-        $this->showResponseModal = false;
-        $this->selectedFeedbackId = null;
-        $this->adminResponse = '';
-        $this->newStatus = '';
+        $this->reset(['showResponseModal', 'selectedFeedbackId', 'adminResponse', 'newStatus']);
     }
 
     public function saveAdminResponse()
     {
-        // FIXED: Only admins can manage feedback, not SSD
-        if (!auth()->user()->isAdmin() || !$this->selectedFeedbackId) {
+        if (!$this->canManageFeedback || !$this->selectedFeedbackId) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
@@ -172,37 +184,113 @@ class FeedbackManager extends Component
             'adminResponse' => 'nullable|string|max:1000',
         ]);
 
-        DB::table('feedbacks')
-            ->where('id', $this->selectedFeedbackId)
-            ->update([
-                'status' => $this->newStatus,
-                'admin_response' => $this->adminResponse,
-                'admin_id' => auth()->id(),
-                'responded_at' => now(),
-                'updated_at' => now(),
-            ]);
+        try {
+            DB::table('feedbacks')
+                ->where('id', $this->selectedFeedbackId)
+                ->update([
+                    'status' => $this->newStatus,
+                    'admin_response' => $this->adminResponse ?: null,
+                    'admin_id' => auth()->id(),
+                    'responded_at' => now(),
+                    'updated_at' => now(),
+                ]);
 
-        $this->closeResponseModal();
-        $this->dispatch('show-alert', type: 'success', message: 'Feedback updated successfully.');
+            $this->closeResponseModal();
+            $this->dispatch('show-alert', type: 'success', message: 'Feedback updated successfully.');
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to update feedback.');
+        }
+    }
+
+    // Helper methods for display
+    public function getStatusBadgeClass($status)
+    {
+        return match($status) {
+            'pending' => 'badge bg-warning text-dark',
+            'reviewed' => 'badge bg-info',
+            'resolved' => 'badge bg-success',
+            default => 'badge bg-secondary'
+        };
+    }
+
+    public function getStatusIcon($status)
+    {
+        return match($status) {
+            'pending' => 'fas fa-clock',
+            'reviewed' => 'fas fa-eye',
+            'resolved' => 'fas fa-check-circle',
+            default => 'fas fa-question-circle'
+        };
+    }
+
+    public function getTypeBadgeClass($type)
+    {
+        return match($type) {
+            'general' => 'badge bg-secondary',
+            'bug' => 'badge bg-danger',
+            'feature' => 'badge bg-primary',
+            'parking' => 'badge bg-success',
+            default => 'badge bg-light text-dark'
+        };
+    }
+
+    public function getTypeDisplayName($type)
+    {
+        return match($type) {
+            'general' => 'General Feedback',
+            'bug' => 'Bug Report',
+            'feature' => 'Feature Request',
+            'parking' => 'Parking Issue',
+            default => ucfirst($type)
+        };
+    }
+
+    public function getRelativeTime($timestamp)
+    {
+        return \Carbon\Carbon::parse($timestamp)->diffForHumans();
+    }
+
+    public function canQuickUpdate($feedback)
+    {
+        return $this->canManageFeedback && $feedback->status !== 'resolved';
+    }
+
+    // Private helper methods
+    private function resetForm()
+    {
+        $this->reset(['type', 'message', 'rating', 'email', 'issues']);
+        $this->resetErrorBag();
+    }
+
+    private function getDeviceInfo()
+    {
+        return [
+            'platform' => 'web',
+            'version' => 'browser',
+            'model' => request()->header('User-Agent'),
+            'appVersion' => '1.0.0',
+            'ip_address' => request()->ip(),
+            'submitted_at' => now()->toISOString(),
+        ];
     }
 
     private function getFeedbacks()
     {
         $query = DB::table('feedbacks')
             ->leftJoin('sys_users', 'feedbacks.user_id', '=', 'sys_users.id')
-            ->select(
+            ->select([
                 'feedbacks.*',
                 'sys_users.name as user_name',
                 'sys_users.role as user_role'
-            );
+            ]);
 
-        // FIXED: Non-admin users (including SSD) can only see their own feedback
-        if (!auth()->user()->isAdmin()) {
+        // Permission-based filtering
+        if ($this->isOwnFeedbackOnly) {
             $query->where('feedbacks.user_id', auth()->id());
         }
 
-        // FIXED: Apply filters (admin only, not SSD)
-        if (auth()->user()->isAdmin()) {
+        // Admin filters
+        if ($this->canManageFeedback) {
             if ($this->statusFilter !== 'all') {
                 $query->where('feedbacks.status', $this->statusFilter);
             }
@@ -219,22 +307,32 @@ class FeedbackManager extends Component
     {
         $baseQuery = DB::table('feedbacks');
         
-        // FIXED: Non-admin users (including SSD) see only their own stats
-        if (!auth()->user()->isAdmin()) {
+        if ($this->isOwnFeedbackOnly) {
             $baseQuery->where('user_id', auth()->id());
         }
 
+        // Single query for all stats
+        $stats = $baseQuery->selectRaw("
+            COUNT(*) as total,
+            COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
+            COUNT(CASE WHEN status = 'reviewed' THEN 1 END) as reviewed,
+            COUNT(CASE WHEN status = 'resolved' THEN 1 END) as resolved
+        ")->first();
+
+        // Type breakdown in separate efficient query
+        $typeStats = (clone $baseQuery)
+            ->select('type')
+            ->selectRaw('COUNT(*) as count')
+            ->groupBy('type')
+            ->pluck('count', 'type')
+            ->toArray();
+
         return [
-            'total' => (clone $baseQuery)->count(),
-            'pending' => (clone $baseQuery)->where('status', 'pending')->count(),
-            'reviewed' => (clone $baseQuery)->where('status', 'reviewed')->count(),
-            'resolved' => (clone $baseQuery)->where('status', 'resolved')->count(),
-            'by_type' => (clone $baseQuery)
-                ->select('type')
-                ->selectRaw('COUNT(*) as count')
-                ->groupBy('type')
-                ->pluck('count', 'type')
-                ->toArray(),
+            'total' => $stats->total,
+            'pending' => $stats->pending,
+            'reviewed' => $stats->reviewed,
+            'resolved' => $stats->resolved,
+            'by_type' => $typeStats,
         ];
     }
 }

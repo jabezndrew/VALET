@@ -1,14 +1,10 @@
 <div>
-    <!-- Alert container for dynamic alerts -->
     <div id="alert-container"></div>
-
     <div class="container mt-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
-                <h2 class="fw-bold mb-1">
-                    Vehicle Management
-                </h2>
+                <h2 class="fw-bold mb-1">Vehicle Management</h2>
                 <p class="text-muted mb-0">Manage registered vehicles and RFID tags</p>
             </div>
             <div class="d-flex gap-2">
@@ -19,7 +15,7 @@
                 @endif
                 @if(auth()->user()->canManageCars())
                 <button wire:click="openModal" class="btn btn-valet-charcoal">
-                    Register Vehicle
+                    <i class="fas fa-plus me-1"></i> Register Vehicle
                 </button>
                 @endif
             </div>
@@ -46,16 +42,16 @@
             <div class="col-md-3">
                 <div class="card card-inactive">
                     <div class="card-body text-center">
-                        <h3>{{ $stats['expired'] }}</h3>
-                        <p class="mb-0">Expired</p>
+                        <h3>{{ $stats['inactive'] }}</h3>
+                        <p class="mb-0">Inactive</p>
                     </div>
                 </div>
             </div>
             <div class="col-md-3">
                 <div class="card card-types">
                     <div class="card-body text-center">
-                        <h3>{{ $stats['expiring_soon'] }}</h3>
-                        <p class="mb-0">Expiring Soon</p>
+                        <h3>{{ $stats['expired'] }}</h3>
+                        <p class="mb-0">Expired</p>
                     </div>
                 </div>
             </div>
@@ -67,15 +63,14 @@
                 <div class="row">
                     <div class="col-md-4">
                         <input wire:model.live="search" type="text" class="form-control" 
-                               placeholder="Search by plate number, make, model, RFID, or owner...">
+                               placeholder="Search by plate, make, model, RFID, or owner...">
                     </div>
                     <div class="col-md-2">
                         <select wire:model.live="statusFilter" class="form-select">
                             <option value="all">All Status</option>
                             <option value="active">Active</option>
-                            <option value="expired">Expired</option>
-                            <option value="expiring_soon">Expiring Soon</option>
                             <option value="inactive">Inactive</option>
+                            <option value="expired">Expired</option>
                         </select>
                     </div>
                     <div class="col-md-2">
@@ -90,7 +85,7 @@
                     <div class="col-md-2">
                         <select wire:model.live="ownerRoleFilter" class="form-select">
                             <option value="all">All Users</option>
-                            <option value="user">Students/Parents</option>
+                            <option value="user">Students</option>
                             <option value="security">Security</option>
                             <option value="ssd">SSD Personnel</option>
                             <option value="admin">Admin</option>
@@ -121,6 +116,10 @@
                         </thead>
                         <tbody>
                             @forelse($vehicles as $vehicle)
+                                @php
+                                    $expiryDate = $vehicle->expires_at ? \Carbon\Carbon::parse($vehicle->expires_at) : null;
+                                    $isExpired = $expiryDate && $expiryDate->isPast();
+                                @endphp
                                 <tr class="{{ $this->getRowClass($vehicle) }}">
                                     <td class="fw-bold">{{ $vehicle->plate_number }}</td>
                                     <td>
@@ -128,7 +127,7 @@
                                             <strong>{{ $vehicle->vehicle_make }} {{ $vehicle->vehicle_model }}</strong>
                                             <br>
                                             <small class="text-muted">
-                                                <span class="badge" style="background-color: #A0A0A0; color: white;">{{ ucfirst($vehicle->vehicle_type) }}</span>
+                                                <span class="badge bg-valet-gray">{{ ucfirst($vehicle->vehicle_type) }}</span>
                                                 {{ $vehicle->vehicle_color }}
                                             </small>
                                         </div>
@@ -136,30 +135,23 @@
                                     <td>
                                         {{ $vehicle->owner_name }}
                                         <br>
-                                        <small class="badge 
-                                            @switch($vehicle->owner_role)
-                                                @case('admin') bg-danger @break
-                                                @case('ssd') @break
-                                                @case('security') bg-warning @break
-                                                @default
-                                            @endswitch
-                                        " style="
-                                            @switch($vehicle->owner_role)
-                                                @case('ssd') background-color: #3A3A3C; color: white; @break
-                                                @default background-color: #A0A0A0; color: white;
-                                            @endswitch
-                                        ">
+                                        <span class="badge {{ match($vehicle->owner_role) {
+                                            'admin' => 'bg-danger',
+                                            'ssd' => 'bg-valet-charcoal text-white',
+                                            'security' => 'bg-warning',
+                                            default => 'bg-valet-gray'
+                                        } }}">
                                             {{ ucfirst($vehicle->owner_role) }}
-                                        </small>
+                                        </span>
                                     </td>
                                     <td class="font-monospace">{{ $vehicle->rfid_tag }}</td>
                                     <td>
                                         @if($vehicle->expires_at)
                                             <div>
-                                                {{ \Carbon\Carbon::parse($vehicle->expires_at)->format('M j, Y') }}
+                                                {{ $expiryDate->format('M j, Y') }}
                                                 <br>
-                                                <small class="text-muted">
-                                                    {{ $this->getDaysUntilExpiry($vehicle->expires_at) }}
+                                                <small class="text-{{ $isExpired ? 'danger' : 'muted' }}">
+                                                    {{ $this->getExpiryText($vehicle->expires_at) }}
                                                 </small>
                                             </div>
                                         @else
@@ -167,7 +159,8 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge {{ $this->getStatusBadgeClass($vehicle) }}">
+                                        <span class="{{ $this->getStatusBadgeClass($vehicle) }}">
+                                            <i class="{{ $this->getStatusIcon($vehicle) }} me-1"></i>
                                             {{ $this->getVehicleStatus($vehicle) }}
                                         </span>
                                     </td>
@@ -180,23 +173,26 @@
                                     <td>
                                         <div class="btn-group btn-group-sm">
                                             <button wire:click="openModal({{ $vehicle->id }})" 
-                                                    class="btn btn-outline-secondary">
+                                                    class="btn btn-outline-secondary"
+                                                    title="Edit vehicle">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            @if($this->isExpired($vehicle->expires_at))
+                                            @if($isExpired)
                                                 <button wire:click="renewVehicle({{ $vehicle->id }})" 
                                                         class="btn btn-outline-success"
-                                                        title="Renew for next semester">
+                                                        title="Renew vehicle">
                                                     <i class="fas fa-redo"></i>
                                                 </button>
                                             @endif
                                             <button wire:click="toggleStatus({{ $vehicle->id }})" 
-                                                    class="btn btn-outline-{{ $vehicle->is_active ? 'warning' : 'success' }}">
+                                                    class="btn btn-outline-{{ $vehicle->is_active ? 'warning' : 'success' }}"
+                                                    title="{{ $vehicle->is_active ? 'Deactivate' : 'Activate' }} vehicle">
                                                 <i class="fas fa-{{ $vehicle->is_active ? 'pause' : 'play' }}"></i>
                                             </button>
                                             <button wire:click="delete({{ $vehicle->id }})" 
                                                     wire:confirm="Are you sure you want to delete this vehicle?"
-                                                    class="btn btn-outline-danger">
+                                                    class="btn btn-outline-danger"
+                                                    title="Delete vehicle">
                                                 <i class="fas fa-trash"></i>
                                             </button>
                                         </div>
@@ -207,8 +203,14 @@
                                 <tr>
                                     <td colspan="{{ auth()->user()->canManageCars() ? '8' : '7' }}" class="text-center py-5">
                                         <i class="fas fa-car text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
-                                        <h5 class="text-muted">No vehicles registered</h5>
-                                        <p class="text-muted">Start by registering your first vehicle</p>
+                                        <h5 class="text-muted">No vehicles found</h5>
+                                        <p class="text-muted">
+                                            @if($search || $statusFilter !== 'all' || $typeFilter !== 'all' || $ownerRoleFilter !== 'all')
+                                                Try adjusting your filters
+                                            @else
+                                                Start by registering your first vehicle
+                                            @endif
+                                        </p>
                                     </td>
                                 </tr>
                             @endforelse
@@ -237,7 +239,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Plate Number</label>
                                     <input wire:model="plate_number" type="text" class="form-control" 
-                                           placeholder="e.g. ABC-1234, XYZ-9876" maxlength="20" required>
+                                           placeholder="e.g. ABC-1234" maxlength="20" required>
                                     @error('plate_number') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -250,13 +252,12 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Make</label>
                                     <input wire:model="vehicle_make" type="text" class="form-control" 
-                                           placeholder="e.g. Toyota, Honda, Mitsubishi" maxlength="50" required>
+                                           placeholder="e.g. Toyota, Honda" maxlength="50" required>
                                     @error('vehicle_make') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -264,12 +265,11 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Model</label>
                                     <input wire:model="vehicle_model" type="text" class="form-control" 
-                                           placeholder="e.g. Camry, Civic, Lancer" maxlength="50" required>
+                                           placeholder="e.g. Camry, Civic" maxlength="50" required>
                                     @error('vehicle_model') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
                         </div>
-
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -292,7 +292,6 @@
                                 </div>
                             </div>
                         </div>
-
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -313,7 +312,7 @@
                                     <label class="form-label fw-bold">Expiry Date</label>
                                     <input wire:model="expires_at" type="date" class="form-control" 
                                            min="{{ date('Y-m-d') }}">
-                                    <small class="text-muted">Leave blank for no expiry (staff vehicles)</small>
+                                    <small class="text-muted">Leave blank for no expiry</small>
                                     @error('expires_at') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -322,12 +321,11 @@
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
                         <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled">
-                            <span wire:loading.remove">
+                            <span wire:loading.remove>
                                 {{ $editingId ? 'Update Vehicle' : 'Register Vehicle' }}
                             </span>
                             <span wire:loading>
-                                <i class="fas fa-spinner fa-spin me-2"></i>
-                                Saving...
+                                <i class="fas fa-spinner fa-spin me-2"></i>Saving...
                             </span>
                         </button>
                     </div>
@@ -345,8 +343,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-search me-2"></i>
-                        Verify Vehicle
+                        <i class="fas fa-search me-2"></i>Verify Vehicle
                     </h5>
                     <button type="button" class="btn-close" wire:click="closeVerifyModal"></button>
                 </div>
@@ -358,13 +355,12 @@
                                wire:keydown.enter="verifyVehicle">
                         @error('verifyRfid') <div class="text-danger small">{{ $message }}</div> @enderror
                     </div>
-
                     @if($verifyResult)
                         <div class="alert alert-{{ $verifyResult['color'] }} mt-3">
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-{{ 
-                                    $verifyResult['status'] === 'ACTIVE' ? 'check-circle' : 
-                                    ($verifyResult['status'] === 'NOT_FOUND' ? 'times-circle' : 'exclamation-triangle') 
+                                    $verifyResult['status'] === 'Active' ? 'check-circle' : 
+                                    ($verifyResult['status'] === 'NOT FOUND' ? 'times-circle' : 'exclamation-triangle') 
                                 }} me-2"></i>
                                 <div>
                                     <strong>{{ $verifyResult['status'] }}</strong>
@@ -406,7 +402,6 @@
     <div class="modal-backdrop fade show"></div>
     @endif
 
-    <!-- Alert handling script -->
     <script>
         document.addEventListener('livewire:init', () => {
             Livewire.on('show-alert', (event) => {

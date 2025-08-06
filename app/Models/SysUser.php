@@ -37,6 +37,22 @@ class SysUser extends Authenticatable
         ];
     }
 
+    // Query Scopes
+    public function scopeActive($query)
+    {
+        return $query->where('is_active', true);
+    }
+
+    public function scopeInactive($query)
+    {
+        return $query->where('is_active', false);
+    }
+
+    public function scopeByRole($query, $role)
+    {
+        return $query->where('role', $role);
+    }
+
     // Role checking methods
     public function isAdmin(): bool
     {
@@ -63,13 +79,11 @@ class SysUser extends Authenticatable
         return $this->isSSD();
     }
 
-    // UPDATED: Allow both admin and SSD to manage users
     public function canManageUsers(): bool
     {
-        return $this->isSSD(); // This includes both ssd and admin
+        return $this->isSSD();
     }
 
-    // NEW: Only admin can approve pending accounts
     public function canApprovePendingAccounts(): bool
     {
         return $this->isAdmin();

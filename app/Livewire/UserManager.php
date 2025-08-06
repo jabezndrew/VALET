@@ -23,7 +23,6 @@ class UserManager extends Component
     // Edit mode
     public $editingId = null;
     public $showModal = false;
-    public $isPasswordRequired = true;
     
     // Filters
     public $search = '';
@@ -32,7 +31,7 @@ class UserManager extends Component
 
     protected function rules()
     {
-        $rules = [
+        $baseRules = [
             'name' => 'required|string|max:255',
             'email' => 'required|email|max:255|unique:sys_users,email,' . $this->editingId,
             'role' => 'required|in:user,security,ssd,admin',
@@ -41,13 +40,11 @@ class UserManager extends Component
             'is_active' => 'boolean',
         ];
 
-        if ($this->isPasswordRequired) {
-            $rules['password'] = ['required', 'confirmed', Password::defaults()];
-        } else {
-            $rules['password'] = ['nullable', 'confirmed', Password::defaults()];
-        }
-
-        return $rules;
+        $passwordRule = $this->editingId 
+            ? ['nullable', 'confirmed', Password::defaults()]
+            : ['required', 'confirmed', Password::defaults()];
+            
+        return array_merge($baseRules, ['password' => $passwordRule]);
     }
 
     public function mount()
@@ -59,14 +56,10 @@ class UserManager extends Component
 
     public function render()
     {
-        $users = $this->getUsers();
-        $stats = $this->getUserStats();
-        $pendingCount = $this->getPendingAccountsCount();
-        
         return view('livewire.user-manager', [
-            'users' => $users,
-            'stats' => $stats,
-            'pendingCount' => $pendingCount
+            'users' => $this->getUsers(),
+            'stats' => $this->getUserStats(),
+            'pendingCount' => $this->getPendingAccountsCount()
         ])->layout('layouts.app');
     }
 
@@ -76,19 +69,18 @@ class UserManager extends Component
             $user = SysUser::find($userId);
             if ($user) {
                 $this->editingId = $userId;
-                $this->name = $user->name;
-                $this->email = $user->email;
-                $this->role = $user->role;
-                $this->employee_id = $user->employee_id;
-                $this->department = $user->department;
-                $this->is_active = $user->is_active;
-                $this->isPasswordRequired = false;
-                $this->password = '';
-                $this->password_confirmation = '';
+                $this->fill([
+                    'name' => $user->name,
+                    'email' => $user->email,
+                    'role' => $user->role,
+                    'employee_id' => $user->employee_id ?? '',
+                    'department' => $user->department ?? '',
+                    'is_active' => $user->is_active,
+                ]);
+                $this->reset(['password', 'password_confirmation']);
             }
         } else {
             $this->resetForm();
-            $this->isPasswordRequired = true;
         }
         $this->showModal = true;
     }
@@ -104,66 +96,21 @@ class UserManager extends Component
         $this->validate();
 
         try {
-            $data = [
-                'name' => $this->name,
-                'email' => $this->email,
-                'role' => $this->role,
-                'employee_id' => $this->employee_id,
-                'department' => $this->department,
-                'is_active' => $this->is_active,
-            ];
-
-            if ($this->password) {
-                $data['password'] = Hash::make($this->password);
+            // Check admin protection before making changes
+            if ($this->editingId && !$this->is_active) {
+                $user = SysUser::find($this->editingId);
+                if ($user->isAdmin() && !$this->canDeactivateAdmin($this->editingId)) {
+                    $this->dispatch('show-alert', type: 'error', message: 'Cannot deactivate the last active admin.');
+                    return;
+                }
             }
 
-            if ($this->editingId) {
-                $user = SysUser::find($this->editingId);
-                
-                // Prevent deactivating the last admin
-                if ($user->isAdmin() && !$this->is_active) {
-                    $activeAdmins = SysUser::where('role', 'admin')
-                        ->where('is_active', true)
-                        ->where('id', '!=', $this->editingId)
-                        ->count();
-                    
-                    if ($activeAdmins == 0) {
-                        $this->dispatch('show-alert', type: 'error', message: 'Cannot deactivate the last active admin.');
-                        return;
-                    }
-                }
+            $data = $this->getUserData();
 
-                $user->update($data);
-                
-                // Revoke tokens if deactivating
-                if (!$this->is_active) {
-                    $user->tokens()->delete();
-                }
-                
-                $this->dispatch('show-alert', type: 'success', message: 'User updated successfully.');
+            if ($this->editingId) {
+                $this->updateUser($data);
             } else {
-                // NEW LOGIC: Admin creates directly, SSD creates as pending
-                if (auth()->user()->isAdmin()) {
-                    // Admin creates user directly
-                    SysUser::create($data);
-                    $this->dispatch('show-alert', type: 'success', message: 'User created successfully.');
-                } else {
-                    // SSD creates pending account
-                    DB::table('pending_accounts')->insert([
-                        'name' => $data['name'],
-                        'email' => $data['email'],
-                        'password' => $data['password'],
-                        'role' => $data['role'],
-                        'employee_id' => $data['employee_id'],
-                        'department' => $data['department'],
-                        'is_active' => $data['is_active'],
-                        'created_by' => auth()->id(),
-                        'status' => 'pending',
-                        'created_at' => now(),
-                        'updated_at' => now(),
-                    ]);
-                    $this->dispatch('show-alert', type: 'success', message: 'Account created and sent for admin approval.');
-                }
+                $this->createUser($data);
             }
 
             $this->closeModal();
@@ -177,23 +124,15 @@ class UserManager extends Component
         $user = SysUser::find($userId);
         if (!$user) return;
 
-        // Prevent deactivating the last admin
-        if ($user->isAdmin() && $user->is_active) {
-            $activeAdmins = SysUser::where('role', 'admin')
-                ->where('is_active', true)
-                ->where('id', '!=', $userId)
-                ->count();
-            
-            if ($activeAdmins == 0) {
-                $this->dispatch('show-alert', type: 'error', message: 'Cannot deactivate the last active admin.');
-                return;
-            }
+        // Check admin protection
+        if ($user->isAdmin() && $user->is_active && !$this->canDeactivateAdmin($userId)) {
+            $this->dispatch('show-alert', type: 'error', message: 'Cannot deactivate the last active admin.');
+            return;
         }
 
-        $user->is_active = !$user->is_active;
-        $user->save();
+        $user->update(['is_active' => !$user->is_active]);
 
-        // Revoke tokens if deactivating
+        // Revoke tokens on deactivation
         if (!$user->is_active) {
             $user->tokens()->delete();
         }
@@ -207,20 +146,14 @@ class UserManager extends Component
         $user = SysUser::find($userId);
         if (!$user) return;
 
-        // Prevent deleting the last admin
-        if ($user->isAdmin()) {
-            $adminCount = SysUser::where('role', 'admin')->where('is_active', true)->count();
-            if ($adminCount <= 1) {
-                $this->dispatch('show-alert', type: 'error', message: 'Cannot delete the last active admin.');
-                return;
-            }
+        // Check admin protection
+        if ($user->isAdmin() && !$this->canDeleteAdmin()) {
+            $this->dispatch('show-alert', type: 'error', message: 'Cannot delete the last active admin.');
+            return;
         }
 
         try {
-            // Revoke all tokens
             $user->tokens()->delete();
-            
-            // Delete user
             $user->delete();
             
             $this->dispatch('show-alert', type: 'success', message: 'User deleted successfully.');
@@ -229,16 +162,74 @@ class UserManager extends Component
         }
     }
 
+    // Helper methods
+    private function getUserData()
+    {
+        $data = [
+            'name' => $this->name,
+            'email' => $this->email,
+            'role' => $this->role,
+            'employee_id' => $this->employee_id ?: null,
+            'department' => $this->department ?: null,
+            'is_active' => $this->is_active,
+        ];
+
+        if ($this->password) {
+            $data['password'] = Hash::make($this->password);
+        }
+
+        return $data;
+    }
+
+    private function updateUser($data)
+    {
+        $user = SysUser::find($this->editingId);
+        $user->update($data);
+
+        // Revoke tokens if deactivating
+        if (!$this->is_active) {
+            $user->tokens()->delete();
+        }
+
+        $this->dispatch('show-alert', type: 'success', message: 'User updated successfully.');
+    }
+
+    private function createUser($data)
+    {
+        if (auth()->user()->isAdmin()) {
+            SysUser::create($data);
+            $this->dispatch('show-alert', type: 'success', message: 'User created successfully.');
+        } else {
+            // SSD users create pending accounts
+            DB::table('pending_accounts')->insert(array_merge($data, [
+                'created_by' => auth()->id(),
+                'status' => 'pending',
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]));
+            $this->dispatch('show-alert', type: 'success', message: 'Account created and sent for admin approval.');
+        }
+    }
+
+    private function canDeactivateAdmin($userId)
+    {
+        return SysUser::byRole('admin')->active()
+            ->where('id', '!=', $userId)
+            ->exists();
+    }
+
+    private function canDeleteAdmin()
+    {
+        return SysUser::byRole('admin')->active()->count() > 1;
+    }
+
     private function resetForm()
     {
-        $this->editingId = null;
-        $this->name = '';
-        $this->email = '';
-        $this->password = '';
-        $this->password_confirmation = '';
+        $this->reset([
+            'editingId', 'name', 'email', 'password', 'password_confirmation',
+            'employee_id', 'department'
+        ]);
         $this->role = 'user';
-        $this->employee_id = '';
-        $this->department = '';
         $this->is_active = true;
         $this->resetErrorBag();
     }
@@ -247,21 +238,22 @@ class UserManager extends Component
     {
         $query = SysUser::query();
 
+        // Apply filters
         if ($this->search) {
             $query->where(function ($q) {
-                $q->where('name', 'like', "%{$this->search}%")
-                  ->orWhere('email', 'like', "%{$this->search}%")
-                  ->orWhere('employee_id', 'like', "%{$this->search}%");
+                $searchTerms = ['name', 'email', 'employee_id'];
+                foreach ($searchTerms as $term) {
+                    $q->orWhere($term, 'like', "%{$this->search}%");
+                }
             });
         }
 
         if ($this->roleFilter !== 'all') {
-            $query->where('role', $this->roleFilter);
+            $query->byRole($this->roleFilter);
         }
 
         if ($this->statusFilter !== 'all') {
-            $active = $this->statusFilter === 'active';
-            $query->where('is_active', $active);
+            $query->where('is_active', $this->statusFilter === 'active');
         }
 
         return $query->latest()->get();
@@ -271,24 +263,21 @@ class UserManager extends Component
     {
         return [
             'total' => SysUser::count(),
-            'active' => SysUser::where('is_active', true)->count(),
-            'inactive' => SysUser::where('is_active', false)->count(),
+            'active' => SysUser::active()->count(),
+            'inactive' => SysUser::inactive()->count(),
             'by_role' => [
-                'admin' => SysUser::where('role', 'admin')->count(),
-                'ssd' => SysUser::where('role', 'ssd')->count(),
-                'security' => SysUser::where('role', 'security')->count(),
-                'user' => SysUser::where('role', 'user')->count(),
+                'admin' => SysUser::byRole('admin')->count(),
+                'ssd' => SysUser::byRole('ssd')->count(),
+                'security' => SysUser::byRole('security')->count(),
+                'user' => SysUser::byRole('user')->count(),
             ],
         ];
     }
 
-    // NEW: Get pending accounts count for admin
     private function getPendingAccountsCount()
     {
-        if (!auth()->user()->canApprovePendingAccounts()) {
-            return 0;
-        }
-        
-        return DB::table('pending_accounts')->where('status', 'pending')->count();
+        return auth()->user()->canApprovePendingAccounts() 
+            ? DB::table('pending_accounts')->where('status', 'pending')->count() 
+            : 0;
     }
 }
