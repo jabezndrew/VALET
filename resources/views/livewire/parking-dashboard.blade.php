@@ -1,4 +1,6 @@
 <div wire:poll.3s="loadParkingData">
+    <div id="alert-container"></div>
+    
     <div class="container mt-4">
         <!-- Header -->
         <div class="text-center mb-2">
@@ -84,9 +86,14 @@
                             </select>
                         </div>
                         <div class="col-md-4 text-center">
-                            <button wire:click="refreshNow" class="btn btn-outline-primary">
+                            <button wire:click="refreshNow" class="btn btn-outline-primary me-2">
                                 <i class="fas fa-sync-alt me-1"></i> Refresh Now
                             </button>
+                            @if(config('app.debug'))
+                            <button wire:click="debugData" class="btn btn-outline-info btn-sm">
+                                <i class="fas fa-bug me-1"></i> Debug
+                            </button>
+                            @endif
                         </div>
                         <div class="col-md-4 text-end">
                             <div class="form-check form-switch">
@@ -201,6 +208,8 @@
                     @endforeach
                 @endif
             </div>
+        </div>
+                </div>
         </div>
     </div>
 

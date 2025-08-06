@@ -43,13 +43,21 @@ class ParkingDashboard extends Component
     public function mount()
     {
         $this->loadParkingData();
+        
+        // Debug: Log data loading for troubleshooting
+        if (config('app.debug')) {
+            logger('ParkingDashboard loaded', [
+                'total_spaces' => $this->allSpaces->count(),
+                'floors_found' => $this->allSpaces->pluck('floor_level')->unique()->toArray(),
+                'floor_stats_count' => count($this->floorStats)
+            ]);
+        }
     }
 
     public function loadParkingData()
     {
         try {
             $this->allSpaces = DB::table('parking_spaces')
-                ->select(['id', 'floor_level', 'section', 'slot_number', 'is_occupied', 'vehicle_rfid', 'sensor_id', 'created_at', 'updated_at'])
                 ->orderBy('sensor_id')
                 ->get();
 
@@ -148,6 +156,11 @@ class ParkingDashboard extends Component
 
     public function refreshNow()
     {
+        // Force reload from database
+        $this->allSpaces = collect();
+        $this->floorStats = [];
+        $this->resetStatistics();
+        
         $this->loadParkingData();
         $this->dispatch('show-alert', type: 'success', message: 'Dashboard refreshed successfully');
     }
@@ -178,12 +191,14 @@ class ParkingDashboard extends Component
 
     public function getSpaceIcon($space)
     {
-        return $space->is_occupied ? 'fas fa-car text-danger' : 'fas fa-check-circle text-success';
+        $isOccupied = $space->is_occupied == 1 || $space->is_occupied === true;
+        return $isOccupied ? 'fas fa-car text-danger' : 'fas fa-check-circle text-success';
     }
 
     public function getStatusText($space)
     {
-        return $space->is_occupied ? 'Vehicle Present' : 'Space Available';
+        $isOccupied = $space->is_occupied == 1 || $space->is_occupied === true;
+        return $isOccupied ? 'Vehicle Present' : 'Space Available';
     }
 
     public function getRelativeTime($timestamp)
@@ -206,7 +221,9 @@ class ParkingDashboard extends Component
         $spaces = $this->getFilteredSpaces();
         
         $this->totalSpaces = $spaces->count();
-        $this->occupiedSpaces = $spaces->where('is_occupied', true)->count();
+        $this->occupiedSpaces = $spaces->filter(function ($space) {
+            return $space->is_occupied == 1 || $space->is_occupied === true;
+        })->count();
         $this->availableSpaces = $this->totalSpaces - $this->occupiedSpaces;
         $this->occupancyRate = $this->totalSpaces > 0 
             ? round(($this->occupiedSpaces / $this->totalSpaces) * 100, 1) 
@@ -238,7 +255,11 @@ class ParkingDashboard extends Component
             ];
         }
 
-        $occupied = $floorSpaces->where('is_occupied', true)->count();
+        // Handle both boolean and integer values for is_occupied
+        $occupied = $floorSpaces->filter(function ($space) {
+            return $space->is_occupied == 1 || $space->is_occupied === true;
+        })->count();
+        
         $available = $total - $occupied;
         $occupancyRate = round(($occupied / $total) * 100, 1);
 
@@ -325,6 +346,25 @@ class ParkingDashboard extends Component
         $this->occupiedSpaces = 0;
         $this->availableSpaces = 0;
         $this->occupancyRate = 0;
+    }
+
+    // Debug method - can be called from browser console or added as a button
+    public function debugData()
+    {
+        $debug = [
+            'total_spaces_loaded' => $this->allSpaces->count(),
+            'unique_floors' => $this->allSpaces->pluck('floor_level')->unique()->sort()->values()->toArray(),
+            'sample_data' => $this->allSpaces->take(3)->toArray(),
+            'floor_stats' => $this->floorStats,
+            'fourth_floor_count' => $this->allSpaces->where('floor_level', '4th Floor')->count(),
+        ];
+        
+        $this->dispatch('show-alert', type: 'info', message: 'Debug data logged to console');
+        
+        // This will be visible in the browser's developer console
+        $this->dispatch('debug-data', $debug);
+        
+        return $debug;
     }
 
     public function render()
