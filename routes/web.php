@@ -22,12 +22,10 @@ Route::middleware(['auth', 'role:security'])->group(function () {
     Route::get('/cars', \App\Livewire\VehicleManager::class)->name('cars.index');
 });
 
-// UPDATED: Allow SSD access to user management
 Route::middleware(['auth', 'role:ssd'])->group(function () {
     Route::get('/admin/users', \App\Livewire\UserManager::class)->name('admin.users');
 });
 
-// NEW: Admin-only routes for pending accounts
 Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/admin/pending-accounts', \App\Livewire\PendingAccountManager::class)->name('admin.pending-accounts');
     Route::get('/admin/settings', function () { return 'Settings - Coming Soon'; })->name('admin.settings');
@@ -37,5 +35,5 @@ Route::post('/logout', function () {
     auth()->logout();
     request()->session()->invalidate();
     request()->session()->regenerateToken();
-    return response()->json(['success' => true]);
+    return redirect('/login');
 });

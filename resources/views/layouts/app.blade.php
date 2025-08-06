@@ -670,7 +670,7 @@ main, .container, .valet-header + * {
                    'Content-Type': 'application/json',
                },
            }).then(() => {
-               window.location.href = '/login';
+               Livewire.navigate('/login');
            });
        }
    </script>
