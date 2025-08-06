@@ -6,43 +6,45 @@ use App\Http\Controllers\Api\SysUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FeedbackController;
 
-// === PUBLIC ROUTES ===
-Route::get('/health', function () {
-    return response()->json(['status' => 'ok', 'service' => 'VALET API']);
-});
+Route::get('/health', fn() => response()->json(['status' => 'ok', 'service' => 'VALET API']));
 
-// === AUTHENTICATION ===
 Route::post('/login', [AuthController::class, 'login']);
 
-// === PROTECTED ROUTES ===
-Route::middleware('auth:sanctum')->group(function () {
-    // Auth
-    Route::post('/logout', [AuthController::class, 'logout']);
-    Route::get('/profile', [AuthController::class, 'profile']);
-    Route::get('/validate', [AuthController::class, 'validate']);
-    Route::post('/reset-password', [AuthController::class, 'resetPassword']);
-    Route::post('/set-default-passwords', [AuthController::class, 'setDefaultPasswords']);
-    
-    // Feedbacks
-    Route::get('/feedbacks', [FeedbackController::class, 'index']);
-    Route::post('/feedbacks', [FeedbackController::class, 'store']);
-    Route::get('/feedbacks/stats', [FeedbackController::class, 'stats']);
-    Route::get('/feedbacks/{id}', [FeedbackController::class, 'show']);
-    Route::put('/feedbacks/{id}', [FeedbackController::class, 'update']);
-    Route::delete('/feedbacks/{id}', [FeedbackController::class, 'destroy']);
-    Route::post('/feedbacks/bulk-status', [FeedbackController::class, 'bulkUpdateStatus']);
-    
-    // Parking
+Route::prefix('public')->group(function () {
     Route::get('/parking', [ParkingController::class, 'index']);
     Route::post('/parking', [ParkingController::class, 'store']);
-    Route::get('/parking/stats', [ParkingController::class, 'stats']);
-    Route::get('/parking/floor/{floorLevel}', [ParkingController::class, 'getByFloor']);
-    
-    // Users
-    Route::get('/users', [SysUserController::class, 'index']);
-    Route::get('/users/stats', [SysUserController::class, 'stats']);
 });
 
-// === PUBLIC SENSOR ROUTES (ESP32) ===
-Route::post('/public/parking', [ParkingController::class, 'store']);
-Route::get('/public/parking', [ParkingController::class, 'index']);
+Route::middleware('auth:sanctum')->group(function () {
+    
+    Route::controller(AuthController::class)->group(function () {
+        Route::post('/logout', 'logout');
+        Route::get('/profile', 'profile');
+        Route::get('/validate', 'validate');
+        Route::post('/reset-password', 'resetPassword');
+        Route::post('/set-default-passwords', 'setDefaultPasswords');
+    });
+    
+    Route::controller(FeedbackController::class)->prefix('feedbacks')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/stats', 'stats');
+        Route::post('/bulk-status', 'bulkUpdateStatus');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
+    });
+    
+    Route::controller(ParkingController::class)->prefix('parking')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/stats', 'stats');
+        Route::get('/floor/{floorLevel}', 'getByFloor');
+    });
+    
+    Route::controller(SysUserController::class)->prefix('users')->group(function () {
+        Route::get('/', 'index');
+        Route::get('/stats', 'stats');
+    });
+    
+});
