@@ -312,7 +312,6 @@
                                     <label class="form-label fw-bold">Expiry Date</label>
                                     <input wire:model="expires_at" type="date" class="form-control" 
                                            min="{{ date('Y-m-d') }}">
-                                    <small class="text-muted">Leave blank for no expiry</small>
                                     @error('expires_at') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>

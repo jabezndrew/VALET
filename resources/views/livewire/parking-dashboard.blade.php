@@ -209,8 +209,6 @@
                 @endif
             </div>
         </div>
-                </div>
-        </div>
     </div>
 
     <!-- Floor Details Modal -->
@@ -260,10 +258,10 @@
                                         <i class="{{ $this->getSpaceIcon($space) }} me-2"></i>
                                         <span class="small">{{ $this->getStatusText($space) }}</span>
                                     </div>
-                                    @if($space->vehicle_rfid)
+                                    @if(isset($space->section) && $space->section)
                                     <div class="small text-muted mb-1">
-                                        <i class="fas fa-tag me-1"></i>
-                                        <span class="font-monospace">{{ $space->vehicle_rfid }}</span>
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        Section {{ $space->section }}
                                     </div>
                                     @endif
                                     <div class="small text-muted">
@@ -367,4 +365,34 @@
     </div>
     <div class="modal-backdrop fade show"></div>
     @endif
+
+    <script>
+        document.addEventListener('livewire:init', () => {
+            Livewire.on('show-alert', (event) => {
+                const alertContainer = document.getElementById('alert-container');
+                const alertId = 'alert-' + Date.now();
+                
+                const alertHtml = `
+                    <div class="container mt-3">
+                        <div id="${alertId}" class="alert alert-${event.type} alert-dismissible fade show" role="alert">
+                            <i class="fas fa-${event.type === 'success' ? 'check-circle' : 'exclamation-circle'} me-2"></i>
+                            ${event.message}
+                            <button type="button" class="btn-close" onclick="document.getElementById('${alertId}').remove()"></button>
+                        </div>
+                    </div>
+                `;
+                
+                alertContainer.innerHTML = alertHtml;
+                
+                setTimeout(() => {
+                    const alert = document.getElementById(alertId);
+                    if (alert) alert.remove();
+                }, 5000);
+            });
+
+            Livewire.on('debug-data', (data) => {
+                console.log('VALET Debug Data:', data);
+            });
+        });
+    </script>
 </div>
