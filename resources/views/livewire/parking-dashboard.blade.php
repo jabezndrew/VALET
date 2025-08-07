@@ -86,14 +86,9 @@
                             </select>
                         </div>
                         <div class="col-md-4 text-center">
-                            <button wire:click="refreshNow" class="btn btn-outline-primary me-2">
+                            <button wire:click="refreshNow" class="btn btn-outline-primary">
                                 <i class="fas fa-sync-alt me-1"></i> Refresh Now
                             </button>
-                            @if(config('app.debug'))
-                            <button wire:click="debugData" class="btn btn-outline-info btn-sm">
-                                <i class="fas fa-bug me-1"></i> Debug
-                            </button>
-                            @endif
                         </div>
                         <div class="col-md-4 text-end">
                             <div class="form-check form-switch">
@@ -388,10 +383,6 @@
                     const alert = document.getElementById(alertId);
                     if (alert) alert.remove();
                 }, 5000);
-            });
-
-            Livewire.on('debug-data', (data) => {
-                console.log('VALET Debug Data:', data);
             });
         }); 
     </script>
