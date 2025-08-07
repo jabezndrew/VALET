@@ -279,13 +279,6 @@
                                 </div>
                             </div>
                         </div>
-
-                        @if(!auth()->user()->isAdmin())
-                        <div class="alert alert-info">
-                            <i class="fas fa-info-circle me-2"></i>
-                            <strong>Note:</strong> As an SSD user, this account will be submitted for admin approval before activation.
-                        </div>
-                        @endif
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
