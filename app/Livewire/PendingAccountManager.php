@@ -47,8 +47,14 @@ class PendingAccountManager extends Component
         $this->showModal = true;
     }
 
-    public function approveAccount()
+    // FIXED: Accept accountId parameter and fetch fresh data
+    public function approveAccount($accountId = null)
     {
+        // If no ID passed, use the selected account from modal
+        if ($accountId) {
+            $this->selectedAccount = $this->getPendingAccountDetails($accountId);
+        }
+        
         $this->validate(['adminNotes' => 'nullable|string|max:1000']);
         
         if (!$this->validateAccountAction()) return;
@@ -78,8 +84,14 @@ class PendingAccountManager extends Component
         }
     }
 
-    public function rejectAccount()
+    // FIXED: Accept accountId parameter and fetch fresh data
+    public function rejectAccount($accountId = null)
     {
+        // If no ID passed, use the selected account from modal
+        if ($accountId) {
+            $this->selectedAccount = $this->getPendingAccountDetails($accountId);
+        }
+        
         $this->validate(['adminNotes' => 'nullable|string|max:1000']);
         
         if (!$this->validateAccountAction()) return;

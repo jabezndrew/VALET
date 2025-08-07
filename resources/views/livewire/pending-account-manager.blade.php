@@ -141,17 +141,29 @@
                                                 <i class="fas fa-eye"></i>
                                             </button>
                                             @if($account->status === 'pending')
-                                            <button wire:click="approveAccount" 
-                                                    onclick="@this.set('selectedAccount', @js($account)); @this.approveAccount();"
+                                            <button wire:click="approveAccount({{ $account->id }})" 
                                                     class="btn btn-outline-success btn-sm"
-                                                    title="Quick approve">
-                                                <i class="fas fa-check"></i>
+                                                    title="Quick approve"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="approveAccount({{ $account->id }})">
+                                                <span wire:loading.remove wire:target="approveAccount({{ $account->id }})">
+                                                    <i class="fas fa-check"></i>
+                                                </span>
+                                                <span wire:loading wire:target="approveAccount({{ $account->id }})">
+                                                    <i class="fas fa-spinner fa-spin"></i>
+                                                </span>
                                             </button>
-                                            <button wire:click="rejectAccount"
-                                                    onclick="@this.set('selectedAccount', @js($account)); @this.rejectAccount();"
+                                            <button wire:click="rejectAccount({{ $account->id }})"
                                                     class="btn btn-outline-danger btn-sm"
-                                                    title="Quick reject">
-                                                <i class="fas fa-times"></i>
+                                                    title="Quick reject"
+                                                    wire:loading.attr="disabled"
+                                                    wire:target="rejectAccount({{ $account->id }})">
+                                                <span wire:loading.remove wire:target="rejectAccount({{ $account->id }})">
+                                                    <i class="fas fa-times"></i>
+                                                </span>
+                                                <span wire:loading wire:target="rejectAccount({{ $account->id }})">
+                                                    <i class="fas fa-spinner fa-spin"></i>
+                                                </span>
                                             </button>
                                             @endif
                                             <button wire:click="deleteAccount({{ $account->id }})" 
