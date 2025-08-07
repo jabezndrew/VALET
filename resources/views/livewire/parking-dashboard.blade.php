@@ -393,6 +393,6 @@
             Livewire.on('debug-data', (data) => {
                 console.log('VALET Debug Data:', data);
             });
-        });
+        }); //
     </script>
 </div>
