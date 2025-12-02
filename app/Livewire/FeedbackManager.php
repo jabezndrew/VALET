@@ -3,7 +3,7 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use Illuminate\Support\Facades\DB;
+use App\Models\Feedback;
 
 class FeedbackManager extends Component
 {
@@ -100,17 +100,15 @@ class FeedbackManager extends Component
         $this->validate();
 
         try {
-            DB::table('feedbacks')->insert([
+            Feedback::create([
                 'user_id' => auth()->id(),
                 'type' => $this->type,
                 'message' => $this->message,
                 'rating' => $this->type === 'general' ? $this->rating : null,
                 'email' => $this->email ?: null,
-                'issues' => json_encode($this->issues ?? []),
-                'device_info' => json_encode($this->getDeviceInfo()),
+                'issues' => $this->issues ?? [],
+                'device_info' => $this->getDeviceInfo(),
                 'status' => 'pending',
-                'created_at' => now(),
-                'updated_at' => now(),
             ]);
 
             $this->closeModal();
@@ -134,12 +132,10 @@ class FeedbackManager extends Component
         }
 
         try {
-            DB::table('feedbacks')
-                ->where('id', $feedbackId)
-                ->update([
-                    'status' => $status,
-                    'updated_at' => now(),
-                ]);
+            $feedback = Feedback::find($feedbackId);
+            if ($feedback) {
+                $feedback->update(['status' => $status]);
+            }
 
             $this->dispatch('show-alert', type: 'success', message: 'Feedback status updated successfully.');
         } catch (\Exception $e) {
@@ -154,8 +150,8 @@ class FeedbackManager extends Component
             return;
         }
 
-        $feedback = DB::table('feedbacks')->find($feedbackId);
-        
+        $feedback = Feedback::find($feedbackId);
+
         if (!$feedback) {
             $this->dispatch('show-alert', type: 'error', message: 'Feedback not found.');
             return;
@@ -185,15 +181,15 @@ class FeedbackManager extends Component
         ]);
 
         try {
-            DB::table('feedbacks')
-                ->where('id', $this->selectedFeedbackId)
-                ->update([
+            $feedback = Feedback::find($this->selectedFeedbackId);
+            if ($feedback) {
+                $feedback->update([
                     'status' => $this->newStatus,
                     'admin_response' => $this->adminResponse ?: null,
                     'admin_id' => auth()->id(),
                     'responded_at' => now(),
-                    'updated_at' => now(),
                 ]);
+            }
 
             $this->closeResponseModal();
             $this->dispatch('show-alert', type: 'success', message: 'Feedback updated successfully.');
@@ -276,37 +272,37 @@ class FeedbackManager extends Component
 
     private function getFeedbacks()
     {
-        $query = DB::table('feedbacks')
-            ->leftJoin('sys_users', 'feedbacks.user_id', '=', 'sys_users.id')
-            ->select([
-                'feedbacks.*',
-                'sys_users.name as user_name',
-                'sys_users.role as user_role'
-            ]);
+        $query = Feedback::with('user:id,name,role');
 
         // Permission-based filtering
         if ($this->isOwnFeedbackOnly) {
-            $query->where('feedbacks.user_id', auth()->id());
+            $query->where('user_id', auth()->id());
         }
 
         // Admin filters
         if ($this->canManageFeedback) {
             if ($this->statusFilter !== 'all') {
-                $query->where('feedbacks.status', $this->statusFilter);
+                $query->where('status', $this->statusFilter);
             }
 
             if ($this->typeFilter !== 'all') {
-                $query->where('feedbacks.type', $this->typeFilter);
+                $query->where('type', $this->typeFilter);
             }
         }
 
-        return $query->orderBy('feedbacks.created_at', 'desc')->get();
+        return $query->orderBy('created_at', 'desc')->get()->map(function ($feedback) {
+            // Add flattened user data for backward compatibility with views
+            $feedbackArray = $feedback->toArray();
+            $feedbackArray['user_name'] = $feedback->user->name ?? null;
+            $feedbackArray['user_role'] = $feedback->user->role ?? null;
+            return (object) $feedbackArray;
+        });
     }
 
     private function getFeedbackStats()
     {
-        $baseQuery = DB::table('feedbacks');
-        
+        $baseQuery = Feedback::query();
+
         if ($this->isOwnFeedbackOnly) {
             $baseQuery->where('user_id', auth()->id());
         }

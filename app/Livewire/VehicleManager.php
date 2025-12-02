@@ -3,8 +3,8 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use Illuminate\Support\Facades\DB;
 use App\Models\SysUser;
+use App\Models\Vehicle;
 use Carbon\Carbon;
 
 class VehicleManager extends Component
@@ -80,11 +80,7 @@ class VehicleManager extends Component
 
         $this->validate(['verifyRfid' => 'required|string']);
 
-        $vehicle = DB::table('vehicles')
-            ->leftJoin('sys_users', 'vehicles.owner_id', '=', 'sys_users.id')
-            ->select('vehicles.*', 'sys_users.name as owner_name', 'sys_users.role as owner_role')
-            ->where('vehicles.rfid_tag', $this->verifyRfid)
-            ->first();
+        $vehicle = Vehicle::with('owner')->where('rfid_tag', $this->verifyRfid)->first();
 
         if (!$vehicle) {
             $this->verifyResult = [
@@ -95,14 +91,19 @@ class VehicleManager extends Component
             return;
         }
 
-        $isActive = $this->isVehicleActive($vehicle);
-        
+        $isActive = $vehicle->isValid();
+
+        // Convert model to array for backward compatibility with view
+        $vehicleData = $vehicle->toArray();
+        $vehicleData['owner_name'] = $vehicle->owner->name;
+        $vehicleData['owner_role'] = $vehicle->owner->role;
+
         $this->verifyResult = [
             'status' => $isActive ? 'Active' : 'Inactive',
-            'message' => $isActive 
+            'message' => $isActive
                 ? 'Vehicle is active and authorized for parking.'
                 : $this->getInactiveReason($vehicle),
-            'vehicle' => $vehicle,
+            'vehicle' => (object) $vehicleData,
             'color' => $isActive ? 'success' : 'danger'
         ];
     }
@@ -110,7 +111,7 @@ class VehicleManager extends Component
     public function openModal($vehicleId = null)
     {
         if ($vehicleId) {
-            $vehicle = DB::table('vehicles')->find($vehicleId);
+            $vehicle = Vehicle::find($vehicleId);
             if ($vehicle) {
                 $this->editingId = $vehicleId;
                 $this->fill([
@@ -161,16 +162,15 @@ class VehicleManager extends Component
                 'rfid_tag' => $this->rfid_tag,
                 'owner_id' => $this->owner_id,
                 'expires_at' => $this->expires_at ?: null,
-                'updated_at' => now(),
             ];
 
             if ($this->editingId) {
-                DB::table('vehicles')->where('id', $this->editingId)->update($data);
+                $vehicle = Vehicle::find($this->editingId);
+                $vehicle->update($data);
                 $message = 'Vehicle updated successfully.';
             } else {
                 $data['is_active'] = true;
-                $data['created_at'] = now();
-                DB::table('vehicles')->insert($data);
+                Vehicle::create($data);
                 $message = 'Vehicle registered successfully.';
             }
 
@@ -190,10 +190,10 @@ class VehicleManager extends Component
 
         $newExpiryDate = Carbon::now()->addMonths(6);
 
-        DB::table('vehicles')->where('id', $vehicleId)->update([
+        $vehicle = Vehicle::find($vehicleId);
+        $vehicle->update([
             'expires_at' => $newExpiryDate,
             'is_active' => true,
-            'updated_at' => now()
         ]);
 
         $this->dispatch('show-alert', type: 'success', message: 'Vehicle renewed successfully until ' . $newExpiryDate->format('M j, Y'));
@@ -206,11 +206,10 @@ class VehicleManager extends Component
             return;
         }
 
-        $vehicle = DB::table('vehicles')->find($vehicleId);
+        $vehicle = Vehicle::find($vehicleId);
         if ($vehicle) {
-            DB::table('vehicles')->where('id', $vehicleId)->update([
+            $vehicle->update([
                 'is_active' => !$vehicle->is_active,
-                'updated_at' => now()
             ]);
 
             $status = $vehicle->is_active ? 'deactivated' : 'activated';
@@ -226,7 +225,10 @@ class VehicleManager extends Component
         }
 
         try {
-            DB::table('vehicles')->where('id', $vehicleId)->delete();
+            $vehicle = Vehicle::find($vehicleId);
+            if ($vehicle) {
+                $vehicle->delete();
+            }
             $this->dispatch('show-alert', type: 'success', message: 'Vehicle deleted successfully.');
         } catch (\Exception $e) {
             $this->dispatch('show-alert', type: 'error', message: 'Failed to delete vehicle.');
@@ -236,21 +238,34 @@ class VehicleManager extends Component
     // Helper methods
     public function getVehicleStatus($vehicle)
     {
+        // Handle both stdClass (from query) and Vehicle model instances
+        if ($vehicle instanceof Vehicle) {
+            return $vehicle->isValid() ? 'Active' : 'Inactive';
+        }
         return $this->isVehicleActive($vehicle) ? 'Active' : 'Inactive';
     }
 
     public function getStatusBadgeClass($vehicle)
     {
+        if ($vehicle instanceof Vehicle) {
+            return $vehicle->isValid() ? 'badge bg-success' : 'badge bg-danger';
+        }
         return $this->isVehicleActive($vehicle) ? 'badge bg-success' : 'badge bg-danger';
     }
 
     public function getRowClass($vehicle)
     {
+        if ($vehicle instanceof Vehicle) {
+            return $vehicle->isValid() ? '' : 'table-danger';
+        }
         return $this->isVehicleActive($vehicle) ? '' : 'table-danger';
     }
 
-    public function getStatusIcon($vehicle) 
+    public function getStatusIcon($vehicle)
     {
+        if ($vehicle instanceof Vehicle) {
+            return $vehicle->isValid() ? 'fas fa-check-circle' : 'fas fa-times-circle';
+        }
         return $this->isVehicleActive($vehicle) ? 'fas fa-check-circle' : 'fas fa-times-circle';
     }
 
@@ -290,8 +305,7 @@ class VehicleManager extends Component
 
     private function isDuplicate($field, $value)
     {
-        return DB::table('vehicles')
-            ->where($field, $value)
+        return Vehicle::where($field, $value)
             ->when($this->editingId, fn($q) => $q->where('id', '!=', $this->editingId))
             ->exists();
     }
@@ -309,54 +323,59 @@ class VehicleManager extends Component
 
     private function getVehicles()
     {
-        $query = DB::table('vehicles')
-            ->leftJoin('sys_users', 'vehicles.owner_id', '=', 'sys_users.id')
-            ->select('vehicles.*', 'sys_users.name as owner_name', 'sys_users.role as owner_role');
+        $query = Vehicle::with('owner');
 
         // Apply filters
         if ($this->search) {
             $query->where(function ($q) {
-                $searchTerms = ['vehicles.plate_number', 'vehicles.vehicle_make', 'vehicles.vehicle_model', 'vehicles.rfid_tag', 'sys_users.name'];
-                foreach ($searchTerms as $term) {
-                    $q->orWhere($term, 'like', "%{$this->search}%");
-                }
+                $q->where('plate_number', 'like', "%{$this->search}%")
+                  ->orWhere('vehicle_make', 'like', "%{$this->search}%")
+                  ->orWhere('vehicle_model', 'like', "%{$this->search}%")
+                  ->orWhere('rfid_tag', 'like', "%{$this->search}%")
+                  ->orWhereHas('owner', function ($ownerQuery) {
+                      $ownerQuery->where('name', 'like', "%{$this->search}%");
+                  });
             });
         }
 
         if ($this->statusFilter !== 'all') {
             match($this->statusFilter) {
-                'active' => $query->where('vehicles.is_active', true)
+                'active' => $query->where('is_active', true)
                                  ->where(function($q) {
-                                     $q->whereNull('vehicles.expires_at')->orWhere('vehicles.expires_at', '>', now());
+                                     $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
                                  }),
-                'inactive' => $query->where('vehicles.is_active', false),
-                'expired' => $query->where('vehicles.expires_at', '<', now())
+                'inactive' => $query->where('is_active', false),
+                'expired' => $query->where('expires_at', '<', now())
             };
         }
 
         if ($this->typeFilter !== 'all') {
-            $query->where('vehicles.vehicle_type', $this->typeFilter);
+            $query->where('vehicle_type', $this->typeFilter);
         }
 
         if ($this->ownerRoleFilter !== 'all') {
-            $query->where('sys_users.role', $this->ownerRoleFilter);
+            $query->whereHas('owner', function ($ownerQuery) {
+                $ownerQuery->where('role', $this->ownerRoleFilter);
+            });
         }
 
-        return $query->orderBy('vehicles.created_at', 'desc')->get();
+        return $query->orderBy('created_at', 'desc')->get()->map(function ($vehicle) {
+            // Add flattened owner data for backward compatibility with views
+            $vehicleArray = $vehicle->toArray();
+            $vehicleArray['owner_name'] = $vehicle->owner->name ?? null;
+            $vehicleArray['owner_role'] = $vehicle->owner->role ?? null;
+            return (object) $vehicleArray;
+        });
     }
 
     private function getVehicleStats()
     {
         return [
-            'total' => DB::table('vehicles')->count(),
-            'active' => DB::table('vehicles')
-                ->where('is_active', true)
-                ->where(function($q) {
-                    $q->whereNull('expires_at')->orWhere('expires_at', '>', now());
-                })->count(),
-            'inactive' => DB::table('vehicles')->where('is_active', false)->count(),
-            'expired' => DB::table('vehicles')->where('expires_at', '<', now())->count(),
-            'by_type' => DB::table('vehicles')
+            'total' => Vehicle::count(),
+            'active' => Vehicle::valid()->count(),
+            'inactive' => Vehicle::where('is_active', false)->count(),
+            'expired' => Vehicle::expired()->count(),
+            'by_type' => Vehicle::query()
                 ->select('vehicle_type')
                 ->selectRaw('COUNT(*) as count')
                 ->groupBy('vehicle_type')

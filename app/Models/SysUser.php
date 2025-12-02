@@ -3,6 +3,7 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
+use Illuminate\Database\Eloquent\Relations\HasMany;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
@@ -109,5 +110,47 @@ class SysUser extends Authenticatable
             'user' => 'bg-secondary',
             default => 'bg-light'
         };
+    }
+
+    // Relationships
+
+    /**
+     * Get the vehicles owned by this user
+     */
+    public function vehicles(): HasMany
+    {
+        return $this->hasMany(Vehicle::class, 'owner_id');
+    }
+
+    /**
+     * Get the feedbacks created by this user
+     */
+    public function feedbacks(): HasMany
+    {
+        return $this->hasMany(Feedback::class, 'user_id');
+    }
+
+    /**
+     * Get the feedbacks responded to by this admin
+     */
+    public function respondedFeedbacks(): HasMany
+    {
+        return $this->hasMany(Feedback::class, 'admin_id');
+    }
+
+    /**
+     * Get the pending accounts created by this user
+     */
+    public function createdPendingAccounts(): HasMany
+    {
+        return $this->hasMany(PendingAccount::class, 'created_by');
+    }
+
+    /**
+     * Get the pending accounts reviewed by this admin
+     */
+    public function reviewedPendingAccounts(): HasMany
+    {
+        return $this->hasMany(PendingAccount::class, 'reviewed_by');
     }
 }

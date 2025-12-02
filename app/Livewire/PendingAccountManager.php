@@ -3,8 +3,8 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use Illuminate\Support\Facades\DB;
 use App\Models\SysUser;
+use App\Models\PendingAccount;
 use Illuminate\Support\Facades\Validator;
 
 class PendingAccountManager extends Component
@@ -51,30 +51,26 @@ class PendingAccountManager extends Component
     public function approveAccount($accountId = null)
     {
         // If no ID passed, use the selected account from modal
-        if ($accountId) {
-            $this->selectedAccount = $this->getPendingAccountDetails($accountId);
-        }
-        
+        $pendingAccount = $accountId
+            ? PendingAccount::find($accountId)
+            : PendingAccount::find($this->selectedAccount->id);
+
         $this->validate(['adminNotes' => 'nullable|string|max:1000']);
-        
-        if (!$this->validateAccountAction()) return;
+
+        if (!$pendingAccount || $pendingAccount->status !== 'pending') {
+            $this->dispatch('show-alert', type: 'error', message: 'Account not found or already processed.');
+            return;
+        }
+
+        // Check for email conflicts
+        if (SysUser::where('email', $pendingAccount->email)->exists()) {
+            $this->dispatch('show-alert', type: 'error', message: 'A user with this email already exists.');
+            return;
+        }
 
         try {
-            DB::transaction(function () {
-                // Create user account
-                SysUser::create([
-                    'name' => $this->selectedAccount->name,
-                    'email' => $this->selectedAccount->email,
-                    'password' => $this->selectedAccount->password, // Already hashed
-                    'role' => $this->selectedAccount->role,
-                    'employee_id' => $this->selectedAccount->employee_id,
-                    'department' => $this->selectedAccount->department,
-                    'is_active' => $this->selectedAccount->is_active ?? true,
-                ]);
-
-                // Update pending account
-                $this->updatePendingAccountStatus('approved');
-            });
+            // Use model's built-in approve method (has transaction built-in!)
+            $pendingAccount->approve(auth()->id(), $this->adminNotes);
 
             $this->closeModal();
             $this->dispatch('show-alert', type: 'success', message: 'Account approved and user created successfully.');
@@ -88,16 +84,21 @@ class PendingAccountManager extends Component
     public function rejectAccount($accountId = null)
     {
         // If no ID passed, use the selected account from modal
-        if ($accountId) {
-            $this->selectedAccount = $this->getPendingAccountDetails($accountId);
-        }
-        
+        $pendingAccount = $accountId
+            ? PendingAccount::find($accountId)
+            : PendingAccount::find($this->selectedAccount->id);
+
         $this->validate(['adminNotes' => 'nullable|string|max:1000']);
-        
-        if (!$this->validateAccountAction()) return;
+
+        if (!$pendingAccount || $pendingAccount->status !== 'pending') {
+            $this->dispatch('show-alert', type: 'error', message: 'Account not found or already processed.');
+            return;
+        }
 
         try {
-            $this->updatePendingAccountStatus('rejected');
+            // Use model's built-in reject method
+            $pendingAccount->reject(auth()->id(), $this->adminNotes);
+
             $this->closeModal();
             $this->dispatch('show-alert', type: 'success', message: 'Account rejected successfully.');
 
@@ -114,9 +115,10 @@ class PendingAccountManager extends Component
         }
 
         try {
-            $deleted = DB::table('pending_accounts')->where('id', $accountId)->delete();
-            
-            if ($deleted) {
+            $account = PendingAccount::find($accountId);
+
+            if ($account) {
+                $account->delete();
                 $this->dispatch('show-alert', type: 'success', message: 'Pending account deleted successfully.');
             } else {
                 $this->dispatch('show-alert', type: 'error', message: 'Account not found or already deleted.');
@@ -132,81 +134,45 @@ class PendingAccountManager extends Component
     }
 
     // Helper methods
-    private function validateAccountAction()
-    {
-        if (!$this->selectedAccount) {
-            $this->dispatch('show-alert', type: 'error', message: 'No account selected.');
-            return false;
-        }
-
-        if ($this->selectedAccount->status !== 'pending') {
-            $this->dispatch('show-alert', type: 'error', message: 'Account has already been processed.');
-            return false;
-        }
-
-        // Check for email conflicts when approving
-        if (request()->routeIs('*approve*') || str_contains(debug_backtrace()[1]['function'], 'approve')) {
-            $existingUser = SysUser::where('email', $this->selectedAccount->email)->first();
-            if ($existingUser) {
-                $this->dispatch('show-alert', type: 'error', message: 'A user with this email already exists.');
-                return false;
-            }
-        }
-
-        return true;
-    }
-
-    private function updatePendingAccountStatus($status)
-    {
-        DB::table('pending_accounts')
-            ->where('id', $this->selectedAccount->id)
-            ->update([
-                'status' => $status,
-                'admin_notes' => $this->adminNotes ?: null,
-                'reviewed_by' => auth()->id(),
-                'reviewed_at' => now(),
-                'updated_at' => now(),
-            ]);
-    }
-
     private function getPendingAccountDetails($accountId)
     {
-        return DB::table('pending_accounts')
-            ->leftJoin('sys_users as creator', 'pending_accounts.created_by', '=', 'creator.id')
-            ->leftJoin('sys_users as reviewer', 'pending_accounts.reviewed_by', '=', 'reviewer.id')
-            ->select([
-                'pending_accounts.*',
-                'creator.name as created_by_name',
-                'creator.role as created_by_role',
-                'reviewer.name as reviewed_by_name'
-            ])
-            ->where('pending_accounts.id', $accountId)
-            ->first();
+        $account = PendingAccount::with(['creator:id,name,role', 'reviewer:id,name'])
+            ->find($accountId);
+
+        if (!$account) {
+            return null;
+        }
+
+        // Convert to object with flattened data for backward compatibility
+        $accountArray = $account->toArray();
+        $accountArray['created_by_name'] = $account->creator->name ?? null;
+        $accountArray['created_by_role'] = $account->creator->role ?? null;
+        $accountArray['reviewed_by_name'] = $account->reviewer->name ?? null;
+
+        return (object) $accountArray;
     }
 
     private function getPendingAccounts()
     {
-        $query = DB::table('pending_accounts')
-            ->leftJoin('sys_users as creator', 'pending_accounts.created_by', '=', 'creator.id')
-            ->leftJoin('sys_users as reviewer', 'pending_accounts.reviewed_by', '=', 'reviewer.id')
-            ->select([
-                'pending_accounts.*',
-                'creator.name as created_by_name',
-                'creator.role as created_by_role',
-                'reviewer.name as reviewed_by_name'
-            ]);
+        $query = PendingAccount::with(['creator:id,name,role', 'reviewer:id,name']);
 
         if ($this->statusFilter !== 'all') {
-            $query->where('pending_accounts.status', $this->statusFilter);
+            $query->where('status', $this->statusFilter);
         }
 
-        return $query->orderBy('pending_accounts.created_at', 'desc')->get();
+        return $query->orderBy('created_at', 'desc')->get()->map(function ($account) {
+            // Add flattened data for backward compatibility with views
+            $accountArray = $account->toArray();
+            $accountArray['created_by_name'] = $account->creator->name ?? null;
+            $accountArray['created_by_role'] = $account->creator->role ?? null;
+            $accountArray['reviewed_by_name'] = $account->reviewer->name ?? null;
+            return (object) $accountArray;
+        });
     }
 
     private function getPendingStats()
     {
-        $stats = DB::table('pending_accounts')
-            ->selectRaw("
+        $stats = PendingAccount::selectRaw("
                 COUNT(*) as total,
                 COUNT(CASE WHEN status = 'pending' THEN 1 END) as pending,
                 COUNT(CASE WHEN status = 'approved' THEN 1 END) as approved,

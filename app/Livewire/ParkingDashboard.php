@@ -3,7 +3,8 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use Illuminate\Support\Facades\DB;
+use App\Models\ParkingSpace;
+use App\Models\Vehicle;
 use Carbon\Carbon;
 
 class ParkingDashboard extends Component
@@ -57,19 +58,17 @@ class ParkingDashboard extends Component
     public function loadParkingData()
     {
         try {
-            $this->allSpaces = DB::table('parking_spaces')
-                ->orderBy('sensor_id')
-                ->get();
+            $this->allSpaces = ParkingSpace::orderBy('sensor_id')->get();
 
             $this->updateStatistics();
             $this->updateFloorStats();
-            
+
             if ($this->showModal && $this->selectedFloor) {
                 $this->loadSelectedFloorData();
             }
-            
+
             $this->lastUpdate = now()->format('H:i:s');
-            
+
         } catch (\Exception $e) {
             $this->handleDataLoadError($e);
         }
@@ -295,47 +294,35 @@ class ParkingDashboard extends Component
 
     private function findVehicleByRfid($rfid)
     {
-        return DB::table('vehicles')
-            ->leftJoin('sys_users', 'vehicles.owner_id', '=', 'sys_users.id')
-            ->select([
-                'vehicles.*',
-                'sys_users.name as owner_name',
-                'sys_users.role as owner_role'
-            ])
-            ->where('vehicles.rfid_tag', $rfid)
-            ->first();
+        return Vehicle::with('owner')->where('rfid_tag', $rfid)->first();
     }
 
     private function getVehicleVerificationResult($vehicle)
     {
-        // Check if vehicle is active
-        if (!$vehicle->is_active) {
+        $isValid = $vehicle->isValid();
+
+        // Convert model to array for backward compatibility with view
+        $vehicleData = $vehicle->toArray();
+        $vehicleData['owner_name'] = $vehicle->owner->name ?? null;
+        $vehicleData['owner_role'] = $vehicle->owner->role ?? null;
+
+        if (!$isValid) {
+            $message = !$vehicle->is_active
+                ? 'Vehicle is deactivated. Contact administrator.'
+                : 'Vehicle registration expired on ' . Carbon::parse($vehicle->expires_at)->format('M j, Y') . '. Renewal required.';
+
             return [
                 'status' => 'Inactive',
-                'message' => 'Vehicle is deactivated. Contact administrator.',
-                'vehicle' => $vehicle,
+                'message' => $message,
+                'vehicle' => (object) $vehicleData,
                 'color' => 'danger'
             ];
-        }
-
-        // Check expiry
-        if ($vehicle->expires_at) {
-            $expiryDate = Carbon::parse($vehicle->expires_at);
-            
-            if ($expiryDate->isPast()) {
-                return [
-                    'status' => 'Inactive',
-                    'message' => 'Vehicle registration expired on ' . $expiryDate->format('M j, Y') . '. Renewal required.',
-                    'vehicle' => $vehicle,
-                    'color' => 'danger'
-                ];
-            }
         }
 
         return [
             'status' => 'Active',
             'message' => 'Vehicle is active and authorized for parking.',
-            'vehicle' => $vehicle,
+            'vehicle' => (object) $vehicleData,
             'color' => 'success'
         ];
     }

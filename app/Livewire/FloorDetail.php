@@ -3,7 +3,7 @@
 namespace App\Livewire;
 
 use Livewire\Component;
-use Illuminate\Support\Facades\DB;
+use App\Models\ParkingSpace;
 use Carbon\Carbon;
 
 class FloorDetail extends Component
@@ -22,10 +22,8 @@ class FloorDetail extends Component
     public function loadFloorData()
     {
         try {
-            // Get spaces for this specific floor
-            $this->spaces = DB::table('parking_spaces')
-                ->where('floor_level', $this->floorLevel)
-                ->orderBy('sensor_id')
+            // Get spaces for this specific floor using model scope
+            $this->spaces = ParkingSpace::forFloor($this->floorLevel)
                 ->get()
                 ->map(function ($space) {
                     $space->created_at = Carbon::parse($space->created_at);

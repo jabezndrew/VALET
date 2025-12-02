@@ -4,8 +4,8 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\SysUser;
+use App\Models\PendingAccount;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rules\Password;
 
 class UserManager extends Component
@@ -201,11 +201,9 @@ class UserManager extends Component
             $this->dispatch('show-alert', type: 'success', message: 'User created successfully.');
         } else {
             // SSD users create pending accounts
-            DB::table('pending_accounts')->insert(array_merge($data, [
+            PendingAccount::create(array_merge($data, [
                 'created_by' => auth()->id(),
                 'status' => 'pending',
-                'created_at' => now(),
-                'updated_at' => now(),
             ]));
             $this->dispatch('show-alert', type: 'success', message: 'Account created and sent for admin approval.');
         }
@@ -276,8 +274,8 @@ class UserManager extends Component
 
     private function getPendingAccountsCount()
     {
-        return auth()->user()->canApprovePendingAccounts() 
-            ? DB::table('pending_accounts')->where('status', 'pending')->count() 
+        return auth()->user()->canApprovePendingAccounts()
+            ? PendingAccount::pending()->count()
             : 0;
     }
 }

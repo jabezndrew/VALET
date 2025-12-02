@@ -3,71 +3,76 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Models\Feedback;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
-use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\ValidationException;
 
 class FeedbackController extends Controller
 {
-    public function __construct()
-    {
-        $this->ensureFeedbackTableExists();
-    }
-
     /**
      * Get all feedbacks (with filters)
      */
     public function index(Request $request): JsonResponse
     {
         try {
-            $query = DB::table('feedbacks')
-                ->leftJoin('sys_users', 'feedbacks.user_id', '=', 'sys_users.id')
-                ->select(
-                    'feedbacks.*',
-                    'sys_users.name as user_name',
-                    'sys_users.role as user_role',
-                    'sys_users.email as user_email'
-                );
+            $query = Feedback::with(['user:id,name,role,email']);
 
             // Apply filters
             if ($request->has('status') && $request->status !== 'all') {
-                $query->where('feedbacks.status', $request->status);
+                $query->where('status', $request->status);
             }
 
             if ($request->has('type') && $request->type !== 'all') {
-                $query->where('feedbacks.type', $request->type);
+                $query->where('type', $request->type);
             }
 
             if ($request->has('user_id')) {
-                $query->where('feedbacks.user_id', $request->user_id);
+                $query->where('user_id', $request->user_id);
             }
 
             // Search functionality
             if ($request->has('search')) {
                 $search = $request->search;
                 $query->where(function ($q) use ($search) {
-                    $q->where('feedbacks.message', 'like', "%{$search}%")
-                      ->orWhere('sys_users.name', 'like', "%{$search}%")
-                      ->orWhere('sys_users.email', 'like', "%{$search}%");
+                    $q->where('message', 'like', "%{$search}%")
+                      ->orWhereHas('user', function ($userQuery) use ($search) {
+                          $userQuery->where('name', 'like', "%{$search}%")
+                                    ->orWhere('email', 'like', "%{$search}%");
+                      });
                 });
             }
 
             // Pagination
             $perPage = $request->get('per_page', 15);
             $page = $request->get('page', 1);
-            $offset = ($page - 1) * $perPage;
 
             $total = $query->count();
-            $feedbacks = $query->orderBy('feedbacks.created_at', 'desc')
-                ->limit($perPage)
-                ->offset($offset)
+            $feedbacks = $query->orderBy('created_at', 'desc')
+                ->skip(($page - 1) * $perPage)
+                ->take($perPage)
                 ->get()
                 ->map(function ($feedback) {
-                    // Parse JSON fields
-                    $feedback->issues = json_decode($feedback->issues ?? '[]', true);
-                    $feedback->device_info = json_decode($feedback->device_info ?? '{}', true);
-                    return $feedback;
+                    // Flatten user data for backward compatibility
+                    return [
+                        'id' => $feedback->id,
+                        'user_id' => $feedback->user_id,
+                        'type' => $feedback->type,
+                        'message' => $feedback->message,
+                        'rating' => $feedback->rating,
+                        'email' => $feedback->email,
+                        'issues' => $feedback->issues,
+                        'device_info' => $feedback->device_info,
+                        'status' => $feedback->status,
+                        'admin_response' => $feedback->admin_response,
+                        'admin_id' => $feedback->admin_id,
+                        'responded_at' => $feedback->responded_at,
+                        'created_at' => $feedback->created_at,
+                        'updated_at' => $feedback->updated_at,
+                        'user_name' => $feedback->user->name,
+                        'user_role' => $feedback->user->role,
+                        'user_email' => $feedback->user->email,
+                    ];
                 });
 
             return response()->json([
@@ -97,16 +102,7 @@ class FeedbackController extends Controller
     public function show(int $id): JsonResponse
     {
         try {
-            $feedback = DB::table('feedbacks')
-                ->leftJoin('sys_users', 'feedbacks.user_id', '=', 'sys_users.id')
-                ->select(
-                    'feedbacks.*',
-                    'sys_users.name as user_name',
-                    'sys_users.role as user_role',
-                    'sys_users.email as user_email'
-                )
-                ->where('feedbacks.id', $id)
-                ->first();
+            $feedback = Feedback::with(['user:id,name,role,email'])->find($id);
 
             if (!$feedback) {
                 return response()->json([
@@ -115,13 +111,30 @@ class FeedbackController extends Controller
                 ], 404);
             }
 
-            // Parse JSON fields
-            $feedback->issues = json_decode($feedback->issues ?? '[]', true);
-            $feedback->device_info = json_decode($feedback->device_info ?? '{}', true);
+            // Flatten user data for backward compatibility
+            $data = [
+                'id' => $feedback->id,
+                'user_id' => $feedback->user_id,
+                'type' => $feedback->type,
+                'message' => $feedback->message,
+                'rating' => $feedback->rating,
+                'email' => $feedback->email,
+                'issues' => $feedback->issues,
+                'device_info' => $feedback->device_info,
+                'status' => $feedback->status,
+                'admin_response' => $feedback->admin_response,
+                'admin_id' => $feedback->admin_id,
+                'responded_at' => $feedback->responded_at,
+                'created_at' => $feedback->created_at,
+                'updated_at' => $feedback->updated_at,
+                'user_name' => $feedback->user->name,
+                'user_role' => $feedback->user->role,
+                'user_email' => $feedback->user->email,
+            ];
 
             return response()->json([
                 'success' => true,
-                'data' => $feedback
+                'data' => $data
             ]);
 
         } catch (\Exception $e) {
@@ -150,36 +163,24 @@ class FeedbackController extends Controller
             ]);
 
             // Only save rating for general feedback
-            $ratingToSave = ($validated['type'] === 'general') ? ($validated['rating'] ?? null) : null;
+            $validated['rating'] = ($validated['type'] === 'general') ? ($validated['rating'] ?? null) : null;
 
-            $feedbackId = DB::table('feedbacks')->insertGetId([
-                'user_id' => $validated['user_id'],
-                'type' => $validated['type'],
-                'message' => $validated['message'],
-                'rating' => $ratingToSave,
-                'email' => $validated['email'] ?? null,
-                'issues' => json_encode($validated['issues'] ?? []),
-                'device_info' => json_encode($validated['device_info'] ?? []),
-                'status' => 'pending',
-                'created_at' => now(),
-                'updated_at' => now(),
+            // Create feedback using Eloquent
+            $feedback = Feedback::create($validated);
+
+            // Load user relationship
+            $feedback->load(['user:id,name,role']);
+
+            // Flatten user data for backward compatibility
+            $data = array_merge($feedback->toArray(), [
+                'user_name' => $feedback->user->name,
+                'user_role' => $feedback->user->role,
             ]);
-
-            // Get the created feedback
-            $feedback = DB::table('feedbacks')
-                ->leftJoin('sys_users', 'feedbacks.user_id', '=', 'sys_users.id')
-                ->select(
-                    'feedbacks.*',
-                    'sys_users.name as user_name',
-                    'sys_users.role as user_role'
-                )
-                ->where('feedbacks.id', $feedbackId)
-                ->first();
 
             return response()->json([
                 'success' => true,
                 'message' => 'Feedback created successfully',
-                'data' => $feedback
+                'data' => $data
             ], 201);
 
         } catch (ValidationException $e) {
@@ -203,8 +204,8 @@ class FeedbackController extends Controller
     public function update(Request $request, int $id): JsonResponse
     {
         try {
-            $feedback = DB::table('feedbacks')->where('id', $id)->first();
-            
+            $feedback = Feedback::find($id);
+
             if (!$feedback) {
                 return response()->json([
                     'success' => false,
@@ -217,7 +218,7 @@ class FeedbackController extends Controller
                 'admin_response' => 'nullable|string|max:1000',
             ]);
 
-            $updateData = ['updated_at' => now()];
+            $updateData = [];
 
             if (isset($validated['status'])) {
                 $updateData['status'] = $validated['status'];
@@ -229,23 +230,21 @@ class FeedbackController extends Controller
                 $updateData['responded_at'] = now();
             }
 
-            DB::table('feedbacks')->where('id', $id)->update($updateData);
+            $feedback->update($updateData);
 
-            // Get updated feedback
-            $updatedFeedback = DB::table('feedbacks')
-                ->leftJoin('sys_users', 'feedbacks.user_id', '=', 'sys_users.id')
-                ->select(
-                    'feedbacks.*',
-                    'sys_users.name as user_name',
-                    'sys_users.role as user_role'
-                )
-                ->where('feedbacks.id', $id)
-                ->first();
+            // Load user relationship
+            $feedback->load(['user:id,name,role']);
+
+            // Flatten user data for backward compatibility
+            $data = array_merge($feedback->toArray(), [
+                'user_name' => $feedback->user->name,
+                'user_role' => $feedback->user->role,
+            ]);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Feedback updated successfully',
-                'data' => $updatedFeedback
+                'data' => $data
             ]);
 
         } catch (ValidationException $e) {
@@ -269,8 +268,8 @@ class FeedbackController extends Controller
     public function destroy(int $id): JsonResponse
     {
         try {
-            $feedback = DB::table('feedbacks')->where('id', $id)->first();
-            
+            $feedback = Feedback::find($id);
+
             if (!$feedback) {
                 return response()->json([
                     'success' => false,
@@ -278,7 +277,7 @@ class FeedbackController extends Controller
                 ], 404);
             }
 
-            DB::table('feedbacks')->where('id', $id)->delete();
+            $feedback->delete();
 
             return response()->json([
                 'success' => true,
@@ -301,22 +300,17 @@ class FeedbackController extends Controller
     {
         try {
             $stats = [
-                'total' => DB::table('feedbacks')->count(),
-                'pending' => DB::table('feedbacks')->where('status', 'pending')->count(),
-                'reviewed' => DB::table('feedbacks')->where('status', 'reviewed')->count(),
-                'resolved' => DB::table('feedbacks')->where('status', 'resolved')->count(),
-                'by_type' => DB::table('feedbacks')
-                    ->select('type')
-                    ->selectRaw('COUNT(*) as count')
+                'total' => Feedback::count(),
+                'pending' => Feedback::pending()->count(),
+                'reviewed' => Feedback::reviewed()->count(),
+                'resolved' => Feedback::resolved()->count(),
+                'by_type' => Feedback::query()
+                    ->selectRaw('type, COUNT(*) as count')
                     ->groupBy('type')
                     ->pluck('count', 'type')
                     ->toArray(),
-                'recent_30_days' => DB::table('feedbacks')
-                    ->where('created_at', '>=', now()->subDays(30))
-                    ->count(),
-                'average_rating' => DB::table('feedbacks')
-                    ->whereNotNull('rating')
-                    ->avg('rating'),
+                'recent_30_days' => Feedback::recent(30)->count(),
+                'average_rating' => Feedback::whereNotNull('rating')->avg('rating'),
             ];
 
             return response()->json([
@@ -345,12 +339,8 @@ class FeedbackController extends Controller
                 'status' => 'required|in:pending,reviewed,resolved',
             ]);
 
-            $updated = DB::table('feedbacks')
-                ->whereIn('id', $validated['feedback_ids'])
-                ->update([
-                    'status' => $validated['status'],
-                    'updated_at' => now(),
-                ]);
+            $updated = Feedback::whereIn('id', $validated['feedback_ids'])
+                ->update(['status' => $validated['status']]);
 
             return response()->json([
                 'success' => true,
@@ -371,32 +361,5 @@ class FeedbackController extends Controller
                 'error' => $e->getMessage()
             ], 500);
         }
-    }
-
-    /**
-     * Ensure feedback table exists
-     */
-    private function ensureFeedbackTableExists(): void
-    {
-        DB::statement("CREATE TABLE IF NOT EXISTS feedbacks (
-            id BIGINT UNSIGNED AUTO_INCREMENT PRIMARY KEY,
-            user_id BIGINT UNSIGNED NOT NULL,
-            type ENUM('general', 'bug', 'feature', 'parking') NOT NULL,
-            message TEXT NOT NULL,
-            rating INT NULL,
-            email VARCHAR(255) NULL,
-            issues JSON NULL,
-            device_info JSON NULL,
-            status ENUM('pending', 'reviewed', 'resolved') DEFAULT 'pending',
-            admin_response TEXT NULL,
-            admin_id BIGINT UNSIGNED NULL,
-            responded_at TIMESTAMP NULL,
-            created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
-            updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
-            INDEX idx_user_id (user_id),
-            INDEX idx_status (status),
-            INDEX idx_type (type),
-            FOREIGN KEY (user_id) REFERENCES sys_users(id) ON DELETE CASCADE
-        ) ENGINE=InnoDB");
     }
 }
