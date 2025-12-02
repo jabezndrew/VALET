@@ -137,18 +137,13 @@
                         @endif
 
                         <!-- Issues -->
-                        @if($feedback->issues)
-                            @php
-                                $issuesArray = json_decode($feedback->issues, true) ?? [];
-                            @endphp
-                            @if(!empty($issuesArray))
-                                <div class="mb-2">
-                                    <small class="text-muted">Issues: </small>
-                                    @foreach($issuesArray as $issue)
-                                        <span class="badge bg-secondary me-1">{{ str_replace('_', ' ', ucwords($issue, '_')) }}</span>
-                                    @endforeach
-                                </div>
-                            @endif
+                        @if($feedback->issues && is_array($feedback->issues) && !empty($feedback->issues))
+                            <div class="mb-2">
+                                <small class="text-muted">Issues: </small>
+                                @foreach($feedback->issues as $issue)
+                                    <span class="badge bg-secondary me-1">{{ str_replace('_', ' ', ucwords($issue, '_')) }}</span>
+                                @endforeach
+                            </div>
                         @endif
 
                         <!-- Footer Row -->
