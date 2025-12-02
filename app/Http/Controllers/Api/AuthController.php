@@ -41,8 +41,9 @@ class AuthController extends Controller
             // Delete any existing tokens for this user to avoid duplicates
             $user->tokens()->delete();
 
-            // Create new token
-            $token = $user->createToken('valet-api');
+            // Create new token with role-based abilities
+            $abilities = $this->getAbilitiesForRole($user->role);
+            $token = $user->createToken('valet-api', $abilities);
 
             return response()->json([
                 'success' => true,
@@ -53,8 +54,12 @@ class AuthController extends Controller
                     'name' => $user->name,
                     'email' => $user->email,
                     'role' => $user->role,
+                    'role_display' => $user->getRoleDisplayName(),
                     'employee_id' => $user->employee_id,
-                ]
+                    'department' => $user->department,
+                    'is_active' => $user->is_active,
+                ],
+                'abilities' => $abilities,
             ]);
 
         } catch (ValidationException $e) {
@@ -113,8 +118,56 @@ class AuthController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'role' => $user->role,
+                'role_display' => $user->getRoleDisplayName(),
                 'employee_id' => $user->employee_id,
+                'department' => $user->department,
+                'is_active' => $user->is_active,
             ]
         ]);
+    }
+
+    /**
+     * Get abilities based on user role
+     */
+    private function getAbilitiesForRole(string $role): array
+    {
+        return match($role) {
+            'admin' => [
+                'parking:view',
+                'parking:manage',
+                'vehicles:view',
+                'vehicles:manage',
+                'vehicles:verify',
+                'users:view',
+                'users:manage',
+                'feedbacks:view',
+                'feedbacks:manage',
+                'feedbacks:respond',
+                'accounts:approve',
+            ],
+            'ssd' => [
+                'parking:view',
+                'parking:manage',
+                'vehicles:view',
+                'vehicles:manage',
+                'vehicles:verify',
+                'users:view',
+                'users:manage',
+                'feedbacks:view',
+                'feedbacks:manage',
+            ],
+            'security' => [
+                'parking:view',
+                'vehicles:view',
+                'vehicles:verify',
+                'feedbacks:view',
+            ],
+            'user' => [
+                'parking:view',
+                'feedbacks:create',
+                'feedbacks:view-own',
+            ],
+            default => ['parking:view'],
+        };
     }
 }

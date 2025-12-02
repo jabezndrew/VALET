@@ -10,7 +10,7 @@ use Illuminate\Http\JsonResponse;
 class SysUserController extends Controller
 {
     /**
-     * Get all registered users WITH TEST PASSWORDS
+     * Get all registered users
      */
     public function index(Request $request): JsonResponse
     {
@@ -49,7 +49,6 @@ class SysUserController extends Controller
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
-                    'password' => 'password123', // DEFAULT TEST PASSWORD
                     'role' => $user->role,
                     'role_display' => $user->getRoleDisplayName(),
                     'employee_id' => $user->employee_id,
@@ -61,8 +60,7 @@ class SysUserController extends Controller
 
             return response()->json([
                 'success' => true,
-                'users' => $transformedUsers,
-                'note' => 'All users have default password: password123'
+                'users' => $transformedUsers
             ]);
 
         } catch (\Exception $e) {

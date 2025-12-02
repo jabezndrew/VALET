@@ -8,9 +8,13 @@ use App\Http\Controllers\Api\FeedbackController;
 
 Route::get('/health', fn() => response()->json(['status' => 'ok', 'service' => 'VALET API']));
 
-Route::post('/login', [AuthController::class, 'login']);
+// Authentication endpoint with rate limiting (max 5 attempts per minute)
+Route::middleware('throttle:5,1')->group(function () {
+    Route::post('/login', [AuthController::class, 'login']);
+});
 
-Route::prefix('public')->group(function () {
+// Public endpoints with rate limiting (max 60 requests per minute)
+Route::prefix('public')->middleware('throttle:60,1')->group(function () {
     Route::get('/parking', [ParkingController::class, 'index']);
     Route::post('/parking', [ParkingController::class, 'store']);
 });
