@@ -123,12 +123,38 @@
             margin: 10px;
             opacity: 0.8;
         }
-        
+
+        .password-field-wrapper {
+            position: relative;
+        }
+
+        .password-toggle {
+            position: absolute;
+            right: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            background: none;
+            border: none;
+            color: #666;
+            cursor: pointer;
+            padding: 5px 10px;
+            z-index: 10;
+            transition: color 0.2s ease;
+        }
+
+        .password-toggle:hover {
+            color: #B22020;
+        }
+
+        .password-toggle:focus {
+            outline: none;
+        }
+
         @media (max-width: 768px) {
             .login-left {
                 padding: 40px 30px;
             }
-            
+
             .login-right {
                 padding: 40px 30px;
             }
@@ -195,9 +221,9 @@
                         <!-- LIVEWIRE Login Form -->
                         <form wire:submit.prevent="login">
                             <div class="form-floating mb-3">
-                                <input type="email" 
-                                       class="form-control @error('email') is-invalid @enderror" 
-                                       id="email" 
+                                <input type="email"
+                                       class="form-control @error('email') is-invalid @enderror"
+                                       id="email"
                                        wire:model="email"
                                        placeholder="name@example.com"
                                        required>
@@ -207,16 +233,22 @@
                                 @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                             
-                            <div class="form-floating mb-3">
-                                <input type="password" 
-                                       class="form-control @error('password') is-invalid @enderror" 
-                                       id="password" 
+                            <div class="form-floating mb-3 password-field-wrapper">
+                                <input type="password"
+                                       class="form-control @error('password') is-invalid @enderror"
+                                       id="password"
                                        wire:model="password"
                                        placeholder="Password"
                                        required>
                                 <label for="password">
                                     <i class="fas fa-lock me-2"></i>Password
                                 </label>
+                                <button type="button"
+                                        class="password-toggle"
+                                        onclick="togglePasswordVisibility()"
+                                        title="Show/Hide Password">
+                                    <i class="fas fa-eye" id="toggleIcon"></i>
+                                </button>
                                 @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
                             
@@ -252,4 +284,21 @@
             </div>
         </div>
     </div>
+
+    <script>
+        function togglePasswordVisibility() {
+            const passwordInput = document.getElementById('password');
+            const toggleIcon = document.getElementById('toggleIcon');
+
+            if (passwordInput.type === 'password') {
+                passwordInput.type = 'text';
+                toggleIcon.classList.remove('fa-eye');
+                toggleIcon.classList.add('fa-eye-slash');
+            } else {
+                passwordInput.type = 'password';
+                toggleIcon.classList.remove('fa-eye-slash');
+                toggleIcon.classList.add('fa-eye');
+            }
+        }
+    </script>
 </div>

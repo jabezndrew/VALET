@@ -22,7 +22,7 @@ class Login extends Component
         ]);
 
         $user = SysUser::where('email', $this->email)->first();
-        
+
         if (!$user) {
             $this->error = 'Invalid credentials provided.';
             return;
