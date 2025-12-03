@@ -5,7 +5,8 @@
       "Bash(php -l:*)",
       "Bash(php artisan:*)",
       "Bash(php test_parking_api.php:*)",
-      "Bash(php test_vehicle_manager.php:*)"
+      "Bash(php test_vehicle_manager.php:*)",
+      "Bash(php --version:*)"
     ],
     "deny": [],
     "ask": []

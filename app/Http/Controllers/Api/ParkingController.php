@@ -1,7 +1,6 @@
 <?php
 
 namespace App\Http\Controllers\Api;
-
 use App\Http\Controllers\Controller;
 use App\Models\ParkingSpace;
 use Illuminate\Http\Request;
@@ -9,9 +8,6 @@ use Illuminate\Http\JsonResponse;
 
 class ParkingController extends Controller
 {
-    /**
-     * Get all parking spaces
-     */
     public function index(): JsonResponse
     {
         try {
@@ -23,24 +19,18 @@ class ParkingController extends Controller
         }
     }
 
-    /**
-     * Store/Update parking space data from ESP32
-     */
     public function store(Request $request): JsonResponse
     {
         try {
-            // Validate incoming data with floor_level
             $validated = $request->validate([
                 'sensor_id' => 'required|integer',
                 'is_occupied' => 'required|boolean',
                 'distance_cm' => 'required|integer|min:0',
-                'floor_level' => 'sometimes|string|max:255' // Optional, defaults to '4th Floor'
+                'floor_level' => 'sometimes|string|max:255'
             ]);
 
-            // Set default floor level if not provided
             $validated['floor_level'] = $validated['floor_level'] ?? '4th Floor';
 
-            // Insert or update parking space using Eloquent
             $space = ParkingSpace::updateOrCreate(
                 ['sensor_id' => $validated['sensor_id']],
                 $validated
@@ -70,9 +60,6 @@ class ParkingController extends Controller
         }
     }
 
-    /**
-     * Get statistics about parking spaces (with floor breakdown)
-     */
     public function stats(): JsonResponse
     {
         try {
@@ -80,7 +67,6 @@ class ParkingController extends Controller
             $occupied = ParkingSpace::occupied()->count();
             $available = $total - $occupied;
 
-            // Get stats by floor using Eloquent query builder
             $floorStats = ParkingSpace::selectRaw('floor_level, COUNT(*) as total')
                 ->selectRaw('SUM(CASE WHEN is_occupied = 1 THEN 1 ELSE 0 END) as occupied')
                 ->selectRaw('SUM(CASE WHEN is_occupied = 0 THEN 1 ELSE 0 END) as available')
@@ -101,9 +87,6 @@ class ParkingController extends Controller
         }
     }
 
-    /**
-     * Get parking spaces for a specific floor
-     */
     public function getByFloor($floorLevel): JsonResponse
     {
         try {
