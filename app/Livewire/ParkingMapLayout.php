@@ -15,8 +15,28 @@ class ParkingMapLayout extends Component
     public $lastUpdate;
     public $isAutoRefreshEnabled = true;
 
+    // Edit mode properties
+    public $editMode = false;
+    public $showSlotModal = false;
+    public $availableSensors = [];
+    public $selectedSlot = null;
+
+    // Slot form data
+    public $slotForm = [
+        'id' => null,
+        'slot_name' => '',
+        'sensor_id' => null,
+        'is_active' => true,
+    ];
+
     protected $listeners = [
         'refresh-parking-data' => 'loadParkingData'
+    ];
+
+    protected $rules = [
+        'slotForm.slot_name' => 'required|string|max:10',
+        'slotForm.sensor_id' => 'nullable|integer',
+        'slotForm.is_active' => 'boolean',
     ];
 
     public function mount($floor = null)
@@ -35,6 +55,7 @@ class ParkingMapLayout extends Component
         }
 
         $this->loadParkingData();
+        $this->loadAvailableSensors();
     }
 
     public function loadParkingData()
@@ -76,6 +97,135 @@ class ParkingMapLayout extends Component
     {
         $this->loadParkingData();
         $this->dispatch('show-alert', type: 'success', message: 'Map refreshed successfully');
+    }
+
+    public function toggleEditMode()
+    {
+        if (!$this->canEditLayout()) {
+            $this->dispatch('show-alert', type: 'error', message: 'You do not have permission to edit the layout.');
+            return;
+        }
+
+        $this->editMode = !$this->editMode;
+
+        if ($this->editMode) {
+            $this->loadAvailableSensors();
+            $this->dispatch('show-alert', type: 'info', message: 'Edit mode enabled. Click on slots to manage them.');
+        } else {
+            $this->closeSlotModal();
+            $this->dispatch('show-alert', type: 'success', message: 'Edit mode disabled.');
+        }
+    }
+
+    public function handleSlotClick($slotId)
+    {
+        $slot = ParkingSpace::find($slotId);
+
+        if (!$slot) {
+            return;
+        }
+
+        $this->selectedSlot = $slot;
+
+        if (!$this->editMode) {
+            // Show slot details in read-only mode
+            $this->showSlotModal = true;
+            return;
+        }
+
+        // Load slot data into form for editing
+        $this->slotForm = [
+            'id' => $slot->id,
+            'slot_name' => $slot->slot_name ?? $this->getSensorDisplayName($slot->sensor_id),
+            'sensor_id' => $slot->sensor_id,
+            'is_active' => $slot->is_active ?? true,
+        ];
+
+        $this->showSlotModal = true;
+    }
+
+    public function saveSlot()
+    {
+        if (!$this->canEditLayout()) {
+            $this->dispatch('show-alert', type: 'error', message: 'You do not have permission to save slots.');
+            return;
+        }
+
+        $this->validate();
+
+        try {
+            $slotData = [
+                'slot_name' => $this->slotForm['slot_name'],
+                'sensor_id' => $this->slotForm['sensor_id'],
+                'is_active' => $this->slotForm['is_active'] ?? true,
+            ];
+
+            if ($this->slotForm['id']) {
+                // Update existing slot
+                $slot = ParkingSpace::findOrFail($this->slotForm['id']);
+                $slot->update($slotData);
+                $message = "Slot {$this->slotForm['slot_name']} updated successfully!";
+            }
+
+            $this->loadParkingData();
+            $this->loadAvailableSensors();
+            $this->closeSlotModal();
+            $this->dispatch('show-alert', type: 'success', message: $message);
+
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to save slot: ' . $e->getMessage());
+        }
+    }
+
+    public function deleteSlot()
+    {
+        if (!$this->canEditLayout() || !$this->slotForm['id']) {
+            $this->dispatch('show-alert', type: 'error', message: 'Cannot delete slot.');
+            return;
+        }
+
+        try {
+            $slot = ParkingSpace::findOrFail($this->slotForm['id']);
+            $slotName = $slot->slot_name ?? $this->getSensorDisplayName($slot->sensor_id);
+            $slot->delete();
+
+            $this->loadParkingData();
+            $this->loadAvailableSensors();
+            $this->closeSlotModal();
+            $this->dispatch('show-alert', type: 'success', message: "Slot {$slotName} deleted successfully!");
+
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to delete slot: ' . $e->getMessage());
+        }
+    }
+
+    public function closeSlotModal()
+    {
+        $this->showSlotModal = false;
+        $this->selectedSlot = null;
+        $this->resetSlotForm();
+    }
+
+    private function resetSlotForm()
+    {
+        $this->slotForm = [
+            'id' => null,
+            'slot_name' => '',
+            'sensor_id' => null,
+            'is_active' => true,
+        ];
+    }
+
+    private function loadAvailableSensors()
+    {
+        $assignedSensors = ParkingSpace::pluck('sensor_id')->toArray();
+        $allSensors = range(1, 50); // Adjust range as needed
+        $this->availableSensors = array_diff($allSensors, $assignedSensors);
+    }
+
+    private function canEditLayout()
+    {
+        return auth()->check() && in_array(auth()->user()->role, ['admin', 'ssd']);
     }
 
     private function calculateFloorStats()
