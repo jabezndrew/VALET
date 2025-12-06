@@ -11,11 +11,6 @@
                 </h2>
             </div>
             <div class="d-flex gap-2">
-                @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'ssd']))
-                <button wire:click="toggleEditMode" class="btn {{ $editMode ? 'btn-edit-active' : 'btn-edit' }}">
-                    <i class="fas fa-{{ $editMode ? 'times' : 'edit' }} me-1"></i> {{ $editMode ? 'Exit Edit' : 'Edit Mode' }}
-                </button>
-                @endif
                 <button wire:click="refreshNow" class="btn btn-refresh">
                     <i class="fas fa-sync-alt me-1"></i> Refresh
                 </button>
@@ -122,11 +117,47 @@
             @else
                 <!-- Parking Map Layout -->
                 <div class="parking-map-wrapper">
-                    <div class="parking-map-container {{ $editMode ? 'edit-mode' : '' }}">
+                    <div class="parking-map-container">
+
+                        <!-- Section Labels (Dynamic based on React Native config scaled 1.5x) -->
+                        @php
+                            // Section label positions based on React Native config (scaled 1.5x)
+                            $sectionLabels = [
+                                'A' => ['x' => 1027, 'y' => 174],    // Original: x: 685, y: 116 (first A1 spot position)
+                                'B' => ['x' => 750, 'y' => 15],      // Original: x: 500, y: 32 (first B spot)
+                                'C' => ['x' => 675, 'y' => 142],     // Original: x: 450, y: 95 (first C spot)
+                                'D' => ['x' => 150, 'y' => 270],     // Original: x: 100, y: 200 (first D spot)
+                                'E' => ['x' => 82, 'y' => 472],      // Original: x: 55, y: 315 (first E spot)
+                                'F' => ['x' => 180, 'y' => 750],     // Original: x: 120, y: 520 (first F spot)
+                                'G' => ['x' => 750, 'y' => 885],     // Original: x: 500, y: 590 (first G spot)
+                                'H' => ['x' => 840, 'y' => 1305],    // Original: x: 560, y: 890 (first H spot)
+                                'I' => ['x' => 1020, 'y' => 885],    // Original: x: 680, y: 590 (first I spot)
+                                'J' => ['x' => 405, 'y' => 525],     // Original: x: 270, y: 370 (first J spot)
+                            ];
+
+                            // Get unique sections from parking spaces
+                            $sections = [];
+                            foreach ($parkingSpaces as $space) {
+                                $slotName = $space->slot_name ?? $this->getSensorDisplayName($space->sensor_id);
+                                // Extract section letter (first character)
+                                $section = substr($slotName, 0, 1);
+                                if (!in_array($section, $sections) && isset($sectionLabels[$section])) {
+                                    $sections[] = $section;
+                                }
+                            }
+                        @endphp
+
+                        @foreach($sections as $section)
+                            @if(isset($sectionLabels[$section]))
+                                <div class="section-label" style="left: {{ $sectionLabels[$section]['x'] }}px; top: {{ $sectionLabels[$section]['y'] }}px;">
+                                    {{ $section }}
+                                </div>
+                            @endif
+                        @endforeach
 
                         <!-- Section A - Box Lines -->
-                        <div class="divider-line" style="left: 1035px; top: 165px; width: 66px; height: 3px;"></div>
-                        <div class="divider-line" style="left: 1035px; top: 255px; width: 66px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 1035px; top: 165px; width: 66px; height: 4px;"></div>
+                        <div class="divider-line" style="left: 1035px; top: 255px; width: 66px; height: 4px;"></div>
 
                         <!-- Section B - Horizontal dividers -->
                         <div class="divider-line" style="left: 747px; top: 45px; width: 270px; height: 3px;"></div>
@@ -260,7 +291,7 @@
                         <i class="fas fa-arrow-up arrow" style="right: 210px; top: 735px;"></i>
                         <i class="fas fa-arrow-right arrow" style="right: 135px; top: 615px;"></i>
 
-                        <!-- Parking Slots (Dynamic from Database) -->
+                        <!-- Parking Spot Labels (Dynamic from Database) -->
                         @foreach($parkingSpaces as $space)
                             @php
                                 $slotName = $space->slot_name ?? $this->getSensorDisplayName($space->sensor_id);
@@ -268,21 +299,37 @@
                                 $y = $space->y_position ?? 0;
                                 $isOccupied = $space->is_occupied;
                                 $isActive = $space->is_active ?? true;
+                                $canEdit = auth()->user() && in_array(auth()->user()->role, ['admin', 'ssd']);
                             @endphp
 
-                            <div class="parking-slot {{ $isOccupied ? 'occupied' : 'available' }} {{ !$isActive ? 'inactive' : '' }}"
-                                 style="left: {{ $x }}px; top: {{ $y }}px;"
-                                 wire:click="handleSlotClick({{ $space->id }})"
-                                 title="{{ $slotName }} - {{ $isOccupied ? 'Occupied' : 'Available' }}">
+                            @php
+                                // Make slots much bigger to fill space better
+                                // Original slots were 60x85, new slots are 120x150
+                                // Offset by half the difference to keep centered: (120-60)/2 = 30, (150-85)/2 = 32.5
+                                $slotWidth = 50;
+                                $slotHeight = 85;
+                                $adjustedX = $x - 5;
+                                $adjustedY = $y - 12.5;
+                                $rotateStyle = '90deg';
+                            @endphp
 
-                                <div class="slot-label">{{ $slotName }}</div>
-
-                                @if($isOccupied)
-                                    <i class="fas fa-car slot-icon"></i>
-                                @else
-                                    <div class="empty-slot"></div>
-                                @endif
-                            </div>
+                            @if($isOccupied)
+                                <!-- Occupied Spot: Show Car Image -->
+                                <div class="parking-spot-occupied {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
+                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
+                                     title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Occupied {{ !$isActive ? '(Inactive)' : '' }}"
+                                     @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
+                                    <img src="{{ asset('images/car_top.png') }}" alt="Car" class="car-icon-img">
+                                </div>
+                            @else
+                                <!-- Available Spot: Show Label Only -->
+                                <div class="parking-spot-label available {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
+                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
+                                     title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Available {{ !$isActive ? '(Inactive)' : '' }}"
+                                     @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
+                                    {{ $slotName }}
+                                </div>
+                            @endif
                         @endforeach
 
                     </div>
@@ -305,84 +352,76 @@
         </div>
     </div>
 
-    <!-- Slot Management Modal (for Admin/SSD) -->
-    @if($showSlotModal)
+    <!-- Slot Management Modal -->
+    @if($showSlotModal && auth()->user() && in_array(auth()->user()->role, ['admin', 'ssd']))
     <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, #B22020 0%, #8B0000 100%); color: white;">
+                <div class="modal-header" style="background: linear-gradient(135deg, #B22020 0%, #8a1818 100%); color: white;">
                     <h5 class="modal-title">
-                        <i class="fas fa-parking me-2"></i>
-                        Manage Parking Slot: {{ $slotForm['slot_name'] ?? 'New Slot' }}
+                        <i class="fas fa-cog me-2"></i>Manage Parking Slot
                     </h5>
                     <button type="button" class="btn-close btn-close-white" wire:click="closeSlotModal"></button>
                 </div>
                 <div class="modal-body">
-                    @if($editMode)
-                    <form wire:submit.prevent="saveSlot">
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-tag me-1"></i> Slot Name
-                            </label>
-                            <input type="text" class="form-control" wire:model="slotForm.slot_name" required>
-                            @error('slotForm.slot_name') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
+                    @if($selectedSlot)
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Slot Name</label>
+                        <input type="text" class="form-control" wire:model="slotName" placeholder="e.g., 4A1">
+                        @error('slotName') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">
-                                <i class="fas fa-microchip me-1"></i> Assign Sensor
-                            </label>
-                            <select class="form-select" wire:model="slotForm.sensor_id">
-                                <option value="">No Sensor (Inactive)</option>
-                                @foreach($availableSensors as $sensorId)
-                                <option value="{{ $sensorId }}">Sensor {{ $sensorId }}</option>
-                                @endforeach
-                                @if($slotForm['sensor_id'])
-                                <option value="{{ $slotForm['sensor_id'] }}" selected>Sensor {{ $slotForm['sensor_id'] }} (Current)</option>
-                                @endif
-                            </select>
-                            @error('slotForm.sensor_id') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Sensor ID</label>
+                        <input type="number" class="form-control" wire:model="sensorId" placeholder="e.g., 401">
+                        @error('sensorId') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
 
-                        <div class="form-check form-switch mb-3">
-                            <input class="form-check-input" type="checkbox" wire:model="slotForm.is_active" id="slotActive">
-                            <label class="form-check-label fw-bold" for="slotActive">
-                                <i class="fas fa-toggle-on me-1"></i> Activate Slot
-                            </label>
-                        </div>
-                    </form>
-                    @else
-                    <!-- View Only Mode -->
-                    <div class="slot-details">
-                        <p><strong>Status:</strong>
-                            <span class="badge {{ $selectedSlot?->is_occupied ? 'bg-danger' : 'bg-success' }}">
-                                {{ $selectedSlot?->is_occupied ? 'Occupied' : 'Available' }}
+                    <div class="mb-3">
+                        <label class="form-label fw-bold">Floor Level</label>
+                        <select class="form-select" wire:model="floorLevel">
+                            <option value="">Select Floor</option>
+                            <option value="1st Floor">1st Floor</option>
+                            <option value="2nd Floor">2nd Floor</option>
+                            <option value="3rd Floor">3rd Floor</option>
+                            <option value="4th Floor">4th Floor</option>
+                        </select>
+                        @error('floorLevel') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="form-check form-switch mb-3">
+                        <input class="form-check-input" type="checkbox" id="isActiveSwitch" wire:model="isSlotActive">
+                        <label class="form-check-label fw-bold" for="isActiveSwitch">
+                            <span class="badge {{ $isSlotActive ? 'bg-success' : 'bg-secondary' }} me-2">
+                                {{ $isSlotActive ? 'ACTIVE' : 'INACTIVE' }}
                             </span>
-                        </p>
-                        @if($selectedSlot?->sensor_id)
-                        <p><strong>Sensor ID:</strong> {{ $selectedSlot->sensor_id }}</p>
-                        @endif
-                        @if($selectedSlot?->distance_cm)
-                        <p><strong>Distance:</strong> {{ $selectedSlot->distance_cm }} cm</p>
-                        @endif
-                        <p><strong>Last Updated:</strong> {{ $this->getRelativeTime($selectedSlot?->updated_at) }}</p>
+                            Slot Status
+                            <small class="text-muted d-block">
+                                {{ $isSlotActive ? 'This slot is active and can receive parking assignments' : 'This slot is inactive and will appear grayed out on the map' }}
+                            </small>
+                        </label>
+                    </div>
+
+                    <div class="alert {{ $isSlotActive ? 'alert-info' : 'alert-warning' }}">
+                        <i class="fas {{ $isSlotActive ? 'fa-info-circle' : 'fa-exclamation-triangle' }} me-2"></i>
+                        <strong>{{ $isSlotActive ? 'Active Slot' : 'Inactive Slot' }}:</strong>
+                        {{ $isSlotActive
+                            ? 'This slot will appear on the map with a label and can accept parking assignments from sensors.'
+                            : 'This slot will be grayed out on the map with a dashed border and strikethrough text. It will not accept any parking assignments until reactivated.'
+                        }}
                     </div>
                     @endif
                 </div>
                 <div class="modal-footer">
-                    @if($editMode && $slotForm['id'])
-                    <button type="button" class="btn btn-danger me-auto" wire:click="deleteSlot">
-                        <i class="fas fa-trash me-1"></i> Delete Slot
-                    </button>
-                    @endif
                     <button type="button" class="btn btn-secondary" wire:click="closeSlotModal">
-                        <i class="fas fa-times me-1"></i> Close
+                        <i class="fas fa-times me-1"></i>Cancel
                     </button>
-                    @if($editMode)
-                    <button type="button" class="btn btn-primary" wire:click="saveSlot">
-                        <i class="fas fa-save me-1"></i> Save Changes
+                    <button type="button" class="btn btn-danger" wire:click="deleteSlot">
+                        <i class="fas fa-trash me-1"></i>Delete Slot
                     </button>
-                    @endif
+                    <button type="button" class="btn btn-success" wire:click="saveSlot">
+                        <i class="fas fa-save me-1"></i>Save Changes
+                    </button>
                 </div>
             </div>
         </div>
@@ -421,32 +460,6 @@
 @push('styles')
 <style>
     /* Buttons */
-    .btn-edit {
-        background: linear-gradient(135deg, #B22020 0%, #8B0000 100%);
-        color: white !important;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(178, 32, 32, 0.2);
-    }
-
-    .btn-edit:hover {
-        background: linear-gradient(135deg, #8B0000 0%, #6B0000 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(178, 32, 32, 0.3);
-    }
-
-    .btn-edit-active {
-        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
-        color: white !important;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 500;
-    }
-
     .btn-refresh {
         background: linear-gradient(135deg, #2F623D 0%, #3a7d4d 100%);
         color: white !important;
@@ -592,27 +605,37 @@
         border-radius: 15px;
         padding: 20px;
         display: flex;
-        justify-content: center;
         align-items: flex-start;
+
     }
 
     .parking-map-container {
-        width: 1200px;
-        height: 1500px;
+        position: relative;
+        width: 100%;
+        height: 900px;
         background: #2a2a2a;
-        border-radius: 10px;
-        transform: scale(0.55);
-        transform-origin: top center;
-    }
+        transform: rotate(90deg);
 
-    .parking-map-container.edit-mode {
-        border: 3px dashed #B22020;
     }
 
     /* Divider Lines */
     .divider-line {
         position: absolute;
         background-color: #fff;
+    }
+
+    /* Section Labels */
+    .section-label {
+        position: absolute;
+        font-size: 24px;
+        font-weight: bold;
+        color: #fff;
+        background: rgba(178, 32, 32, 0.8);
+        padding: 8px 16px;
+        border-radius: 8px;
+        border: 2px solid #fff;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
+        z-index: 10;
     }
 
     /* Facilities */
@@ -709,23 +732,100 @@
         background-color: rgba(108, 117, 125, 0.2);
     }
 
-    .slot-label {
-        font-size: 10px;
+    .parking-label {
+        position: absolute;
+        font-size: 16px;
         font-weight: bold;
         color: white;
-        margin-bottom: 2px;
+        text-align: center;
+        width: 60px;
+        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
+        line-height: 1;
+        z-index: 15;
+        pointer-events: none;
+    }
+
+    /* Parking Spot Labels (Text Only) */
+    .parking-spot-label {
+        position: absolute;
+        font-size: 18px;
+        font-weight: 700;
+        text-align: center;
+        padding: 8px 16px;
+        border-radius: 6px;
+        z-index: 15;
+        pointer-events: none;
+        transition: all 0.3s ease;
+        min-width: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .parking-spot-label.available {
+        color: #fff;
+        background: transparent;
+        border: none;
+        font-size: 40px;
+        text-align: center;
+        justify-content: center;
+        font-weight: 800;
+    }
+
+    /* Inactive slots */
+    .parking-spot-label.inactive,
+    .parking-spot-occupied.inactive {
+        opacity: 0.4;
+        filter: grayscale(100%) brightness(0.6);
+        background: rgba(108, 117, 125, 0.3) !important;
+        border: 2px dashed #6c757d !important;
+    }
+
+    .parking-spot-label.inactive {
+        color: #6c757d !important;
+        text-decoration: line-through;
+        font-style: italic;
+    }
+
+    .parking-spot-occupied.inactive .car-icon-img {
+        opacity: 0.3;
+        filter: grayscale(100%);
+    }
+
+    /* Editable slots */
+    .parking-spot-label.editable,
+    .parking-spot-occupied.editable {
+        pointer-events: auto;
+        cursor: pointer;
+        transition: all 0.2s ease;
+    }
+
+    .parking-spot-label.editable:hover,
+    .parking-spot-occupied.editable:hover {
+        transform: scale(1.1);
+        filter: brightness(1.2);
+    }
+
+    /* Occupied Spot with Car Image */
+    .parking-spot-occupied {
+        position: absolute;
+        z-index: 15;
+        pointer-events: none;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .car-icon-img {
+        width: 110px;
+        height: 110px;
+        object-fit: contain;
+        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
     }
 
     .slot-icon {
-        font-size: 20px;
+        font-size: 32px;
         color: white;
-    }
-
-    .empty-slot {
-        width: 20px;
-        height: 20px;
-        border: 2px dashed rgba(255, 255, 255, 0.5);
-        border-radius: 2px;
     }
 
     /* Modal Enhancements */
