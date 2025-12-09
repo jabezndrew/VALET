@@ -9,7 +9,7 @@ use App\Http\Controllers\Api\FeedbackController;
 Route::get('/health', fn() => response()->json(['status' => 'ok', 'service' => 'VALET API']));
 
 // Authentication endpoint with rate limiting (max 5 attempts per minute)
-Route::middleware('throttle:5,1')->group(function () {
+Route::middleware('throttle:20,1')->group(function () {
     Route::post('/login', [AuthController::class, 'login']);
 });
 
