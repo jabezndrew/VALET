@@ -22,6 +22,12 @@ class ParkingMapLayout extends Component
     public $sensorId = '';
     public $floorLevel = '';
     public $isSlotActive = true;
+    public $xPosition = 0;
+    public $yPosition = 0;
+    public $isCreatingNew = false;
+    public $availableSensors = [];
+    public $takenSlots = [];
+    public $isSlotNameTaken = false;
 
     protected $listeners = [
         'refresh-parking-data' => 'loadParkingData'
@@ -29,9 +35,11 @@ class ParkingMapLayout extends Component
 
     protected $rules = [
         'slotName' => 'required|string|max:10',
-        'sensorId' => 'required|integer',
+        'sensorId' => 'required|integer|unique:parking_spaces,sensor_id',
         'floorLevel' => 'required|string',
         'isSlotActive' => 'boolean',
+        'xPosition' => 'required|numeric',
+        'yPosition' => 'required|numeric',
     ];
 
     public function mount($floor = null)
@@ -249,7 +257,7 @@ class ParkingMapLayout extends Component
     }
 
     // Slot Management Methods
-    public function openSlotModal($slotId)
+    public function openSlotModal($slotId = null)
     {
         // Check authorization
         if (!auth()->user() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
@@ -257,15 +265,48 @@ class ParkingMapLayout extends Component
             return;
         }
 
-        $this->selectedSlot = ParkingSpace::find($slotId);
+        if ($slotId) {
+            $this->selectedSlot = ParkingSpace::find($slotId);
 
-        if ($this->selectedSlot) {
-            $this->slotName = $this->selectedSlot->slot_name ?? '';
-            $this->sensorId = $this->selectedSlot->sensor_id ?? '';
-            $this->floorLevel = $this->selectedSlot->floor_level ?? $this->selectedFloor;
-            $this->isSlotActive = $this->selectedSlot->is_active ?? true;
-            $this->showSlotModal = true;
+            if ($this->selectedSlot) {
+                $this->slotName = $this->selectedSlot->slot_name ?? '';
+                $this->sensorId = $this->selectedSlot->sensor_id ?? '';
+                $this->floorLevel = $this->selectedSlot->floor_level ?? $this->selectedFloor;
+
+                // Determine if slot should be active based on sensor
+                // Only sensors 401-405 have real data and can be active
+                $hasRealSensor = in_array($this->selectedSlot->sensor_id, [401, 402, 403, 404, 405]);
+                $this->isSlotActive = $hasRealSensor ? (bool)($this->selectedSlot->is_active ?? true) : false;
+
+                $this->xPosition = $this->selectedSlot->x_position ?? 0;
+                $this->yPosition = $this->selectedSlot->y_position ?? 0;
+                $this->isCreatingNew = false;
+                $this->loadAvailableSensors();
+                $this->loadTakenSlots();
+                $this->showSlotModal = true;
+            }
         }
+    }
+
+    public function openCreateSlotModal($x, $y)
+    {
+        // Check authorization
+        if (!auth()->user() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            $this->dispatch('show-alert', type: 'error', message: 'Unauthorized access');
+            return;
+        }
+
+        $this->isCreatingNew = true;
+        $this->xPosition = $x;
+        $this->yPosition = $y;
+        $this->floorLevel = $this->selectedFloor;
+        $this->slotName = '';
+        $this->sensorId = '';
+        // New slots are inactive by default until a real sensor is assigned
+        $this->isSlotActive = false;
+        $this->loadAvailableSensors();
+        $this->loadTakenSlots();
+        $this->showSlotModal = true;
     }
 
     public function closeSlotModal()
@@ -281,6 +322,10 @@ class ParkingMapLayout extends Component
         $this->sensorId = '';
         $this->floorLevel = '';
         $this->isSlotActive = true;
+        $this->xPosition = 0;
+        $this->yPosition = 0;
+        $this->isCreatingNew = false;
+        $this->isSlotNameTaken = false;
         $this->resetValidation();
     }
 
@@ -292,23 +337,46 @@ class ParkingMapLayout extends Component
             return;
         }
 
-        $this->validate();
+        // Adjust validation rules for update vs create
+        $rules = $this->rules;
+        if (!$this->isCreatingNew && $this->selectedSlot) {
+            $rules['sensorId'] = 'required|integer|unique:parking_spaces,sensor_id,' . $this->selectedSlot->id;
+        }
+
+        $this->validate($rules);
 
         try {
-            if ($this->selectedSlot) {
+            if ($this->isCreatingNew) {
+                // Create new parking slot
+                ParkingSpace::create([
+                    'slot_name' => $this->slotName,
+                    'sensor_id' => $this->sensorId,
+                    'floor_level' => $this->floorLevel,
+                    'is_active' => $this->isSlotActive,
+                    'x_position' => $this->xPosition,
+                    'y_position' => $this->yPosition,
+                    'is_occupied' => false,
+                ]);
+
+                $this->dispatch('show-alert', type: 'success', message: 'Parking slot created successfully');
+            } elseif ($this->selectedSlot) {
+                // Update existing parking slot
                 $this->selectedSlot->update([
                     'slot_name' => $this->slotName,
                     'sensor_id' => $this->sensorId,
                     'floor_level' => $this->floorLevel,
                     'is_active' => $this->isSlotActive,
+                    'x_position' => $this->xPosition,
+                    'y_position' => $this->yPosition,
                 ]);
 
                 $this->dispatch('show-alert', type: 'success', message: 'Parking slot updated successfully');
-                $this->loadParkingData();
-                $this->closeSlotModal();
             }
+
+            $this->loadParkingData();
+            $this->closeSlotModal();
         } catch (\Exception $e) {
-            $this->dispatch('show-alert', type: 'error', message: 'Failed to update slot: ' . $e->getMessage());
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to save slot: ' . $e->getMessage());
         }
     }
 
@@ -331,6 +399,60 @@ class ParkingMapLayout extends Component
             }
         } catch (\Exception $e) {
             $this->dispatch('show-alert', type: 'error', message: 'Failed to delete slot: ' . $e->getMessage());
+        }
+    }
+
+    private function loadAvailableSensors()
+    {
+        // Get all taken sensor IDs
+        $takenSensorIds = ParkingSpace::pluck('sensor_id')->toArray();
+
+        // Real sensors (401-405) and extended range for manual configuration (1000-1100)
+        $allSensors = array_merge(range(401, 442), range(1000, 1100));
+
+        // Filter out taken sensors (except the current one being edited)
+        $this->availableSensors = array_filter($allSensors, function($sensorId) use ($takenSensorIds) {
+            if ($this->selectedSlot && $sensorId == $this->selectedSlot->sensor_id) {
+                return true; // Allow current sensor when editing
+            }
+            return !in_array($sensorId, $takenSensorIds);
+        });
+
+        sort($this->availableSensors);
+    }
+
+    private function loadTakenSlots()
+    {
+        // Get all existing slot names
+        $this->takenSlots = ParkingSpace::pluck('slot_name')->filter()->toArray();
+    }
+
+    public function updatedSlotName($value)
+    {
+        // Check if slot name is already taken when it changes
+        $this->isSlotNameTaken = false;
+
+        if (!empty($value)) {
+            $query = ParkingSpace::where('slot_name', $value);
+
+            // Exclude current slot when editing
+            if ($this->selectedSlot) {
+                $query->where('id', '!=', $this->selectedSlot->id);
+            }
+
+            $this->isSlotNameTaken = $query->exists();
+        }
+    }
+
+    public function updatedSensorId($value)
+    {
+        // Automatically activate slot if real sensor (401-405) is selected
+        if (!empty($value)) {
+            $hasRealSensor = in_array((int)$value, [401, 402, 403, 404, 405]);
+            $this->isSlotActive = $hasRealSensor;
+        } else {
+            // No sensor selected, set to inactive
+            $this->isSlotActive = false;
         }
     }
 

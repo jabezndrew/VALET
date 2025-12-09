@@ -117,7 +117,7 @@
             @else
                 <!-- Parking Map Layout -->
                 <div class="parking-map-wrapper">
-                    <div class="parking-map-container">
+                    <div class="parking-map-container" id="parkingMapContainer">
 
                         <!-- Section Labels (Dynamic based on React Native config scaled 1.5x) -->
                         @php
@@ -250,7 +250,7 @@
                         </div>
 
                         <!-- Elevator 3 -->
-                        <div class="facility elevator rotated" style="left: 985px; top: 742px; width: 127px; height: 60px;">
+                        <div class="facility elevator rotated-left" style="left: 985px; top: 742px; width: 127px; height: 60px;">
                             <span>Elevator</span>
                         </div>
 
@@ -294,40 +294,49 @@
                         <!-- Parking Spot Labels (Dynamic from Database) -->
                         @foreach($parkingSpaces as $space)
                             @php
-                                $slotName = $space->slot_name ?? $this->getSensorDisplayName($space->sensor_id);
+                                // Only show slots with real sensor data (sensors 401-405: 4B1-4B4, 4C1)
+                                // These are the only sensors with actual API data
+                                $hasRealSensor = in_array($space->sensor_id, [401, 402, 403, 404, 405]);
+
+                                $slotName = $space->slot_name ?? '';
                                 $x = $space->x_position ?? 0;
                                 $y = $space->y_position ?? 0;
                                 $isOccupied = $space->is_occupied;
                                 $isActive = $space->is_active ?? true;
                                 $canEdit = auth()->user() && in_array(auth()->user()->role, ['admin', 'ssd']);
-                            @endphp
 
-                            @php
-                                // Make slots much bigger to fill space better
-                                // Original slots were 60x85, new slots are 120x150
-                                // Offset by half the difference to keep centered: (120-60)/2 = 30, (150-85)/2 = 32.5
-                                $slotWidth = 50;
+                                // Slot dimensions
+                                $slotWidth = 60;
                                 $slotHeight = 85;
-                                $adjustedX = $x - 5;
-                                $adjustedY = $y - 12.5;
-                                $rotateStyle = '90deg';
+                                $adjustedX = $x;
+                                $adjustedY = $y;
                             @endphp
 
-                            @if($isOccupied)
-                                <!-- Occupied Spot: Show Car Image -->
-                                <div class="parking-spot-occupied {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
-                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
-                                     title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Occupied {{ !$isActive ? '(Inactive)' : '' }}"
-                                     @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
-                                    <img src="{{ asset('images/car_top.png') }}" alt="Car" class="car-icon-img">
-                                </div>
+                            @if($hasRealSensor)
+                                @if($isOccupied)
+                                    <!-- Occupied Spot: Show Car Image -->
+                                    <div class="parking-spot-occupied {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
+                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
+                                         title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Occupied {{ !$isActive ? '(Inactive)' : '' }}"
+                                         @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
+                                        <img src="{{ asset('images/car_top.png') }}" alt="Car" class="car-icon-img">
+                                    </div>
+                                @else
+                                    <!-- Available Spot: Show Label -->
+                                    <div class="parking-spot-label available {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
+                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
+                                         title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Available {{ !$isActive ? '(Inactive)' : '' }}"
+                                         @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
+                                        {{ $slotName }}
+                                    </div>
+                                @endif
                             @else
-                                <!-- Available Spot: Show Label Only -->
-                                <div class="parking-spot-label available {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
+                                <!-- Inactive/Empty Slot: Show as grayed out box (clickable by admin/SSD) -->
+                                <div class="parking-slot-empty {{ $canEdit ? 'editable' : '' }}"
                                      style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
-                                     title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Available {{ !$isActive ? '(Inactive)' : '' }}"
+                                     title="Sensor {{ $space->sensor_id }} - Not Active - Click to configure"
                                      @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
-                                    {{ $slotName }}
+                                    <i class="fas fa-cog slot-config-icon"></i>
                                 </div>
                             @endif
                         @endforeach
@@ -359,22 +368,63 @@
             <div class="modal-content">
                 <div class="modal-header" style="background: linear-gradient(135deg, #B22020 0%, #8a1818 100%); color: white;">
                     <h5 class="modal-title">
-                        <i class="fas fa-cog me-2"></i>Manage Parking Slot
+                        <i class="fas {{ $isCreatingNew ? 'fa-plus-circle' : 'fa-cog' }} me-2"></i>
+                        {{ $isCreatingNew ? 'Create New Parking Slot' : 'Manage Parking Slot' }}
                     </h5>
                     <button type="button" class="btn-close btn-close-white" wire:click="closeSlotModal"></button>
                 </div>
                 <div class="modal-body">
-                    @if($selectedSlot)
                     <div class="mb-3">
                         <label class="form-label fw-bold">Slot Name</label>
-                        <input type="text" class="form-control" wire:model="slotName" placeholder="e.g., 4A1">
+                        <input type="text" class="form-control" wire:model.live="slotName" placeholder="e.g., 4A1">
                         @error('slotName') <span class="text-danger small">{{ $message }}</span> @enderror
+                        @if($isSlotNameTaken)
+                            <div class="alert alert-warning mt-2 py-2 px-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>This slot name is already taken!</strong>
+                            </div>
+                        @endif
                     </div>
 
                     <div class="mb-3">
                         <label class="form-label fw-bold">Sensor ID</label>
-                        <input type="number" class="form-control" wire:model="sensorId" placeholder="e.g., 401">
+                        <select class="form-select" wire:model.live="sensorId">
+                            <option value="">Select a sensor...</option>
+                            <optgroup label="Real Sensors (401-405: 4B1-4B4, 4C1)">
+                                @foreach($availableSensors as $sensor)
+                                    @if($sensor >= 401 && $sensor <= 405)
+                                        <option value="{{ $sensor }}">Sensor {{ $sensor }} @if($sensor == 401) - 4B4 @elseif($sensor == 402) - 4B3 @elseif($sensor == 403) - 4B2 @elseif($sensor == 404) - 4B1 @elseif($sensor == 405) - 4C1 @endif</option>
+                                    @endif
+                                @endforeach
+                            </optgroup>
+                            <optgroup label="Future Sensors (406-442)">
+                                @foreach($availableSensors as $sensor)
+                                    @if($sensor >= 406 && $sensor <= 442)
+                                        <option value="{{ $sensor }}">Sensor {{ $sensor }}</option>
+                                    @endif
+                                @endforeach
+                            </optgroup>
+                            <optgroup label="Custom Sensors (1000+)">
+                                @foreach($availableSensors as $sensor)
+                                    @if($sensor >= 1000)
+                                        <option value="{{ $sensor }}">Sensor {{ $sensor }}</option>
+                                    @endif
+                                @endforeach
+                            </optgroup>
+                        </select>
                         @error('sensorId') <span class="text-danger small">{{ $message }}</span> @enderror
+                        @if(!empty($sensorId))
+                            <small class="text-muted mt-1 d-block">
+                                <i class="fas fa-info-circle me-1"></i>
+                                @if($sensorId >= 401 && $sensorId <= 405)
+                                    Real sensor with API data
+                                @elseif($sensorId >= 406 && $sensorId <= 442)
+                                    Future sensor (mapped but no API data yet)
+                                @else
+                                    Custom sensor for manual configuration
+                                @endif
+                            </small>
+                        @endif
                     </div>
 
                     <div class="mb-3">
@@ -389,15 +439,36 @@
                         @error('floorLevel') <span class="text-danger small">{{ $message }}</span> @enderror
                     </div>
 
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">X Position</label>
+                            <input type="number" class="form-control" wire:model="xPosition" placeholder="e.g., 100">
+                            @error('xPosition') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Y Position</label>
+                            <input type="number" class="form-control" wire:model="yPosition" placeholder="e.g., 200">
+                            @error('yPosition') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                    </div>
+
                     <div class="form-check form-switch mb-3">
-                        <input class="form-check-input" type="checkbox" id="isActiveSwitch" wire:model="isSlotActive">
+                        @php
+                            $hasRealSensor = !empty($sensorId) && in_array((int)$sensorId, [401, 402, 403, 404, 405]);
+                            $canToggle = $hasRealSensor;
+                        @endphp
+                        <input class="form-check-input" type="checkbox" id="isActiveSwitch" wire:model="isSlotActive" {{ !$canToggle ? 'disabled' : '' }}>
                         <label class="form-check-label fw-bold" for="isActiveSwitch">
                             <span class="badge {{ $isSlotActive ? 'bg-success' : 'bg-secondary' }} me-2">
                                 {{ $isSlotActive ? 'ACTIVE' : 'INACTIVE' }}
                             </span>
                             Slot Status
                             <small class="text-muted d-block">
-                                {{ $isSlotActive ? 'This slot is active and can receive parking assignments' : 'This slot is inactive and will appear grayed out on the map' }}
+                                @if($canToggle)
+                                    {{ $isSlotActive ? 'This slot is active and can receive parking assignments' : 'This slot is inactive and will appear grayed out on the map' }}
+                                @else
+                                    Only slots with real sensors (401-405) can be activated
+                                @endif
                             </small>
                         </label>
                     </div>
@@ -405,22 +476,28 @@
                     <div class="alert {{ $isSlotActive ? 'alert-info' : 'alert-warning' }}">
                         <i class="fas {{ $isSlotActive ? 'fa-info-circle' : 'fa-exclamation-triangle' }} me-2"></i>
                         <strong>{{ $isSlotActive ? 'Active Slot' : 'Inactive Slot' }}:</strong>
-                        {{ $isSlotActive
-                            ? 'This slot will appear on the map with a label and can accept parking assignments from sensors.'
-                            : 'This slot will be grayed out on the map with a dashed border and strikethrough text. It will not accept any parking assignments until reactivated.'
-                        }}
+                        @if($isSlotActive)
+                            This slot will appear on the map with a label and can accept parking assignments from sensors.
+                        @else
+                            @if($hasRealSensor)
+                                This slot will be grayed out on the map with a dashed border and strikethrough text. It will not accept any parking assignments until reactivated.
+                            @else
+                                This slot requires a real sensor (401-405) to be activated. Future sensors (406-442) and custom sensors (1000+) cannot be activated.
+                            @endif
+                        @endif
                     </div>
-                    @endif
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" wire:click="closeSlotModal">
                         <i class="fas fa-times me-1"></i>Cancel
                     </button>
+                    @if(!$isCreatingNew)
                     <button type="button" class="btn btn-danger" wire:click="deleteSlot">
                         <i class="fas fa-trash me-1"></i>Delete Slot
                     </button>
+                    @endif
                     <button type="button" class="btn btn-success" wire:click="saveSlot">
-                        <i class="fas fa-save me-1"></i>Save Changes
+                        <i class="fas fa-save me-1"></i>{{ $isCreatingNew ? 'Create Slot' : 'Save Changes' }}
                     </button>
                 </div>
             </div>
@@ -431,474 +508,12 @@
 
 @push('scripts')
 <script>
-    document.addEventListener('livewire:init', () => {
-        Livewire.on('show-alert', (event) => {
-            const alertContainer = document.getElementById('alert-container');
-            const alertId = 'alert-' + Date.now();
-
-            const alertHtml = `
-                <div class="container mt-3">
-                    <div id="${alertId}" class="alert alert-${event.type} alert-dismissible fade show" role="alert">
-                        <i class="fas fa-${event.type === 'success' ? 'check-circle' : (event.type === 'info' ? 'info-circle' : 'exclamation-circle')} me-2"></i>
-                        ${event.message}
-                        <button type="button" class="btn-close" onclick="document.getElementById('${alertId}').remove()"></button>
-                    </div>
-                </div>
-            `;
-
-            alertContainer.innerHTML = alertHtml;
-
-            setTimeout(() => {
-                const alert = document.getElementById(alertId);
-                if (alert) alert.remove();
-            }, 5000);
-        });
-    });
+    // Pass user permissions to JavaScript
+    window.userCanEdit = @json(auth()->user() && in_array(auth()->user()->role, ['admin', 'ssd']));
 </script>
+<script src="{{ asset('js/parking-map-layout.js') }}"></script>
 @endpush
 
 @push('styles')
-<style>
-    /* Buttons */
-    .btn-refresh {
-        background: linear-gradient(135deg, #2F623D 0%, #3a7d4d 100%);
-        color: white !important;
-        border: none;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-        box-shadow: 0 2px 8px rgba(47, 98, 61, 0.2);
-    }
-
-    .btn-refresh:hover {
-        background: linear-gradient(135deg, #255030 0%, #2e6640 100%);
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(47, 98, 61, 0.3);
-    }
-
-    .btn-back-dashboard {
-        background: white;
-        color: #3A3A3C !important;
-        border: 2px solid #e9ecef;
-        padding: 10px 20px;
-        border-radius: 8px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .btn-back-dashboard:hover {
-        background: #f8f9fa;
-        border-color: #B22020;
-        color: #B22020 !important;
-        transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(178, 32, 32, 0.2);
-    }
-
-    /* Floor Selector */
-    .floor-selector {
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-        border-radius: 10px;
-        overflow: hidden;
-    }
-
-    .btn-floor-select {
-        background: white;
-        color: #6c757d !important;
-        border: 1px solid #e9ecef;
-        padding: 14px 20px;
-        font-weight: 500;
-        transition: all 0.3s ease;
-    }
-
-    .btn-floor-select:hover:not(.disabled) {
-        background: #f8f9fa;
-        color: #3A3A3C !important;
-        transform: translateY(-2px);
-    }
-
-    .btn-floor-select.active {
-        background: linear-gradient(135deg, #B22020 0%, #8B0000 100%);
-        color: white !important;
-        border-color: #B22020;
-        box-shadow: 0 4px 12px rgba(178, 32, 32, 0.3);
-        transform: translateY(-2px);
-    }
-
-    /* Map Legend */
-    .map-legend {
-        display: flex;
-        gap: 15px;
-        align-items: center;
-        flex-wrap: wrap;
-    }
-
-    .legend-item {
-        display: inline-flex;
-        align-items: center;
-        padding: 8px 16px;
-        border-radius: 8px;
-        font-weight: 500;
-        font-size: 14px;
-        box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    }
-
-    .legend-available {
-        background: linear-gradient(135deg, #2F623D 0%, #3a7d4d 100%);
-        color: white;
-    }
-
-    .legend-occupied {
-        background: linear-gradient(135deg, #B22020 0%, #8B0000 100%);
-        color: white;
-    }
-
-    /* Statistics */
-    .live-badge {
-        background: #28a745;
-        color: white;
-        padding: 6px 16px;
-        border-radius: 20px;
-        font-size: 12px;
-        font-weight: 600;
-        display: inline-flex;
-        align-items: center;
-    }
-
-    .stat-circle {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        display: inline-flex;
-        align-items: center;
-        justify-content: center;
-        margin-bottom: 15px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
-    }
-
-    .stat-number {
-        font-size: 2.5rem;
-        font-weight: 700;
-        color: #3A3A3C;
-        background: white;
-        width: 90px;
-        height: 90px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .campus-section {
-        background: white;
-        border-radius: 15px;
-        padding: 25px;
-        box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
-    }
-
-    /* Parking Map Styles */
-    .parking-map-wrapper {
-        width: 100%;
-        max-height: 900px;
-        overflow: hidden;
-        background: #2a2a2a;
-        border-radius: 15px;
-        padding: 20px;
-        display: flex;
-        align-items: flex-start;
-
-    }
-
-    .parking-map-container {
-        position: relative;
-        width: 100%;
-        height: 900px;
-        background: #2a2a2a;
-        transform: rotate(90deg);
-
-    }
-
-    /* Divider Lines */
-    .divider-line {
-        position: absolute;
-        background-color: #fff;
-    }
-
-    /* Section Labels */
-    .section-label {
-        position: absolute;
-        font-size: 24px;
-        font-weight: bold;
-        color: #fff;
-        background: rgba(178, 32, 32, 0.8);
-        padding: 8px 16px;
-        border-radius: 8px;
-        border: 2px solid #fff;
-        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
-        z-index: 10;
-    }
-
-    /* Facilities */
-    .facility {
-        position: absolute;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        padding: 10px;
-        border-radius: 4px;
-        font-size: 9px;
-        font-weight: 600;
-        text-align: center;
-    }
-
-    .facility.elevator {
-        background-color: #d5d821;
-        color: black;
-    }
-
-    .facility.stairs {
-        background-color: #d5d821;
-        color: black;
-    }
-
-    .facility.entrance {
-        background-color: #3ed120;
-        color: black;
-        font-size: 15px;
-    }
-
-    .facility.exit-sign {
-        background-color: transparent;
-        color: white;
-        font-size: 24px;
-        font-weight: bold;
-    }
-
-    .facility.rotated {
-        transform: rotate(90deg);
-    }
-
-    .facility.rotated-left {
-        transform: rotate(-90deg);
-    }
-
-    /* Direction Arrows */
-    .arrow {
-        position: absolute;
-        font-size: 28px;
-        color: white;
-    }
-
-    /* Parking Slots */
-    .parking-slot {
-        position: absolute;
-        width: 60px;
-        height: 85px;
-        border: 3px solid;
-        border-radius: 6px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        cursor: pointer;
-        transition: all 0.3s ease;
-    }
-
-    .parking-slot.available {
-        background-color: rgba(46, 213, 115, 0.3);
-        border-color: #2ed573;
-    }
-
-    .parking-slot.available:hover {
-        background-color: rgba(46, 213, 115, 0.5);
-        transform: scale(1.1);
-        box-shadow: 0 0 15px rgba(46, 213, 115, 0.6);
-    }
-
-    .parking-slot.occupied {
-        background-color: rgba(255, 71, 87, 0.3);
-        border-color: #ff4757;
-    }
-
-    .parking-slot.occupied:hover {
-        background-color: rgba(255, 71, 87, 0.5);
-        transform: scale(1.1);
-        box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
-    }
-
-    .parking-slot.inactive {
-        opacity: 0.4;
-        border-color: #6c757d;
-        background-color: rgba(108, 117, 125, 0.2);
-    }
-
-    .parking-label {
-        position: absolute;
-        font-size: 16px;
-        font-weight: bold;
-        color: white;
-        text-align: center;
-        width: 60px;
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
-        line-height: 1;
-        z-index: 15;
-        pointer-events: none;
-    }
-
-    /* Parking Spot Labels (Text Only) */
-    .parking-spot-label {
-        position: absolute;
-        font-size: 18px;
-        font-weight: 700;
-        text-align: center;
-        padding: 8px 16px;
-        border-radius: 6px;
-        z-index: 15;
-        pointer-events: none;
-        transition: all 0.3s ease;
-        min-width: 60px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .parking-spot-label.available {
-        color: #fff;
-        background: transparent;
-        border: none;
-        font-size: 40px;
-        text-align: center;
-        justify-content: center;
-        font-weight: 800;
-    }
-
-    /* Inactive slots */
-    .parking-spot-label.inactive,
-    .parking-spot-occupied.inactive {
-        opacity: 0.4;
-        filter: grayscale(100%) brightness(0.6);
-        background: rgba(108, 117, 125, 0.3) !important;
-        border: 2px dashed #6c757d !important;
-    }
-
-    .parking-spot-label.inactive {
-        color: #6c757d !important;
-        text-decoration: line-through;
-        font-style: italic;
-    }
-
-    .parking-spot-occupied.inactive .car-icon-img {
-        opacity: 0.3;
-        filter: grayscale(100%);
-    }
-
-    /* Editable slots */
-    .parking-spot-label.editable,
-    .parking-spot-occupied.editable {
-        pointer-events: auto;
-        cursor: pointer;
-        transition: all 0.2s ease;
-    }
-
-    .parking-spot-label.editable:hover,
-    .parking-spot-occupied.editable:hover {
-        transform: scale(1.1);
-        filter: brightness(1.2);
-    }
-
-    /* Occupied Spot with Car Image */
-    .parking-spot-occupied {
-        position: absolute;
-        z-index: 15;
-        pointer-events: none;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-
-    .car-icon-img {
-        width: 110px;
-        height: 110px;
-        object-fit: contain;
-        filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
-    }
-
-    .slot-icon {
-        font-size: 32px;
-        color: white;
-    }
-
-    /* Modal Enhancements */
-    .modal-content {
-        border-radius: 15px;
-        border: none;
-        overflow: hidden;
-    }
-
-    .modal-body {
-        padding: 25px;
-    }
-
-    /* Responsive */
-    @media (max-width: 1400px) {
-        .parking-map-wrapper {
-            max-height: 600px;
-        }
-
-        .parking-map-container {
-            transform: scale(0.5);
-            transform-origin: top center;
-        }
-    }
-
-    @media (max-width: 1200px) {
-        .parking-map-wrapper {
-            max-height: 550px;
-        }
-
-        .parking-map-container {
-            transform: scale(0.45);
-            transform-origin: top center;
-        }
-    }
-
-    @media (max-width: 992px) {
-        .parking-map-wrapper {
-            max-height: 500px;
-        }
-
-        .parking-map-container {
-            transform: scale(0.4);
-            transform-origin: top center;
-        }
-    }
-
-    @media (max-width: 768px) {
-        .parking-map-wrapper {
-            max-height: 450px;
-        }
-
-        .parking-map-container {
-            transform: scale(0.35);
-            transform-origin: top center;
-        }
-
-        .map-legend {
-            flex-direction: column;
-            gap: 8px;
-        }
-    }
-
-    @media (max-width: 576px) {
-        .parking-map-wrapper {
-            max-height: 400px;
-            padding: 10px;
-        }
-
-        .parking-map-container {
-            transform: scale(0.28);
-            transform-origin: top center;
-        }
-    }
-</style>
+<link rel="stylesheet" href="{{ asset('css/parking-map-layout.css') }}">
 @endpush
