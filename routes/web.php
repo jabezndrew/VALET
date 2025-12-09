@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Livewire\Auth\Login;
 use App\Livewire\ParkingDashboard;
+use App\Livewire\ParkingMapLayout;
 use App\Livewire\FloorDetail;
 use App\Livewire\FeedbackManager;
 use App\Livewire\VehicleManager;
@@ -26,6 +27,7 @@ Route::middleware('auth')->group(function () {
     
     Route::middleware('role:user')->group(function () {
         Route::get('/dashboard', ParkingDashboard::class)->name('dashboard');
+        Route::get('/parking-map/{floor?}', ParkingMapLayout::class)->name('parking.map');
         Route::get('/floor/{floor}', FloorDetail::class)->name('floor.detail');
         Route::get('/feedback', FeedbackManager::class)->name('feedback.index');
     });

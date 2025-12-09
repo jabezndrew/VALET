@@ -467,6 +467,7 @@ main, .container, .valet-header + * {
 .badge-closed { background-color: #A0A0A0; }
 </style>
    @livewireStyles
+   @stack('styles')
 </head>
 <body>
    @php
@@ -492,15 +493,21 @@ main, .container, .valet-header + * {
                @auth
                <div class="d-flex align-items-center">
                    <nav class="navbar-nav d-flex flex-row me-3">
-                       <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}" 
-                          href="{{ route('dashboard') }}" 
+                       <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                          href="{{ route('dashboard') }}"
                           wire:navigate>
                            Dashboard
                        </a>
-                       
+
+                       <a class="nav-link {{ request()->routeIs('parking.map') ? 'active' : '' }}"
+                          href="{{ route('parking.map') }}"
+                          wire:navigate>
+                           Parking Map
+                       </a>
+
                        @if(auth()->user()->canViewCars())
-                       <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}" 
-                          href="{{ route('cars.index') }}" 
+                       <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}"
+                          href="{{ route('cars.index') }}"
                           wire:navigate>
                            Vehicles
                        </a>
@@ -674,5 +681,6 @@ main, .container, .valet-header + * {
            });
        }
    </script>
+   @stack('scripts')
 </body>
 </html>
