@@ -407,18 +407,21 @@ class ParkingMapLayout extends Component
         // Get all taken sensor IDs
         $takenSensorIds = ParkingSpace::pluck('sensor_id')->toArray();
 
-        // Real sensors (401-405) and extended range for manual configuration (1000-1100)
-        $allSensors = array_merge(range(401, 442), range(1000, 1100));
+        // Show all real sensors with API data (401-405)
+        $allSensors = range(401, 405);
 
-        // Filter out taken sensors (except the current one being edited)
-        $this->availableSensors = array_filter($allSensors, function($sensorId) use ($takenSensorIds) {
-            if ($this->selectedSlot && $sensorId == $this->selectedSlot->sensor_id) {
-                return true; // Allow current sensor when editing
-            }
-            return !in_array($sensorId, $takenSensorIds);
-        });
+        // Build array with sensor info including whether it's taken
+        $this->availableSensors = [];
+        foreach ($allSensors as $sensorId) {
+            $isTaken = in_array($sensorId, $takenSensorIds);
+            $isCurrentSensor = $this->selectedSlot && $sensorId == $this->selectedSlot->sensor_id;
 
-        sort($this->availableSensors);
+            $this->availableSensors[] = [
+                'id' => $sensorId,
+                'is_taken' => $isTaken && !$isCurrentSensor,
+                'is_current' => $isCurrentSensor
+            ];
+        }
     }
 
     private function loadTakenSlots()

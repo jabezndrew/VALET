@@ -99,14 +99,6 @@
                     <i class="fas fa-parking me-2" style="color: #B22020;"></i>
                     {{ $selectedFloor }} - Parking Layout
                 </h4>
-                <div class="map-legend">
-                    <span class="legend-item legend-available">
-                        <i class="fas fa-square me-1"></i> Available
-                    </span>
-                    <span class="legend-item legend-occupied">
-                        <i class="fas fa-square me-1"></i> Occupied
-                    </span>
-                </div>
             </div>
 
             @if($parkingSpaces->isEmpty())
@@ -390,39 +382,17 @@
                         <label class="form-label fw-bold">Sensor ID</label>
                         <select class="form-select" wire:model.live="sensorId">
                             <option value="">Select a sensor...</option>
-                            <optgroup label="Real Sensors (401-405: 4B1-4B4, 4C1)">
-                                @foreach($availableSensors as $sensor)
-                                    @if($sensor >= 401 && $sensor <= 405)
-                                        <option value="{{ $sensor }}">Sensor {{ $sensor }} @if($sensor == 401) - 4B4 @elseif($sensor == 402) - 4B3 @elseif($sensor == 403) - 4B2 @elseif($sensor == 404) - 4B1 @elseif($sensor == 405) - 4C1 @endif</option>
-                                    @endif
-                                @endforeach
-                            </optgroup>
-                            <optgroup label="Future Sensors (406-442)">
-                                @foreach($availableSensors as $sensor)
-                                    @if($sensor >= 406 && $sensor <= 442)
-                                        <option value="{{ $sensor }}">Sensor {{ $sensor }}</option>
-                                    @endif
-                                @endforeach
-                            </optgroup>
-                            <optgroup label="Custom Sensors (1000+)">
-                                @foreach($availableSensors as $sensor)
-                                    @if($sensor >= 1000)
-                                        <option value="{{ $sensor }}">Sensor {{ $sensor }}</option>
-                                    @endif
-                                @endforeach
-                            </optgroup>
+                            @foreach($availableSensors as $sensor)
+                                <option value="{{ $sensor['id'] }}" {{ $sensor['is_taken'] ? 'disabled' : '' }}>
+                                    Sensor {{ $sensor['id'] }}{{ $sensor['is_taken'] ? ' (Already in use)' : '' }}{{ $sensor['is_current'] ? ' (Current)' : '' }}
+                                </option>
+                            @endforeach
                         </select>
                         @error('sensorId') <span class="text-danger small">{{ $message }}</span> @enderror
                         @if(!empty($sensorId))
-                            <small class="text-muted mt-1 d-block">
-                                <i class="fas fa-info-circle me-1"></i>
-                                @if($sensorId >= 401 && $sensorId <= 405)
-                                    Real sensor with API data
-                                @elseif($sensorId >= 406 && $sensorId <= 442)
-                                    Future sensor (mapped but no API data yet)
-                                @else
-                                    Custom sensor for manual configuration
-                                @endif
+                            <small class="text-success mt-1 d-block">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Sensor with real-time API data
                             </small>
                         @endif
                     </div>
