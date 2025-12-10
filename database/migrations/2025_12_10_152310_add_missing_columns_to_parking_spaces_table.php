@@ -12,6 +12,10 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('parking_spaces', function (Blueprint $table) {
+            // Add floor_level first if it doesn't exist
+            if (!Schema::hasColumn('parking_spaces', 'floor_level')) {
+                $table->string('floor_level')->default('4th Floor')->after('distance_cm');
+            }
             if (!Schema::hasColumn('parking_spaces', 'slot_name')) {
                 $table->string('slot_name')->nullable()->after('sensor_id');
             }
@@ -46,6 +50,7 @@ return new class extends Migration
     {
         Schema::table('parking_spaces', function (Blueprint $table) {
             $table->dropColumn([
+                'floor_level',
                 'slot_name',
                 'section',
                 'is_active',
