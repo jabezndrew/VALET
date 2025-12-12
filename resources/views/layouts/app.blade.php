@@ -198,6 +198,202 @@ main, .container, .valet-header + * {
    color: white;
 }
 
+.parking-space-compact {
+   background: white;
+   border-radius: 8px;
+   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+   cursor: pointer;
+   transition: transform 0.2s, box-shadow 0.2s;
+   display: flex;
+   flex-direction: column;
+   position: relative;
+}
+
+.parking-space-compact:hover {
+   transform: translateY(-2px);
+   box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+}
+
+.parking-space-compact .space-code {
+   padding: 7px;
+   text-align: center;
+   font-size: 0.75rem;
+   font-weight: bold;
+   color: #333;
+   border-radius: 8px 8px 0 0;
+}
+
+.parking-space-compact .space-indicator {
+   height: 4px;
+   width: 100%;
+   border-radius: 0 0 8px 8px;
+}
+
+.parking-space-compact .space-indicator.available {
+   background: #2F623D;
+}
+
+.parking-space-compact .space-indicator.occupied {
+   background: #B22020;
+}
+
+/* Hover popup styles */
+.space-popup {
+   position: absolute;
+   bottom: 100%;
+   left: 50%;
+   transform: translateX(-50%) translateY(-10px);
+   background: white;
+   border-radius: 12px;
+   box-shadow: 0 8px 24px rgba(0,0,0,0.2);
+   padding: 16px;
+   min-width: 250px;
+   z-index: 1000;
+   opacity: 0;
+   pointer-events: none;
+   transition: opacity 0.2s, transform 0.2s;
+   margin-bottom: 8px;
+}
+
+.parking-space-compact:hover .space-popup {
+   opacity: 1;
+   pointer-events: auto;
+   transform: translateX(-50%) translateY(0);
+}
+
+.space-popup::after {
+   content: '';
+   position: absolute;
+   top: 100%;
+   left: 50%;
+   transform: translateX(-50%);
+   border: 8px solid transparent;
+   border-top-color: white;
+}
+
+.popup-header {
+   display: flex;
+   justify-content: space-between;
+   align-items: center;
+   padding-bottom: 12px;
+   border-bottom: 1px solid #eee;
+   margin-bottom: 12px;
+}
+
+.popup-header strong {
+   font-size: 1.1rem;
+   color: #333;
+}
+
+.popup-badge {
+   padding: 4px 10px;
+   border-radius: 6px;
+   font-size: 0.75rem;
+   font-weight: 600;
+   text-transform: uppercase;
+}
+
+.popup-badge.available {
+   background: #2F623D;
+   color: white;
+}
+
+.popup-badge.occupied {
+   background: #B22020;
+   color: white;
+}
+
+.popup-body {
+   margin-bottom: 12px;
+}
+
+.popup-info {
+   display: flex;
+   align-items: center;
+   gap: 8px;
+   padding: 6px 0;
+   font-size: 0.9rem;
+   color: #555;
+}
+
+.popup-info i {
+   width: 16px;
+   text-align: center;
+   color: #888;
+}
+
+.popup-map-btn {
+   display: block;
+   width: 100%;
+   padding: 10px;
+   background: linear-gradient(135deg, #2F623D 0%, #3d7a4f 100%);
+   color: white;
+   text-align: center;
+   border-radius: 8px;
+   text-decoration: none;
+   font-weight: 600;
+   transition: all 0.2s;
+}
+
+.popup-map-btn:hover {
+   background: linear-gradient(135deg, #3d7a4f 0%, #2F623D 100%);
+   color: white;
+   transform: translateY(-1px);
+   box-shadow: 0 4px 12px rgba(47, 98, 61, 0.3);
+}
+
+.popup-map-btn i {
+   margin-right: 6px;
+}
+
+/* Column Navigator Styles */
+.column-nav-buttons {
+   display: flex;
+   flex-wrap: wrap;
+   gap: 6px;
+}
+
+.column-nav-btn {
+   min-width: 32px;
+   height: 32px;
+   border: 2px solid #B22020;
+   background: white;
+   color: #B22020;
+   border-radius: 6px;
+   font-weight: bold;
+   font-size: 0.85rem;
+   cursor: pointer;
+   transition: all 0.2s;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+}
+
+.column-nav-btn:hover {
+   background: #B22020;
+   color: white;
+   transform: translateY(-1px);
+   box-shadow: 0 3px 10px rgba(178, 32, 32, 0.3);
+}
+
+.column-nav-btn:active {
+   transform: translateY(0);
+}
+
+/* Fix modal overflow for popups */
+.modal-body {
+   overflow: visible !important;
+}
+
+.modal-content {
+   overflow: visible !important;
+}
+
+/* Ensure rows don't clip popups */
+.row {
+   overflow: visible !important;
+}
+
 .navbar-nav {
    gap: 15px;
 }
