@@ -12,7 +12,10 @@
       "Bash(php -r:*)",
       "Bash(git add:*)",
       "Bash(del:*)",
-      "Bash(git commit -m \"$(cat <<''EOF''\nRefactor parking space database schema with scalable format\n\n- Added space_code field (e.g., \"2B4\" = 2nd floor, column B, slot 4)\n- Created parking_floors and parking_columns configuration tables\n- Updated API to support both old (sensor_id) and new (space_code) formats\n- Organized floor details view by columns with cleaner display\n- Added ParkingConfigController for managing floors and columns\n- Models: ParkingSpace, ParkingFloor, ParkingColumn, ParkingConfig\n- Migrations for new database structure\n- Updated Livewire dashboard to show spaces grouped by column\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")"
+      "Bash(git commit -m \"$(cat <<''EOF''\nRefactor parking space database schema with scalable format\n\n- Added space_code field (e.g., \"2B4\" = 2nd floor, column B, slot 4)\n- Created parking_floors and parking_columns configuration tables\n- Updated API to support both old (sensor_id) and new (space_code) formats\n- Organized floor details view by columns with cleaner display\n- Added ParkingConfigController for managing floors and columns\n- Models: ParkingSpace, ParkingFloor, ParkingColumn, ParkingConfig\n- Migrations for new database structure\n- Updated Livewire dashboard to show spaces grouped by column\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git fetch:*)",
+      "Bash(git merge:*)",
+      "Bash(git commit:*)"
     ],
     "deny": [],
     "ask": []
