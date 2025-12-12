@@ -29,28 +29,63 @@ class ParkingController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            // Validate incoming data with floor_level
+            // Support both old (sensor_id) and new (space_code or floor/column/slot) formats
             $validated = $request->validate([
-                'sensor_id' => 'required|integer',
+                'sensor_id' => 'sometimes|integer',
+                'space_code' => 'sometimes|string|max:10',
+                'floor_number' => 'sometimes|integer',
+                'column_code' => 'sometimes|string|max:5',
+                'slot_number' => 'sometimes|integer',
                 'is_occupied' => 'required|boolean',
                 'distance_cm' => 'required|integer|min:0',
-                'floor_level' => 'sometimes|string|max:255' // Optional, defaults to '4th Floor'
+                'floor_level' => 'sometimes|string|max:255'
             ]);
+
+            // Parse space_code if provided
+            if (isset($validated['space_code'])) {
+                $parsed = ParkingSpace::parseSpaceCode($validated['space_code']);
+                if ($parsed) {
+                    $validated['floor_number'] = $parsed['floor_number'];
+                    $validated['column_code'] = $parsed['column_code'];
+                    $validated['slot_number'] = $parsed['slot_number'];
+                }
+            }
+
+            // Build space_code if floor/column/slot provided
+            if (isset($validated['floor_number']) && isset($validated['column_code']) && isset($validated['slot_number'])) {
+                $validated['space_code'] = ParkingSpace::buildSpaceCode(
+                    $validated['floor_number'],
+                    $validated['column_code'],
+                    $validated['slot_number']
+                );
+            }
 
             // Set default floor level if not provided
             $validated['floor_level'] = $validated['floor_level'] ?? '4th Floor';
 
+            // Determine unique identifier (prefer space_code, fallback to sensor_id)
+            $uniqueField = isset($validated['space_code']) && $validated['space_code']
+                ? ['space_code' => $validated['space_code']]
+                : ['sensor_id' => $validated['sensor_id'] ?? null];
+
+            if (!$uniqueField['space_code'] && !$uniqueField['sensor_id']) {
+                return response()->json([
+                    'error' => 'Either space_code or sensor_id must be provided'
+                ], 422);
+            }
+
             // Insert or update parking space using Eloquent
-            $space = ParkingSpace::updateOrCreate(
-                ['sensor_id' => $validated['sensor_id']],
-                $validated
-            );
+            $space = ParkingSpace::updateOrCreate($uniqueField, $validated);
 
             return response()->json([
                 'success' => true,
                 'message' => 'Parking data updated successfully',
                 'data' => [
                     'sensor_id' => $space->sensor_id,
+                    'space_code' => $space->space_code,
+                    'floor_number' => $space->floor_number,
+                    'column_code' => $space->column_code,
+                    'slot_number' => $space->slot_number,
                     'floor_level' => $space->floor_level,
                     'is_occupied' => $space->is_occupied,
                     'distance_cm' => $space->distance_cm

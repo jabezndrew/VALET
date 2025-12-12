@@ -238,42 +238,51 @@
                         </div>
                     </div>
 
-                    <!-- Individual Parking Spaces -->
-                    <div class="row">
-                        @forelse($selectedFloorData['spaces'] ?? [] as $space)
-                            <div class="col-md-6 col-lg-4 mb-3">
-                                <div class="parking-space-card {{ $space->is_occupied ? 'occupied' : 'available' }}">
-                                    <div class="d-flex justify-content-between align-items-center mb-2">
-                                        <h6 class="mb-0 fw-bold">{{ $this->getSensorDisplayName($space->sensor_id) }}</h6>
-                                        <span class="status-badge-small {{ $space->is_occupied ? 'badge-occupied' : 'badge-available' }}">
-                                            {{ $space->is_occupied ? 'Occupied' : 'Available' }}
-                                        </span>
-                                    </div>
-                                    <div class="d-flex align-items-center mb-2">
-                                        <i class="{{ $this->getSpaceIcon($space) }} me-2"></i>
-                                        <span class="small">{{ $this->getStatusText($space) }}</span>
-                                    </div>
-                                    @if(isset($space->section) && $space->section)
-                                    <div class="small text-muted mb-1">
-                                        <i class="fas fa-map-marker-alt me-1"></i>
-                                        Section {{ $space->section }}
-                                    </div>
-                                    @endif
-                                    <div class="small text-muted">
-                                        <i class="fas fa-clock me-1"></i>
-                                        Updated {{ $this->getRelativeTime($space->updated_at) }}
-                                    </div>
+                    <!-- Individual Parking Spaces Organized by Column -->
+                    @if(!empty($selectedFloorData['spaces_by_column']))
+                        @foreach($selectedFloorData['spaces_by_column'] as $columnCode => $columnSpaces)
+                            <div class="mb-4">
+                                <h5 class="fw-bold text-dark mb-3">{{ $columnCode }}</h5>
+                                <div class="row">
+                                    @foreach($columnSpaces as $space)
+                                        @php
+                                            $spaceObj = (object) $space;
+                                            // Extract just column and slot from space_code (e.g., "2A1" becomes "A1")
+                                            $displayCode = $spaceObj->space_code
+                                                ? $spaceObj->column_code . $spaceObj->slot_number
+                                                : 'S' . $spaceObj->sensor_id;
+                                        @endphp
+                                        <div class="col-md-6 col-lg-4 col-xl-3 mb-3">
+                                            <div class="parking-space-card {{ $spaceObj->is_occupied ? 'occupied' : 'available' }}">
+                                                <div class="d-flex justify-content-between align-items-center mb-2">
+                                                    <h6 class="mb-0 fw-bold">{{ $displayCode }}</h6>
+                                                    <span class="status-badge-small {{ $spaceObj->is_occupied ? 'badge-occupied' : 'badge-available' }}">
+                                                        {{ $spaceObj->is_occupied ? 'Occupied' : 'Available' }}
+                                                    </span>
+                                                </div>
+                                                <div class="d-flex align-items-center mb-2">
+                                                    @php
+                                                        $isOccupied = $spaceObj->is_occupied == 1 || $spaceObj->is_occupied === true;
+                                                        $statusText = $isOccupied ? 'Vehicle Present' : 'Space Available';
+                                                    @endphp
+                                                    <span class="small">{{ $statusText }}</span>
+                                                </div>
+                                                <div class="small text-muted">
+                                                    <i class="fas fa-clock me-1"></i>
+                                                    Updated {{ \Carbon\Carbon::parse($spaceObj->updated_at)->diffForHumans() }}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    @endforeach
                                 </div>
                             </div>
-                        @empty
-                            <div class="col-12">
-                                <div class="text-center py-4">
-                                    <i class="fas fa-info-circle text-muted mb-2" style="font-size: 2rem;"></i>
-                                    <p class="text-muted">No parking spaces found for {{ $selectedFloor }}.</p>
-                                </div>
-                            </div>
-                        @endforelse
-                    </div>
+                        @endforeach
+                    @else
+                        <div class="text-center py-4">
+                            <i class="fas fa-info-circle text-muted mb-2" style="font-size: 2rem;"></i>
+                            <p class="text-muted">No parking spaces found for {{ $selectedFloor }}.</p>
+                        </div>
+                    @endif
                 </div>
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" wire:click="closeModal">
