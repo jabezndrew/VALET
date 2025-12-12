@@ -179,13 +179,17 @@ class ParkingDashboard extends Component
         return $this->allSpaces->pluck('floor_level')->unique()->filter()->sort()->values();
     }
 
-    public function getSensorDisplayName($sensorId)
+    public function getSensorDisplayName($space)
     {
+        if ($space->space_code) {
+            return $space->space_code;
+        }
+
         $mapping = [
             1 => 'B4', 2 => 'B3', 3 => 'B2', 4 => 'B1', 5 => 'C1'
         ];
-        
-        return $mapping[$sensorId] ?? "S{$sensorId}";
+
+        return $mapping[$space->sensor_id] ?? "S{$space->sensor_id}";
     }
 
     public function getSpaceIcon($space)
@@ -275,9 +279,20 @@ class ParkingDashboard extends Component
     private function loadSelectedFloorData()
     {
         $floorSpaces = $this->allSpaces->where('floor_level', $this->selectedFloor);
-        
+
+        $spacesByColumn = $floorSpaces
+            ->sortBy([
+                ['column_code', 'asc'],
+                ['slot_number', 'asc']
+            ])
+            ->groupBy('column_code')
+            ->sortKeys()
+            ->map(fn($spaces) => $spaces->values()->toArray())
+            ->toArray();
+
         $this->selectedFloorData = [
-            'spaces' => $floorSpaces->values(),
+            'spaces' => $floorSpaces->values()->toArray(),
+            'spaces_by_column' => $spacesByColumn,
             'stats' => $this->calculateFloorStats($this->selectedFloor)
         ];
     }

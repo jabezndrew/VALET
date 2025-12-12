@@ -22,3 +22,7 @@
 Homestead.json
 Homestead.yaml
 Thumbs.db
+
+# Local testing only - do not deploy to production
+/database/seeders/TestParkingSpacesSeeder.php
+test_parking_data.php
