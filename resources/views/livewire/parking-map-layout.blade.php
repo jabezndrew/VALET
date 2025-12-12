@@ -337,20 +337,6 @@
                 </div>
             @endif
         </div>
-
-        <!-- Auto-refresh Toggle -->
-        <div class="text-center mt-4">
-            <div class="form-check form-switch d-inline-block">
-                <input wire:model.live="isAutoRefreshEnabled"
-                       wire:click="toggleAutoRefresh"
-                       class="form-check-input"
-                       type="checkbox"
-                       id="autoRefreshMap">
-                <label class="form-check-label" for="autoRefreshMap" style="color: #6c757d;">
-                    Auto-refresh every 3 seconds
-                </label>
-            </div>
-        </div>
     </div>
 
     <!-- Slot Management Modal -->
