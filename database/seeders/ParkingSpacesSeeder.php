@@ -13,8 +13,53 @@ class ParkingSpacesSeeder extends Seeder
      */
     public function run(): void
     {
-        // Seed initial parking spaces with real sensor data (401-405)
+        // Seed initial parking spaces with real sensor data
         $parkingSpaces = [
+            // 2nd Floor parking spaces (201-2xx)
+            [
+                'sensor_id' => 201,
+                'slot_name' => '2B1',
+                'section' => 'B',
+                'is_occupied' => false,
+                'is_active' => true,
+                'distance_cm' => null,
+                'floor_level' => '2nd Floor',
+                'x_position' => 100.00, // TODO: Adjust based on your floor plan
+                'y_position' => 100.00, // TODO: Adjust based on your floor plan
+                'rotation' => 0,
+                'width' => 80.00,
+                'height' => 120.00,
+            ],
+            [
+                'sensor_id' => 202,
+                'slot_name' => '2B2',
+                'section' => 'B',
+                'is_occupied' => false,
+                'is_active' => true,
+                'distance_cm' => null,
+                'floor_level' => '2nd Floor',
+                'x_position' => 180.00, // TODO: Adjust based on your floor plan
+                'y_position' => 100.00, // TODO: Adjust based on your floor plan
+                'rotation' => 0,
+                'width' => 80.00,
+                'height' => 120.00,
+            ],
+            [
+                'sensor_id' => 203,
+                'slot_name' => '2B3',
+                'section' => 'B',
+                'is_occupied' => false,
+                'is_active' => true,
+                'distance_cm' => null,
+                'floor_level' => '2nd Floor',
+                'x_position' => 260.00, // TODO: Adjust based on your floor plan
+                'y_position' => 100.00, // TODO: Adjust based on your floor plan
+                'rotation' => 0,
+                'width' => 80.00,
+                'height' => 120.00,
+            ],
+
+            // 4th Floor parking spaces (401-405)
             [
                 'sensor_id' => 401,
                 'slot_name' => '4B4',
