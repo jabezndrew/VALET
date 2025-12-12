@@ -14,7 +14,7 @@
                 </button>
                 @endif
                 @if(auth()->user()->canManageCars())
-                <button wire:click="openModal" class="btn btn-valet-charcoal">
+                <button wire:click="openModal" class="btn btn-success">
                     <i class="fas fa-plus me-1"></i> Register Vehicle
                 </button>
                 @endif
@@ -62,7 +62,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-4">
-                        <input wire:model.live="search" type="text" class="form-control" 
+                        <input wire:model.live="search" type="text" class="form-control"
                                placeholder="Search by plate, make, model, RFID, or owner...">
                     </div>
                     <div class="col-md-2">
@@ -172,24 +172,24 @@
                                     @if(auth()->user()->canManageCars())
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <button wire:click="openModal({{ $vehicle->id }})" 
+                                            <button wire:click="openModal({{ $vehicle->id }})"
                                                     class="btn btn-outline-secondary"
                                                     title="Edit vehicle">
                                                 <i class="fas fa-edit"></i>
                                             </button>
                                             @if($isExpired)
-                                                <button wire:click="renewVehicle({{ $vehicle->id }})" 
+                                                <button wire:click="renewVehicle({{ $vehicle->id }})"
                                                         class="btn btn-outline-success"
                                                         title="Renew vehicle">
                                                     <i class="fas fa-redo"></i>
                                                 </button>
                                             @endif
-                                            <button wire:click="toggleStatus({{ $vehicle->id }})" 
+                                            <button wire:click="toggleStatus({{ $vehicle->id }})"
                                                     class="btn btn-outline-{{ $vehicle->is_active ? 'warning' : 'success' }}"
                                                     title="{{ $vehicle->is_active ? 'Deactivate' : 'Activate' }} vehicle">
                                                 <i class="fas fa-{{ $vehicle->is_active ? 'pause' : 'play' }}"></i>
                                             </button>
-                                            <button wire:click="delete({{ $vehicle->id }})" 
+                                            <button wire:click="delete({{ $vehicle->id }})"
                                                     wire:confirm="Are you sure you want to delete this vehicle?"
                                                     class="btn btn-outline-danger"
                                                     title="Delete vehicle">
@@ -238,7 +238,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Plate Number</label>
-                                    <input wire:model="plate_number" type="text" class="form-control" 
+                                    <input wire:model="plate_number" type="text" class="form-control"
                                            placeholder="e.g. ABC-1234" maxlength="20" required>
                                     @error('plate_number') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -246,7 +246,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">RFID Tag</label>
-                                    <input wire:model="rfid_tag" type="text" class="form-control" 
+                                    <input wire:model="rfid_tag" type="text" class="form-control"
                                            placeholder="e.g. 0123456789ABCDEF" maxlength="50" required>
                                     @error('rfid_tag') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -256,7 +256,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Make</label>
-                                    <input wire:model="vehicle_make" type="text" class="form-control" 
+                                    <input wire:model="vehicle_make" type="text" class="form-control"
                                            placeholder="e.g. Toyota, Honda" maxlength="50" required>
                                     @error('vehicle_make') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -264,7 +264,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Model</label>
-                                    <input wire:model="vehicle_model" type="text" class="form-control" 
+                                    <input wire:model="vehicle_model" type="text" class="form-control"
                                            placeholder="e.g. Camry, Civic" maxlength="50" required>
                                     @error('vehicle_model') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -286,7 +286,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Color</label>
-                                    <input wire:model="vehicle_color" type="text" class="form-control" 
+                                    <input wire:model="vehicle_color" type="text" class="form-control"
                                            placeholder="e.g. Red, Blue, White" maxlength="30" required>
                                     @error('vehicle_color') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -310,7 +310,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Expiry Date</label>
-                                    <input wire:model="expires_at" type="date" class="form-control" 
+                                    <input wire:model="expires_at" type="date" class="form-control"
                                            min="{{ date('Y-m-d') }}">
                                     @error('expires_at') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -319,7 +319,7 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
-                        <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled">
+                        <button type="submit" class="btn btn-success" wire:loading.attr="disabled">
                             <span wire:loading.remove>
                                 {{ $editingId ? 'Update Vehicle' : 'Register Vehicle' }}
                             </span>
@@ -349,24 +349,24 @@
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label fw-bold">RFID Tag</label>
-                        <input wire:model="verifyRfid" type="text" class="form-control" 
-                               placeholder="Enter RFID tag to verify..." 
+                        <input wire:model="verifyRfid" type="text" class="form-control"
+                               placeholder="Enter RFID tag to verify..."
                                wire:keydown.enter="verifyVehicle">
                         @error('verifyRfid') <div class="text-danger small">{{ $message }}</div> @enderror
                     </div>
                     @if($verifyResult)
                         <div class="alert alert-{{ $verifyResult['color'] }} mt-3">
                             <div class="d-flex align-items-center">
-                                <i class="fas fa-{{ 
-                                    $verifyResult['status'] === 'Active' ? 'check-circle' : 
-                                    ($verifyResult['status'] === 'NOT FOUND' ? 'times-circle' : 'exclamation-triangle') 
+                                <i class="fas fa-{{
+                                    $verifyResult['status'] === 'Active' ? 'check-circle' :
+                                    ($verifyResult['status'] === 'NOT FOUND' ? 'times-circle' : 'exclamation-triangle')
                                 }} me-2"></i>
                                 <div>
                                     <strong>{{ $verifyResult['status'] }}</strong>
                                     <div>{{ $verifyResult['message'] }}</div>
                                 </div>
                             </div>
-                            
+
                             @if(isset($verifyResult['vehicle']))
                                 <hr class="my-2">
                                 <div class="row">
@@ -406,7 +406,7 @@
             Livewire.on('show-alert', (event) => {
                 const alertContainer = document.getElementById('alert-container');
                 const alertId = 'alert-' + Date.now();
-                
+
                 const alertHtml = `
                     <div class="container mt-3">
                         <div id="${alertId}" class="alert alert-${event.type} alert-dismissible fade show" role="alert">
@@ -416,9 +416,9 @@
                         </div>
                     </div>
                 `;
-                
+
                 alertContainer.innerHTML = alertHtml;
-                
+
                 setTimeout(() => {
                     const alert = document.getElementById(alertId);
                     if (alert) alert.remove();
