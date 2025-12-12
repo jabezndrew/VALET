@@ -2,19 +2,18 @@
 
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ParkingController;
+use App\Http\Controllers\Api\ParkingConfigController;
 use App\Http\Controllers\Api\SysUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FeedbackController;
 
 Route::get('/health', fn() => response()->json(['status' => 'ok', 'service' => 'VALET API']));
 
-// Authentication endpoint with rate limiting (max 5 attempts per minute)
-Route::middleware('throttle:5,1')->group(function () {
-    Route::post('/login', [AuthController::class, 'login']);
-});
+// Authentication endpoint
+Route::post('/login', [AuthController::class, 'login']);
 
-// Public endpoints with rate limiting (max 60 requests per minute)
-Route::prefix('public')->middleware('throttle:60,1')->group(function () {
+// Public endpoints
+Route::prefix('public')->group(function () {
     Route::get('/parking', [ParkingController::class, 'index']);
     Route::post('/parking', [ParkingController::class, 'store']);
 });
@@ -45,10 +44,18 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/stats', 'stats');
         Route::get('/floor/{floorLevel}', 'getByFloor');
     });
-    
+
+    Route::controller(ParkingConfigController::class)->prefix('parking-config')->group(function () {
+        Route::get('/floors', 'getFloors');
+        Route::post('/floors', 'createFloor');
+        Route::get('/floors/{floorNumber}/columns', 'getColumns');
+        Route::post('/columns', 'createColumn');
+        Route::get('/floors/{floorNumber}/columns/{columnCode}/max-slots', 'getMaxSlots');
+    });
+
     Route::controller(SysUserController::class)->prefix('users')->group(function () {
         Route::get('/', 'index');
         Route::get('/stats', 'stats');
     });
-    
+
 });
