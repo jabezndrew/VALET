@@ -74,42 +74,6 @@
             </div>
         </div>
 
-        <!-- Filter Section -->
-        @if(count($this->getAvailableFloors()) > 1)
-        <div class="mb-4">
-            <div class="card">
-                <div class="card-body">
-                    <div class="row align-items-center">
-                        <div class="col-md-4">
-                            <label class="form-label fw-bold">Filter by Floor</label>
-                            <select wire:model.live="floorFilter" class="form-select">
-                                <option value="all">All Floors</option>
-                                @foreach($this->getAvailableFloors() as $floor)
-                                    <option value="{{ $floor }}">{{ $floor }}</option>
-                                @endforeach
-                            </select>
-                        </div>
-                        <div class="col-md-4 text-center">
-                            <button wire:click="refreshNow" class="btn btn-outline-primary">
-                                <i class="fas fa-sync-alt me-1"></i> Refresh Now
-                            </button>
-                        </div>
-                        <div class="col-md-4 text-end">
-                            <div class="form-check form-switch">
-                                <input wire:model.live="isAutoRefreshEnabled"
-                                       wire:click="toggleAutoRefresh"
-                                       class="form-check-input" type="checkbox" id="autoRefresh">
-                                <label class="form-check-label" for="autoRefresh">
-                                    Auto-refresh
-                                </label>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        @endif
-
         <!-- Floor Selection Section -->
         <div class="floor-section">
             <div class="d-flex justify-content-between align-items-center mb-4">
@@ -126,8 +90,8 @@
 
                 @foreach($sortedFloorStats as $floorStat)
                     @php
-                        $percentage = $floorStat['total'] > 0 ? ($floorStat['occupied'] / $floorStat['total']) * 100 : 0;
-                        $progressClass = $percentage >= 90 ? 'bg-danger' : ($percentage >= 70 ? 'bg-warning' : 'bg-success');
+                        $availablePercentage = $floorStat['total'] > 0 ? ($floorStat['available'] / $floorStat['total']) * 100 : 0;
+                        $occupiedPercentage = $floorStat['total'] > 0 ? ($floorStat['occupied'] / $floorStat['total']) * 100 : 0;
                         $badgeClass = match(true) {
                             !$floorStat['has_data'] => 'no-data-badge',
                             $floorStat['available'] == 0 => 'full-badge',
@@ -172,15 +136,24 @@
                                 </div>
 
                                 <div class="progress mb-2">
-                                    <div class="progress-bar {{ $progressClass }}"
-                                         style="width: {{ $percentage }}%"
+                                    <div class="progress-bar bg-success"
+                                         style="width: {{ $availablePercentage }}%"
                                          role="progressbar"
-                                         aria-valuenow="{{ round($percentage) }}"
+                                         aria-valuenow="{{ round($availablePercentage) }}"
                                          aria-valuemin="0"
-                                         aria-valuemax="100">
+                                         aria-valuemax="100"
+                                         title="Available: {{ $floorStat['available'] }} ({{ round($availablePercentage) }}%)">
+                                    </div>
+                                    <div class="progress-bar bg-danger"
+                                         style="width: {{ $occupiedPercentage }}%"
+                                         role="progressbar"
+                                         aria-valuenow="{{ round($occupiedPercentage) }}"
+                                         aria-valuemin="0"
+                                         aria-valuemax="100"
+                                         title="Occupied: {{ $floorStat['occupied'] }} ({{ round($occupiedPercentage) }}%)">
                                     </div>
                                 </div>
-                                <small class="text-muted">{{ round($percentage) }}% Full</small>
+                                <small class="text-muted">{{ round($occupiedPercentage) }}% Full</small>
 
                                 <!-- View Map Overlay - Slides up on hover -->
                                 <div class="floor-map-overlay">
@@ -226,7 +199,7 @@
 
     <!-- Floor Details Modal -->
     @if($showModal && $selectedFloorData)
-    <div class="modal fade show" style="display: block;" tabindex="-1">
+    <div class="modal fade show" style="display: block;" tabindex="-1" wire:click.self="closeModal">
         <div class="modal-dialog modal-lg">
             <div class="modal-content">
                 <div class="modal-header">
@@ -256,10 +229,23 @@
                         </div>
                     </div>
 
+                    <!-- Column Quick Navigation -->
+                    @if(!empty($selectedFloorData['spaces_by_column']))
+                        <div class="column-nav-buttons mb-4">
+                            @foreach(array_keys($selectedFloorData['spaces_by_column']) as $columnCode)
+                                <button type="button"
+                                        class="column-nav-btn"
+                                        onclick="document.getElementById('column-{{ $columnCode }}').scrollIntoView({ behavior: 'smooth', block: 'start' })">
+                                    {{ $columnCode }}
+                                </button>
+                            @endforeach
+                        </div>
+                    @endif
+
                     <!-- Individual Parking Spaces Organized by Column -->
                     @if(!empty($selectedFloorData['spaces_by_column']))
                         @foreach($selectedFloorData['spaces_by_column'] as $columnCode => $columnSpaces)
-                            <div class="mb-4">
+                            <div class="mb-4" id="column-{{ $columnCode }}">
                                 <h5 class="fw-bold text-dark mb-3">{{ $columnCode }}</h5>
                                 <div class="row">
                                     @foreach($columnSpaces as $space)
@@ -269,25 +255,41 @@
                                             $displayCode = $spaceObj->space_code
                                                 ? $spaceObj->column_code . $spaceObj->slot_number
                                                 : 'S' . $spaceObj->sensor_id;
+                                            $isOccupied = $spaceObj->is_occupied == 1 || $spaceObj->is_occupied === true;
+                                            $statusText = $isOccupied ? 'Vehicle Present' : 'Space Available';
                                         @endphp
-                                        <div class="col-md-6 col-lg-4 col-xl-3 mb-3">
-                                            <div class="parking-space-card {{ $spaceObj->is_occupied ? 'occupied' : 'available' }}">
-                                                <div class="d-flex justify-content-between align-items-center mb-2">
-                                                    <h6 class="mb-0 fw-bold">{{ $displayCode }}</h6>
-                                                    <span class="status-badge-small {{ $spaceObj->is_occupied ? 'badge-occupied' : 'badge-available' }}">
-                                                        {{ $spaceObj->is_occupied ? 'Occupied' : 'Available' }}
-                                                    </span>
-                                                </div>
-                                                <div class="d-flex align-items-center mb-2">
-                                                    @php
-                                                        $isOccupied = $spaceObj->is_occupied == 1 || $spaceObj->is_occupied === true;
-                                                        $statusText = $isOccupied ? 'Vehicle Present' : 'Space Available';
-                                                    @endphp
-                                                    <span class="small">{{ $statusText }}</span>
-                                                </div>
-                                                <div class="small text-muted">
-                                                    <i class="fas fa-clock me-1"></i>
-                                                    Updated {{ \Carbon\Carbon::parse($spaceObj->updated_at)->diffForHumans() }}
+                                        <div class="col-6 col-sm-4 col-md-3 col-lg-2 mb-3">
+                                            <div class="parking-space-compact {{ $spaceObj->is_occupied ? 'occupied' : 'available' }}">
+                                                <div class="space-code">{{ $displayCode }}</div>
+                                                <div class="space-indicator {{ $spaceObj->is_occupied ? 'occupied' : 'available' }}"></div>
+
+                                                <!-- Hover popup with full details -->
+                                                <div class="space-popup">
+                                                    <div class="popup-header">
+                                                        <strong>{{ $displayCode }}</strong>
+                                                        <span class="popup-badge {{ $isOccupied ? 'occupied' : 'available' }}">
+                                                            {{ $isOccupied ? 'Occupied' : 'Available' }}
+                                                        </span>
+                                                    </div>
+                                                    <div class="popup-body">
+                                                        <div class="popup-info">
+                                                            <i class="fas {{ $isOccupied ? 'fa-car' : 'fa-check-circle' }}"></i>
+                                                            {{ $statusText }}
+                                                        </div>
+                                                        <div class="popup-info">
+                                                            <i class="fas fa-ruler"></i>
+                                                            Distance: {{ $spaceObj->distance_cm }}cm
+                                                        </div>
+                                                        <div class="popup-info">
+                                                            <i class="fas fa-clock"></i>
+                                                            {{ \Carbon\Carbon::parse($spaceObj->updated_at)->diffForHumans() }}
+                                                        </div>
+                                                    </div>
+                                                    <a href="{{ route('parking.map', ['floor' => $selectedFloor]) }}"
+                                                       class="popup-map-btn"
+                                                       wire:navigate>
+                                                        <i class="fas fa-map-marked-alt"></i> View on Map
+                                                    </a>
                                                 </div>
                                             </div>
                                         </div>
@@ -313,7 +315,7 @@
             </div>
         </div>
     </div>
-    <div class="modal-backdrop fade show"></div>
+    <div class="modal-backdrop fade show" wire:click="closeModal"></div>
     @endif
 
     <!-- Verify Vehicle Modal -->
@@ -540,6 +542,30 @@
 .floor-card small {
     position: relative;
     z-index: 1;
+}
+
+/*===========================================
+  PROGRESS BAR - Seamless stacked bars
+============================================*/
+.floor-card .progress {
+    display: flex;
+    height: 8px;
+    overflow: hidden;
+    background-color: transparent;
+    border-radius: 4px;
+}
+
+.floor-card .progress-bar {
+    border-radius: 0;
+    margin: 0;
+}
+
+.floor-card .progress-bar:first-child {
+    border-radius: 4px 0 0 4px;
+}
+
+.floor-card .progress-bar:last-child {
+    border-radius: 0 4px 4px 0;
 }
 
 /*===========================================
