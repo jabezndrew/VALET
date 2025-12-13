@@ -99,6 +99,15 @@
                     <i class="fas fa-parking me-2" style="color: #B22020;"></i>
                     {{ $selectedFloor }} - Parking Layout
                 </h4>
+                <!-- Legend -->
+                <div class="map-legend">
+                    <div class="legend-item legend-available">
+                        <i class="fas fa-square me-2"></i>Available
+                    </div>
+                    <div class="legend-item legend-occupied">
+                        <i class="fas fa-square me-2"></i>Occupied
+                    </div>
+                </div>
             </div>
 
             @if($parkingSpaces->isEmpty())
@@ -296,6 +305,7 @@
                                 $isOccupied = $space->is_occupied;
                                 $isActive = $space->is_active ?? true;
                                 $canEdit = auth()->user() && in_array(auth()->user()->role, ['admin', 'ssd']);
+                                $rotation = $space->rotation ?? 0;
 
                                 // Slot dimensions
                                 $slotWidth = 60;
@@ -308,7 +318,7 @@
                                 @if($isOccupied)
                                     <!-- Occupied Spot: Show Car Image -->
                                     <div class="parking-spot-occupied {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
-                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
+                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px; transform: rotate({{ $rotation }}deg);"
                                          title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Occupied {{ !$isActive ? '(Inactive)' : '' }}"
                                          @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
                                         <img src="{{ asset('images/car_top.png') }}" alt="Car" class="car-icon-img">
@@ -316,20 +326,14 @@
                                 @else
                                     <!-- Available Spot: Show Label -->
                                     <div class="parking-spot-label available {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
-                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
+                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px; transform: rotate({{ $rotation }}deg);"
                                          title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Available {{ !$isActive ? '(Inactive)' : '' }}"
                                          @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
                                         {{ $slotName }}
                                     </div>
                                 @endif
                             @else
-                                <!-- Inactive/Empty Slot: Show as grayed out box (clickable by admin/SSD) -->
-                                <div class="parking-slot-empty {{ $canEdit ? 'editable' : '' }}"
-                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
-                                     title="Sensor {{ $space->sensor_id }} - Not Active - Click to configure"
-                                     @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
-                                    <i class="fas fa-cog slot-config-icon"></i>
-                                </div>
+                                <!-- Inactive/Empty Slot: Hidden (no real sensor data) -->
                             @endif
                         @endforeach
 
@@ -393,19 +397,6 @@
                             <option value="4th Floor">4th Floor</option>
                         </select>
                         @error('floorLevel') <span class="text-danger small">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">X Position</label>
-                            <input type="number" class="form-control" wire:model="xPosition" placeholder="e.g., 100">
-                            @error('xPosition') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Y Position</label>
-                            <input type="number" class="form-control" wire:model="yPosition" placeholder="e.g., 200">
-                            @error('yPosition') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
                     </div>
 
                     <div class="form-check form-switch mb-3">
