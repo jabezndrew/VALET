@@ -11,8 +11,7 @@ use App\Models\ParkingSpace;
 // Original positions from mobile app, scaled by 1.5
 $parkingConfig = [
     // Section A
-    ['sensor_id' => 407, 'spot_id' => '4A1', 'x' => 1027.5, 'y' => 174, 'section' => 'A'],
-
+    ['sensor_id' => 407, 'spot_id' => '4A1', 'x' => 1027.5, 'y' => 174, 'section' => 'A', 'rotation' => 180],
     // Section B (B4, B3, B2, B1)
     ['sensor_id' => 401, 'spot_id' => '4B4', 'x' => 750, 'y' => 48, 'section' => 'B'],
     ['sensor_id' => 402, 'spot_id' => '4B3', 'x' => 817.5, 'y' => 48, 'section' => 'B'],
@@ -20,8 +19,8 @@ $parkingConfig = [
     ['sensor_id' => 404, 'spot_id' => '4B1', 'x' => 952.5, 'y' => 48, 'section' => 'B'],
 
     // Section C
-    ['sensor_id' => 405, 'spot_id' => '4C1', 'x' => 675, 'y' => 142.5, 'section' => 'C'],
-    ['sensor_id' => 406, 'spot_id' => '4C2', 'x' => 675, 'y' => 210, 'section' => 'C'],
+    ['sensor_id' => 405, 'spot_id' => '4C1', 'x' => 675, 'y' => 142.5, 'section' => 'C', 'rotation' => 270],
+    ['sensor_id' => 406, 'spot_id' => '4C2', 'x' => 675, 'y' => 210, 'section' => 'C', 'rotation' => 270],
 
     // Section D (D7 to D1)
     ['sensor_id' => 414, 'spot_id' => '4D7', 'x' => 150, 'y' => 300, 'section' => 'D'],
@@ -33,9 +32,9 @@ $parkingConfig = [
     ['sensor_id' => 408, 'spot_id' => '4D1', 'x' => 600, 'y' => 300, 'section' => 'D'],
 
     // Section E
-    ['sensor_id' => 417, 'spot_id' => '4E3', 'x' => 82.5, 'y' => 472.5, 'section' => 'E'],
-    ['sensor_id' => 416, 'spot_id' => '4E2', 'x' => 82.5, 'y' => 570, 'section' => 'E'],
-    ['sensor_id' => 415, 'spot_id' => '4E1', 'x' => 82.5, 'y' => 667.5, 'section' => 'E'],
+    ['sensor_id' => 417, 'spot_id' => '4E3', 'x' => 82.5, 'y' => 472.5, 'section' => 'E', 'rotation' => 180],
+    ['sensor_id' => 416, 'spot_id' => '4E2', 'x' => 82.5, 'y' => 570, 'section' => 'E', 'rotation' => 180],
+    ['sensor_id' => 415, 'spot_id' => '4E1', 'x' => 82.5, 'y' => 667.5, 'section' => 'E', 'rotation' => 180],
 
     // Section F (F1 to F7)
     ['sensor_id' => 418, 'spot_id' => '4F1', 'x' => 180, 'y' => 780, 'section' => 'F'],
@@ -94,6 +93,7 @@ foreach ($parkingConfig as $config) {
     $space->x_position = $config['x'];
     $space->y_position = $config['y'];
     $space->section = $config['section'];
+    $space->rotation = $config['rotation'] ?? 0;
     $space->is_active = true;
     $space->save();
 
