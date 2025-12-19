@@ -3,6 +3,7 @@
 namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ParkingSpace;
+use App\Models\SensorAssignment;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 
@@ -22,8 +23,10 @@ class ParkingController extends Controller
     public function store(Request $request): JsonResponse
     {
         try {
-            // Support both old (sensor_id) and new (space_code or floor/column/slot) formats
+            // Support MAC address based sensor registration
             $validated = $request->validate([
+                'mac_address' => 'sometimes|string|max:17', // MAC address
+                'sensor_index' => 'sometimes|integer|min:1|max:5', // Sensor index (1-5)
                 'sensor_id' => 'sometimes|integer',
                 'space_code' => 'sometimes|string|max:10',
                 'floor_number' => 'sometimes|integer',
@@ -31,8 +34,45 @@ class ParkingController extends Controller
                 'slot_number' => 'sometimes|integer',
                 'is_occupied' => 'required|boolean',
                 'distance_cm' => 'required|integer|min:0',
-                'floor_level' => 'sometimes|string|max:255'
+                'floor_level' => 'sometimes|string|max:255',
+                'firmware_version' => 'sometimes|string|max:20'
             ]);
+
+            // If MAC address is provided, handle sensor registration and assignment
+            if (isset($validated['mac_address']) && isset($validated['sensor_index'])) {
+                $sensor = SensorAssignment::firstOrCreate(
+                    [
+                        'mac_address' => $validated['mac_address'],
+                        'sensor_index' => $validated['sensor_index']
+                    ],
+                    [
+                        'status' => 'unassigned',
+                        'firmware_version' => $validated['firmware_version'] ?? null,
+                        'last_seen' => now()
+                    ]
+                );
+
+                // Update last seen and firmware version
+                $sensor->update([
+                    'last_seen' => now(),
+                    'firmware_version' => $validated['firmware_version'] ?? $sensor->firmware_version
+                ]);
+
+                // If sensor is not assigned, return assignment request response
+                if (!$sensor->isAssigned()) {
+                    return response()->json([
+                        'success' => false,
+                        'status' => 'unassigned',
+                        'message' => 'Sensor registered but not assigned to a parking space',
+                        'mac_address' => $sensor->mac_address,
+                        'sensor_index' => $sensor->sensor_index,
+                        'instruction' => 'Please assign this sensor to a parking space via the web interface'
+                    ], 200);
+                }
+
+                // Use the assigned space_code from sensor assignment
+                $validated['space_code'] = $sensor->space_code;
+            }
 
             // Parse space_code if provided
             if (isset($validated['space_code'])) {
