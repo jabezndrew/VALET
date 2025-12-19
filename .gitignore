@@ -5,6 +5,7 @@
 .env.production
 .phpactor.json
 .phpunit.result.cache
+/.claude
 /.fleet
 /.idea
 /.nova
@@ -25,4 +26,5 @@ Thumbs.db
 
 # Local testing only - do not deploy to production
 /database/seeders/TestParkingSpacesSeeder.php
+/database/seeders/LocalSensorSeeder.php
 test_parking_data.php
