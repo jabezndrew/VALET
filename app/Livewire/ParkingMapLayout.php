@@ -260,7 +260,7 @@ class ParkingMapLayout extends Component
     public function openSlotModal($slotId = null)
     {
         // Check authorization
-        if (!auth()->user() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+        if (!auth()->user() || auth()->user()->role !== 'admin') {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized access');
             return;
         }
@@ -291,7 +291,7 @@ class ParkingMapLayout extends Component
     public function openCreateSlotModal($x, $y)
     {
         // Check authorization
-        if (!auth()->user() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+        if (!auth()->user() || auth()->user()->role !== 'admin') {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized access');
             return;
         }
