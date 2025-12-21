@@ -6,6 +6,7 @@ const char* ssid = "rxtn";
 const char* password = "rxtn7536";
 const char* serverURL = "https://valet.up.railway.app/api/public/parking";
 const char* assignmentURL = "https://valet.up.railway.app/api/public/sensor/assignment";
+const char* registerURL = "https://valet.up.railway.app/api/public/sensor/register";
 const char* FIRMWARE_VERSION = "v3.0.0-MULTI";
 const int NUM_SENSORS = 5;
 
@@ -83,6 +84,9 @@ void setup() {
     Serial.println(FIRMWARE_VERSION);
     Serial.println("=========================================");
 
+    // Register all sensors on boot
+    registerSensors();
+
     // Check assignments from server
     checkAssignments();
 
@@ -135,6 +139,42 @@ void loop() {
         }
 
         delay(20);
+    }
+}
+
+void registerSensors() {
+    Serial.println("Registering all 5 sensors with server...");
+
+    if (WiFi.status() == WL_CONNECTED) {
+        HTTPClient http;
+        http.begin(registerURL);
+        http.addHeader("Content-Type", "application/json");
+
+        StaticJsonDocument<200> doc;
+        doc["mac_address"] = macAddress;
+        doc["firmware_version"] = FIRMWARE_VERSION;
+
+        String jsonString;
+        serializeJson(doc, jsonString);
+
+        int httpResponseCode = http.POST(jsonString);
+
+        if (httpResponseCode > 0) {
+            String response = http.getString();
+            Serial.print("Registration response (");
+            Serial.print(httpResponseCode);
+            Serial.print("): ");
+            Serial.println(response);
+
+            if (httpResponseCode == 200) {
+                Serial.println("✓ All sensors registered successfully!");
+            }
+        } else {
+            Serial.print("Error registering sensors: ");
+            Serial.println(httpResponseCode);
+        }
+
+        http.end();
     }
 }
 
