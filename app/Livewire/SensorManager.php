@@ -101,6 +101,21 @@ class SensorManager extends Component
             // Build space_code (e.g., "4B4")
             $spaceCode = "{$this->floorNumber}{$this->columnCode}{$this->slotNumber}";
 
+            // Map floor numbers to proper floor names
+            $floorNames = [
+                1 => '1st Floor',
+                2 => '2nd Floor',
+                3 => '3rd Floor',
+                4 => '4th Floor',
+                5 => '5th Floor',
+                6 => '6th Floor',
+                7 => '7th Floor',
+                8 => '8th Floor',
+                9 => '9th Floor',
+                10 => '10th Floor'
+            ];
+            $floorLevel = $floorNames[$this->floorNumber] ?? "{$this->floorNumber}th Floor";
+
             // Check if parking space exists, create if it doesn't
             $parkingSpace = ParkingSpace::firstOrCreate(
                 ['space_code' => $spaceCode],
@@ -108,7 +123,7 @@ class SensorManager extends Component
                     'floor_number' => $this->floorNumber,
                     'column_code' => $this->columnCode,
                     'slot_number' => $this->slotNumber,
-                    'floor_level' => "{$this->floorNumber}th Floor",
+                    'floor_level' => $floorLevel,
                     'is_occupied' => false,
                     'distance_cm' => 0
                 ]
