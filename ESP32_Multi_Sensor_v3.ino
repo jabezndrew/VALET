@@ -167,9 +167,11 @@ void checkAssignments() {
             if (!error && responseDoc.containsKey("sensors")) {
                 JsonArray sensors = responseDoc["sensors"];
 
-                // If sensors array is empty, it means not registered yet
+                // If sensors array is empty, sensors will register on first data send
                 if (sensors.size() == 0) {
-                    Serial.println("  No sensors registered yet. Send data to register.");
+                    Serial.println("  Not yet registered. Will auto-register on first sensor data.");
+                    // Don't return - let sensors proceed in unassigned mode
+                    http.end();
                     return;
                 }
 
