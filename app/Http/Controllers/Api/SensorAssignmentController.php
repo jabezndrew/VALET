@@ -54,6 +54,63 @@ class SensorAssignmentController extends Controller
     }
 
     /**
+     * Register all 5 sensors for an ESP32 on boot
+     */
+    public function register(Request $request): JsonResponse
+    {
+        try {
+            $validated = $request->validate([
+                'mac_address' => 'required|string|max:17',
+                'firmware_version' => 'sometimes|string|max:20',
+                'device_name' => 'sometimes|string|max:100'
+            ]);
+
+            $registered = [];
+
+            // Register all 5 sensors for this ESP32
+            for ($sensorIndex = 1; $sensorIndex <= 5; $sensorIndex++) {
+                $sensor = SensorAssignment::firstOrCreate(
+                    [
+                        'mac_address' => $validated['mac_address'],
+                        'sensor_index' => $sensorIndex
+                    ],
+                    [
+                        'status' => 'unassigned',
+                        'firmware_version' => $validated['firmware_version'] ?? null,
+                        'device_name' => $validated['device_name'] ?? null,
+                        'last_seen' => now()
+                    ]
+                );
+
+                // Update last seen and firmware version if already exists
+                $sensor->update([
+                    'last_seen' => now(),
+                    'firmware_version' => $validated['firmware_version'] ?? $sensor->firmware_version
+                ]);
+
+                $registered[] = [
+                    'sensor_index' => $sensor->sensor_index,
+                    'status' => $sensor->status,
+                    'is_assigned' => $sensor->isAssigned()
+                ];
+            }
+
+            return response()->json([
+                'success' => true,
+                'message' => 'All 5 sensors registered successfully',
+                'mac_address' => $validated['mac_address'],
+                'sensors' => $registered
+            ]);
+
+        } catch (\Exception $e) {
+            return response()->json([
+                'error' => 'Failed to register sensors',
+                'details' => $e->getMessage()
+            ], 500);
+        }
+    }
+
+    /**
      * Get sensor configuration by MAC address (for Arduino to fetch assignment)
      * Returns all 5 sensors for the ESP32
      */
