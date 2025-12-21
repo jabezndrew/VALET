@@ -70,13 +70,15 @@ class SensorAssignmentController extends Controller
                 ->orderBy('sensor_index')
                 ->get();
 
+            // If no sensors registered yet, return empty array (ESP32 will register on first data send)
             if ($sensors->isEmpty()) {
                 return response()->json([
-                    'success' => false,
+                    'success' => true,
                     'status' => 'not_registered',
-                    'message' => 'Sensors not registered. Please connect to register.',
-                    'mac_address' => $validated['mac_address']
-                ], 404);
+                    'message' => 'No sensors registered yet. Will register when you send data.',
+                    'mac_address' => $validated['mac_address'],
+                    'sensors' => []
+                ], 200);
             }
 
             // Build response with all 5 sensors
@@ -95,6 +97,7 @@ class SensorAssignmentController extends Controller
 
             return response()->json([
                 'success' => true,
+                'status' => 'registered',
                 'mac_address' => $validated['mac_address'],
                 'sensors' => $sensorAssignments
             ]);
