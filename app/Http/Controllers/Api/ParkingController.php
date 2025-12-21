@@ -88,7 +88,24 @@ class ParkingController extends Controller
                 );
             }
 
-            // Set default floor level if not provided
+            // Set floor_level based on floor_number if not provided
+            if (!isset($validated['floor_level']) && isset($validated['floor_number'])) {
+                $floorNames = [
+                    1 => '1st Floor',
+                    2 => '2nd Floor',
+                    3 => '3rd Floor',
+                    4 => '4th Floor',
+                    5 => '5th Floor',
+                    6 => '6th Floor',
+                    7 => '7th Floor',
+                    8 => '8th Floor',
+                    9 => '9th Floor',
+                    10 => '10th Floor'
+                ];
+                $validated['floor_level'] = $floorNames[$validated['floor_number']] ?? $validated['floor_number'] . 'th Floor';
+            }
+
+            // Default to 4th Floor if nothing else is set
             $validated['floor_level'] = $validated['floor_level'] ?? '4th Floor';
 
             // Determine unique identifier (prefer space_code, fallback to sensor_id)
