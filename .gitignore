@@ -28,3 +28,4 @@ Thumbs.db
 /database/seeders/TestParkingSpacesSeeder.php
 /database/seeders/LocalSensorSeeder.php
 test_parking_data.php
+ESP32_Multi_Sensor_v3.ino
