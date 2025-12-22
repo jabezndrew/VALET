@@ -116,6 +116,26 @@ class SensorManager extends Component
             ];
             $floorLevel = $floorNames[$this->floorNumber] ?? "{$this->floorNumber}th Floor";
 
+            // Check if space is already assigned to another sensor
+            $existingAssignment = SensorAssignment::where('space_code', $spaceCode)
+                ->where('id', '!=', $this->selectedSensor->id)
+                ->where('status', 'active')
+                ->first();
+
+            if ($existingAssignment) {
+                session()->flash('error', "Parking space {$spaceCode} is already assigned to another sensor");
+                return;
+            }
+
+            // If sensor was previously assigned, delete old temporary parking space
+            if ($this->selectedSensor->space_code) {
+                $oldSpaceCode = $this->selectedSensor->space_code;
+                // Delete old temporary space (starts with 'T' like TEEFF1)
+                if (str_starts_with($oldSpaceCode, 'T')) {
+                    ParkingSpace::where('space_code', $oldSpaceCode)->delete();
+                }
+            }
+
             // Check if parking space exists, create if it doesn't
             $parkingSpace = ParkingSpace::firstOrCreate(
                 ['space_code' => $spaceCode],
@@ -128,17 +148,6 @@ class SensorManager extends Component
                     'distance_cm' => 0
                 ]
             );
-
-            // Check if space is already assigned to another sensor
-            $existingAssignment = SensorAssignment::where('space_code', $spaceCode)
-                ->where('id', '!=', $this->selectedSensor->id)
-                ->where('status', 'active')
-                ->first();
-
-            if ($existingAssignment) {
-                session()->flash('error', "Parking space {$spaceCode} is already assigned to another sensor");
-                return;
-            }
 
             $this->selectedSensor->update([
                 'space_code' => $spaceCode,
