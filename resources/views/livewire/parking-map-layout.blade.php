@@ -160,21 +160,21 @@
                         <div class="divider-line" style="left: 1035px; top: 165px; width: 66px; height: 4px;"></div>
                         <div class="divider-line" style="left: 1035px; top: 255px; width: 66px; height: 4px;"></div>
 
-                        <!-- Section B - Horizontal dividers -->
+                        <!-- Section B - Horizontal dividers
                         <div class="divider-line" style="left: 747px; top: 45px; width: 270px; height: 3px;"></div>
-                        <div class="divider-line" style="left: 747px; top: 135px; width: 270px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 747px; top: 135px; width: 270px; height: 3px;"></div> -->
 
-                        <!-- Section B - Vertical dividers -->
+                        <!-- Section B - Vertical dividers
                         <div class="divider-line" style="left: 810px; top: 45px; width: 3px; height: 88px;"></div>
                         <div class="divider-line" style="left: 877px; top: 45px; width: 3px; height: 88px;"></div>
-                        <div class="divider-line" style="left: 945px; top: 45px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 945px; top: 45px; width: 3px; height: 88px;"></div> -->
 
-                        <!-- Section C - Vertical dividers -->
+                        <!-- Section C - Vertical dividers
                         <div class="divider-line" style="left: 655px; top: 150px; width: 3px; height: 135px;"></div>
-                        <div class="divider-line" style="left: 745px; top: 147px; width: 3px; height: 135px;"></div>
+                        <div class="divider-line" style="left: 745px; top: 147px; width: 3px; height: 135px;"></div> -->
 
-                        <!-- Section C - Horizontal dividers -->
-                        <div class="divider-line" style="left: 660px; top: 217px; width: 87px; height: 3px;"></div>
+                        <!-- Section C - Horizontal dividers
+                        <div class="divider-line" style="left: 660px; top: 217px; width: 87px; height: 3px;"></div>-->
 
                         <!-- Section D - Horizontal dividers -->
                         <div class="divider-line" style="left: 150px; top: 297px; width: 502px; height: 3px;"></div>
