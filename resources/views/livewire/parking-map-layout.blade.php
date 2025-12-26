@@ -99,15 +99,12 @@
                     <i class="fas fa-parking me-2" style="color: #B22020;"></i>
                     {{ $selectedFloor }} - Parking Layout
                 </h4>
-                <!-- Legend -->
-                <div class="map-legend">
-                    <div class="legend-item legend-available">
-                        <i class="fas fa-square me-2"></i>Available
-                    </div>
-                    <div class="legend-item legend-occupied">
-                        <i class="fas fa-square me-2"></i>Occupied
-                    </div>
-                </div>
+                @if(auth()->user() && auth()->user()->role === 'admin')
+                    <a href="{{ route('admin.sensors') }}" wire:navigate class="btn btn-sm" style="background: #B22020; color: white;">
+                        <i class="fas fa-microchip me-2"></i>
+                        Manage Sensors
+                    </a>
+                @endif
             </div>
 
             @if($parkingSpaces->isEmpty())
@@ -160,21 +157,21 @@
                         <div class="divider-line" style="left: 1035px; top: 165px; width: 66px; height: 4px;"></div>
                         <div class="divider-line" style="left: 1035px; top: 255px; width: 66px; height: 4px;"></div>
 
-                        <!-- Section B - Horizontal dividers
+                        <!-- Section B - Horizontal dividers -->
                         <div class="divider-line" style="left: 747px; top: 45px; width: 270px; height: 3px;"></div>
-                        <div class="divider-line" style="left: 747px; top: 135px; width: 270px; height: 3px;"></div> -->
+                        <div class="divider-line" style="left: 747px; top: 135px; width: 270px; height: 3px;"></div>
 
-                        <!-- Section B - Vertical dividers
+                        <!-- Section B - Vertical dividers -->
                         <div class="divider-line" style="left: 810px; top: 45px; width: 3px; height: 88px;"></div>
                         <div class="divider-line" style="left: 877px; top: 45px; width: 3px; height: 88px;"></div>
-                        <div class="divider-line" style="left: 945px; top: 45px; width: 3px; height: 88px;"></div> -->
+                        <div class="divider-line" style="left: 945px; top: 45px; width: 3px; height: 88px;"></div>
 
-                        <!-- Section C - Vertical dividers
+                        <!-- Section C - Vertical dividers -->
                         <div class="divider-line" style="left: 655px; top: 150px; width: 3px; height: 135px;"></div>
-                        <div class="divider-line" style="left: 745px; top: 147px; width: 3px; height: 135px;"></div> -->
+                        <div class="divider-line" style="left: 745px; top: 147px; width: 3px; height: 135px;"></div>
 
-                        <!-- Section C - Horizontal dividers
-                        <div class="divider-line" style="left: 660px; top: 217px; width: 87px; height: 3px;"></div>-->
+                        <!-- Section C - Horizontal dividers -->
+                        <div class="divider-line" style="left: 660px; top: 217px; width: 87px; height: 3px;"></div>
 
                         <!-- Section D - Horizontal dividers -->
                         <div class="divider-line" style="left: 150px; top: 297px; width: 502px; height: 3px;"></div>
@@ -305,7 +302,6 @@
                                 $isOccupied = $space->is_occupied;
                                 $isActive = $space->is_active ?? true;
                                 $canEdit = auth()->user() && in_array(auth()->user()->role, ['admin', 'ssd']);
-                                $rotation = $space->rotation ?? 0;
 
                                 // Slot dimensions
                                 $slotWidth = 60;
@@ -318,7 +314,7 @@
                                 @if($isOccupied)
                                     <!-- Occupied Spot: Show Car Image -->
                                     <div class="parking-spot-occupied {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
-                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px; transform: rotate({{ $rotation }}deg);"
+                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
                                          title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Occupied {{ !$isActive ? '(Inactive)' : '' }}"
                                          @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
                                         <img src="{{ asset('images/car_top.png') }}" alt="Car" class="car-icon-img">
@@ -326,14 +322,18 @@
                                 @else
                                     <!-- Available Spot: Show Label -->
                                     <div class="parking-spot-label available {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
-                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px; transform: rotate({{ $rotation }}deg);"
+                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
                                          title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Available {{ !$isActive ? '(Inactive)' : '' }}"
                                          @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
                                         {{ $slotName }}
                                     </div>
                                 @endif
                             @else
-                                <!-- Inactive/Empty Slot: Hidden (no real sensor data) -->
+                                <!-- Inactive/Empty Slot: Show as grayed out box (non-clickable) -->
+                                <div class="parking-slot-empty"
+                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;"
+                                     title="Sensor {{ $space->sensor_id }} - Not Active">
+                                </div>
                             @endif
                         @endforeach
 
@@ -344,7 +344,7 @@
     </div>
 
     <!-- Slot Management Modal -->
-    @if($showSlotModal && auth()->user() && in_array(auth()->user()->role, ['admin', 'ssd']))
+    @if($showSlotModal && auth()->user() && auth()->user()->role === 'admin')
     <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -369,21 +369,38 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Sensor ID</label>
-                        <select class="form-select" wire:model.live="sensorId">
-                            <option value="">Select a sensor...</option>
-                            @foreach($availableSensors as $sensor)
-                                <option value="{{ $sensor['id'] }}" {{ $sensor['is_taken'] ? 'disabled' : '' }}>
-                                    Sensor {{ $sensor['id'] }}{{ $sensor['is_taken'] ? ' (Already in use)' : '' }}{{ $sensor['is_current'] ? ' (Current)' : '' }}
-                                </option>
-                            @endforeach
-                        </select>
-                        @error('sensorId') <span class="text-danger small">{{ $message }}</span> @enderror
-                        @if(!empty($sensorId))
-                            <small class="text-success mt-1 d-block">
-                                <i class="fas fa-check-circle me-1"></i>
-                                Sensor with real-time API data
+                        <label class="form-label fw-bold">Assigned Sensor</label>
+                        @php
+                            $assignedSensor = \App\Models\SensorAssignment::where('space_code', $slotName)->first();
+                        @endphp
+                        @if($assignedSensor)
+                            <div class="card border-success">
+                                <div class="card-body py-2 px-3">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <span class="badge bg-success me-2">Active</span>
+                                            <code class="text-primary">{{ $assignedSensor->mac_address }}</code>
+                                            @if($assignedSensor->device_name)
+                                                <br><small class="text-muted">{{ $assignedSensor->device_name }}</small>
+                                            @endif
+                                        </div>
+                                        <div class="text-end">
+                                            <small class="text-muted d-block">Last Seen:</small>
+                                            <small class="fw-bold">{{ $assignedSensor->last_seen ? $assignedSensor->last_seen->diffForHumans() : 'Never' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            <small class="text-muted mt-2 d-block">
+                                <i class="fas fa-info-circle me-1"></i>
+                                To reassign or manage sensors, visit <a href="{{ route('admin.sensors') }}" wire:navigate>Sensor Management</a>
                             </small>
+                        @else
+                            <div class="alert alert-warning py-2 px-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>No sensor assigned</strong>
+                                <p class="mb-0 small">Assign a sensor to this parking space via <a href="{{ route('admin.sensors') }}" wire:navigate>Sensor Management</a></p>
+                            </div>
                         @endif
                     </div>
 
@@ -397,6 +414,19 @@
                             <option value="4th Floor">4th Floor</option>
                         </select>
                         @error('floorLevel') <span class="text-danger small">{{ $message }}</span> @enderror
+                    </div>
+
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">X Position</label>
+                            <input type="number" class="form-control" wire:model="xPosition" placeholder="e.g., 100">
+                            @error('xPosition') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
+                        <div class="col-md-6">
+                            <label class="form-label fw-bold">Y Position</label>
+                            <input type="number" class="form-control" wire:model="yPosition" placeholder="e.g., 200">
+                            @error('yPosition') <span class="text-danger small">{{ $message }}</span> @enderror
+                        </div>
                     </div>
 
                     <div class="form-check form-switch mb-3">

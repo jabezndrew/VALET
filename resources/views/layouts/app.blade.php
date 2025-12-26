@@ -710,8 +710,8 @@ main, .container, .valet-header + * {
                        @endif
                        
                        @if(auth()->user()->canManageUsers())
-                       <a class="nav-link {{ request()->routeIs('admin.*') ? 'active' : '' }}" 
-                          href="{{ route('admin.users') }}" 
+                       <a class="nav-link {{ request()->routeIs('admin.users') ? 'active' : '' }}"
+                          href="{{ route('admin.users') }}"
                           wire:navigate>
                            Users
                            @if(auth()->user()->canApprovePendingAccounts())
@@ -724,10 +724,18 @@ main, .container, .valet-header + * {
                            @endif
                        </a>
                        @endif
-                       
+
+                       @if(auth()->user()->role === 'admin')
+                       <a class="nav-link {{ request()->routeIs('admin.sensors') ? 'active' : '' }}"
+                          href="{{ route('admin.sensors') }}"
+                          wire:navigate>
+                           Sensors
+                       </a>
+                       @endif
+
                        <!-- Feedback Button - Now matches other nav items -->
-                       <a class="nav-link {{ request()->routeIs('feedback.*') ? 'active' : '' }}" 
-                          href="{{ route('feedback.index') }}" 
+                       <a class="nav-link {{ request()->routeIs('feedback.*') ? 'active' : '' }}"
+                          href="{{ route('feedback.index') }}"
                           wire:navigate>
                            Feedback
                        </a>
