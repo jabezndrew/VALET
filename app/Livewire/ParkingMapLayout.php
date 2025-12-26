@@ -64,7 +64,7 @@ class ParkingMapLayout extends Component
     public function loadParkingData()
     {
         try {
-            // Get all parking spaces for the selected floor with positions
+            // Get all parking spaces for the selected floor with positions (including unassigned)
             $this->parkingSpaces = ParkingSpace::forFloor($this->selectedFloor)
                 ->where(function($query) {
                     $query->whereNotNull('space_code')
@@ -110,8 +110,13 @@ class ParkingMapLayout extends Component
 
     private function calculateFloorStats()
     {
-        $total = $this->parkingSpaces->count();
-        $occupied = $this->parkingSpaces->filter(function ($space) {
+        // Only count spaces with actual sensor assignments for statistics
+        $spacesWithSensors = $this->parkingSpaces->filter(function ($space) {
+            return $space->sensorAssignment !== null;
+        });
+
+        $total = $spacesWithSensors->count();
+        $occupied = $spacesWithSensors->filter(function ($space) {
             return $space->is_occupied == 1 || $space->is_occupied === true;
         })->count();
 
@@ -251,7 +256,7 @@ class ParkingMapLayout extends Component
         $this->availableFloors = [];
 
         foreach ($allFloors as $floor) {
-            // Check if floor has parking spaces with assigned sensors
+            // Check if floor has parking spaces (including unassigned)
             $count = ParkingSpace::forFloor($floor)
                 ->where(function($query) {
                     $query->whereNotNull('space_code')
@@ -259,7 +264,6 @@ class ParkingMapLayout extends Component
                 })
                 ->whereNotNull('x_position')
                 ->whereNotNull('y_position')
-                ->whereHas('sensorAssignment')
                 ->count();
             if ($count > 0) {
                 $this->availableFloors[] = $floor;
