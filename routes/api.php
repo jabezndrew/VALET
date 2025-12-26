@@ -3,6 +3,7 @@
 use Illuminate\Support\Facades\Route;
 use App\Http\Controllers\Api\ParkingController;
 use App\Http\Controllers\Api\ParkingConfigController;
+use App\Http\Controllers\Api\SensorAssignmentController;
 use App\Http\Controllers\Api\SysUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FeedbackController;
@@ -16,6 +17,12 @@ Route::post('/login', [AuthController::class, 'login']);
 Route::prefix('public')->group(function () {
     Route::get('/parking', [ParkingController::class, 'index']);
     Route::post('/parking', [ParkingController::class, 'store']);
+
+    // Sensor assignment endpoint (for Arduino to fetch its assignment)
+    Route::post('/sensor/assignment', [SensorAssignmentController::class, 'getAssignment']);
+
+    // Sensor registration endpoint (for Arduino to register all sensors on boot)
+    Route::post('/sensor/register', [SensorAssignmentController::class, 'register']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -56,6 +63,18 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::controller(SysUserController::class)->prefix('users')->group(function () {
         Route::get('/', 'index');
         Route::get('/stats', 'stats');
+    });
+
+    // Sensor Assignment Management Routes (Admin only)
+    Route::controller(SensorAssignmentController::class)->prefix('sensors')->group(function () {
+        Route::get('/', 'index');                          // Get all sensors
+        Route::get('/unassigned', 'unassigned');           // Get unassigned sensors
+        Route::post('/assign', 'assign');                  // Assign sensor to space
+        Route::post('/unassign', 'unassign');              // Unassign sensor
+        Route::post('/identify/start', 'startIdentify');   // Start identify mode (blue LED)
+        Route::post('/identify/stop', 'stopIdentify');     // Stop identify mode
+        Route::put('/{macAddress}', 'update');             // Update sensor details
+        Route::delete('/{macAddress}', 'destroy');         // Delete sensor
     });
 
 });
