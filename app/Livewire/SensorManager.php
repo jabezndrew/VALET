@@ -168,12 +168,20 @@ class SensorManager extends Component
     {
         try {
             $sensor = SensorAssignment::find($sensorId);
+
+            // Delete the parking space if it exists
+            if ($sensor->space_code) {
+                ParkingSpace::where('space_code', $sensor->space_code)->delete();
+            }
+
+            // Reset ALL sensor fields
             $sensor->update([
                 'space_code' => null,
+                'device_name' => null,
                 'status' => 'unassigned'
             ]);
 
-            session()->flash('success', 'Sensor unassigned successfully!');
+            session()->flash('success', 'Sensor unassigned and reset successfully!');
             $this->loadSensors();
 
         } catch (\Exception $e) {
