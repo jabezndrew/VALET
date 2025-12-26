@@ -3,8 +3,13 @@
 
     <div class="container mt-4">
         <!-- Header -->
-        <div class="d-flex justify-content-between align-items-right mb-4">
-
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold mb-1" style="color: #3A3A3C;">
+                    <i class="fas fa-map-marked-alt me-2" style="color: #B22020;"></i>
+                    Parking Map Layout
+                </h2>
+            </div>
             <div class="d-flex gap-2">
                 <button wire:click="refreshNow" class="btn btn-refresh">
                     <i class="fas fa-sync-alt me-1"></i> Refresh
@@ -94,12 +99,15 @@
                     <i class="fas fa-parking me-2" style="color: #B22020;"></i>
                     {{ $selectedFloor }} - Parking Layout
                 </h4>
-                @if(auth()->user() && auth()->user()->role === 'admin')
-                    <a href="{{ route('admin.sensors') }}" wire:navigate class="btn btn-sm" style="background: #B22020; color: white;">
-                        <i class="fas fa-microchip me-2"></i>
-                        Manage Sensors
-                    </a>
-                @endif
+                <!-- Legend -->
+                <div class="map-legend">
+                    <div class="legend-item legend-available">
+                        <i class="fas fa-square me-2"></i>Available
+                    </div>
+                    <div class="legend-item legend-occupied">
+                        <i class="fas fa-square me-2"></i>Occupied
+                    </div>
+                </div>
             </div>
 
             @if($parkingSpaces->isEmpty())
@@ -132,15 +140,105 @@
                             $sections = [];
                             foreach ($parkingSpaces as $space) {
                                 $slotName = $space->slot_name ?? $this->getSensorDisplayName($space->sensor_id);
-                                // Extract section letter (second character for format like "4A1")
-                                if (strlen($slotName) >= 2) {
-                                    $section = substr($slotName, 1, 1);
-                                    if (!in_array($section, $sections) && isset($sectionLabels[$section])) {
-                                        $sections[] = $section;
-                                    }
+                                // Extract section letter (first character)
+                                $section = substr($slotName, 0, 1);
+                                if (!in_array($section, $sections) && isset($sectionLabels[$section])) {
+                                    $sections[] = $section;
                                 }
                             }
                         @endphp
+
+                        @foreach($sections as $section)
+                            @if(isset($sectionLabels[$section]))
+                                <div class="section-label" style="left: {{ $sectionLabels[$section]['x'] }}px; top: {{ $sectionLabels[$section]['y'] }}px;">
+                                    {{ $section }}
+                                </div>
+                            @endif
+                        @endforeach
+
+                        <!-- Section A - Box Lines -->
+                        <div class="divider-line" style="left: 1035px; top: 165px; width: 66px; height: 4px;"></div>
+                        <div class="divider-line" style="left: 1035px; top: 255px; width: 66px; height: 4px;"></div>
+
+                        <!-- Section B - Horizontal dividers
+                        <div class="divider-line" style="left: 747px; top: 45px; width: 270px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 747px; top: 135px; width: 270px; height: 3px;"></div> -->
+
+                        <!-- Section B - Vertical dividers
+                        <div class="divider-line" style="left: 810px; top: 45px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 877px; top: 45px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 945px; top: 45px; width: 3px; height: 88px;"></div> -->
+
+                        <!-- Section C - Vertical dividers
+                        <div class="divider-line" style="left: 655px; top: 150px; width: 3px; height: 135px;"></div>
+                        <div class="divider-line" style="left: 745px; top: 147px; width: 3px; height: 135px;"></div> -->
+
+                        <!-- Section C - Horizontal dividers
+                        <div class="divider-line" style="left: 660px; top: 217px; width: 87px; height: 3px;"></div>-->
+
+                        <!-- Section D - Horizontal dividers -->
+                        <div class="divider-line" style="left: 150px; top: 297px; width: 502px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 150px; top: 385px; width: 502px; height: 3px;"></div>
+
+                        <!-- Section D - Vertical dividers -->
+                        <div class="divider-line" style="left: 225px; top: 297px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 307px; top: 297px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 375px; top: 297px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 457px; top: 297px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 525px; top: 297px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 592px; top: 297px; width: 3px; height: 88px;"></div>
+
+                        <!-- Section E - Lines -->
+                        <div class="divider-line" style="left: 79px; top: 469px; width: 3px; height: 307px;"></div>
+                        <div class="divider-line" style="left: 168px; top: 469px; width: 3px; height: 307px;"></div>
+                        <div class="divider-line" style="left: 79px; top: 562px; width: 88px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 79px; top: 660px; width: 88px; height: 3px;"></div>
+
+                        <!-- Section F - Horizontal dividers -->
+                        <div class="divider-line" style="left: 172px; top: 777px; width: 495px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 172px; top: 865px; width: 495px; height: 3px;"></div>
+
+                        <!-- Section F - Vertical dividers -->
+                        <div class="divider-line" style="left: 240px; top: 777px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 322px; top: 777px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 390px; top: 777px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 457px; top: 777px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 540px; top: 777px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 607px; top: 777px; width: 3px; height: 88px;"></div>
+
+                        <!-- Section G - Lines -->
+                        <div class="divider-line" style="left: 747px; top: 882px; width: 3px; height: 457px;"></div>
+                        <div class="divider-line" style="left: 813px; top: 882px; width: 3px; height: 457px;"></div>
+                        <div class="divider-line" style="left: 747px; top: 967px; width: 66px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 747px; top: 1057px; width: 66px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 747px; top: 1147px; width: 66px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 747px; top: 1237px; width: 66px; height: 3px;"></div>
+
+                        <!-- Section I - Lines -->
+                        <div class="divider-line" style="left: 1017px; top: 882px; width: 3px; height: 457px;"></div>
+                        <div class="divider-line" style="left: 1083px; top: 882px; width: 3px; height: 457px;"></div>
+                        <div class="divider-line" style="left: 1017px; top: 967px; width: 66px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 1017px; top: 1057px; width: 66px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 1017px; top: 1147px; width: 66px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 1017px; top: 1237px; width: 66px; height: 3px;"></div>
+
+                        <!-- Section H - Horizontal dividers -->
+                        <div class="divider-line" style="left: 817px; top: 1335px; width: 202px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 825px; top: 1420px; width: 202px; height: 3px;"></div>
+
+                        <!-- Section H - Vertical dividers -->
+                        <div class="divider-line" style="left: 900px; top: 1335px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 967px; top: 1335px; width: 3px; height: 88px;"></div>
+
+                        <!-- Section J - Horizontal dividers -->
+                        <div class="divider-line" style="left: 405px; top: 552px; width: 375px; height: 3px;"></div>
+                        <div class="divider-line" style="left: 405px; top: 640px; width: 375px; height: 3px;"></div>
+
+                        <!-- Section J - Vertical dividers -->
+                        <div class="divider-line" style="left: 465px; top: 552px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 555px; top: 552px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 645px; top: 552px; width: 3px; height: 88px;"></div>
+                        <div class="divider-line" style="left: 727px; top: 552px; width: 3px; height: 88px;"></div>
 
                         <!-- Elevator 1 -->
                         <div class="facility elevator" style="left: 675px; top: 315px; width: 90px; height: 60px;">
@@ -197,61 +295,45 @@
                         <!-- Parking Spot Labels (Dynamic from Database) -->
                         @foreach($parkingSpaces as $space)
                             @php
-                                // Check if slot has an assigned sensor via sensor_assignments table
-                                $hasAssignedSensor = $space->sensorAssignment !== null;
+                                // Only show slots with real sensor data (sensors 401-405: 4B1-4B4, 4C1)
+                                // These are the only sensors with actual API data
+                                $hasRealSensor = in_array($space->sensor_id, [401, 402, 403, 404, 405]);
 
                                 $slotName = $space->slot_name ?? '';
                                 $x = $space->x_position ?? 0;
                                 $y = $space->y_position ?? 0;
-                                $rotation = $space->rotation ?? 0;
                                 $isOccupied = $space->is_occupied;
                                 $isActive = $space->is_active ?? true;
+                                $canEdit = auth()->user() && in_array(auth()->user()->role, ['admin', 'ssd']);
+                                $rotation = $space->rotation ?? 0;
 
-                                // Slot dimensions adjusted for proper spacing
+                                // Slot dimensions
                                 $slotWidth = 60;
                                 $slotHeight = 85;
                                 $adjustedX = $x;
                                 $adjustedY = $y;
                             @endphp
 
-                            @if($hasAssignedSensor && $isOccupied)
-                                <!-- Occupied Spot: Show Car Image -->
-                                <div class="parking-spot-box occupied"
-                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
-                                            border: 4px solid #dc3545; background: rgba(220, 53, 69, 0.1);
-                                            display: flex; align-items: center; justify-content: center;
-                                            border-radius: 8px; box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-                                            position: absolute; pointer-events: none;
-                                            transform: rotate({{ $rotation }}deg); transform-origin: center center;"
-                                     title="{{ $slotName }} - Occupied">
-                                    <img src="{{ asset('images/car_top.png') }}" alt="Car" style="max-width: 90%; max-height: 90%;">
-                                </div>
-                            @elseif($hasAssignedSensor && !$isOccupied)
-                                <!-- Available Spot with Sensor: Show Label (Green) -->
-                                <div class="parking-spot-box available"
-                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
-                                            border: 4px solid #28a745; background: linear-gradient(135deg, #2ed573 0%, #28a745 100%);
-                                            color: white; font-size: 22px; font-weight: 700;
-                                            display: flex; align-items: center; justify-content: center;
-                                            border-radius: 8px; box-shadow: 0 4px 12px rgba(46, 213, 115, 0.4);
-                                            position: absolute; pointer-events: none;
-                                            transform: rotate({{ $rotation }}deg); transform-origin: center center;"
-                                     title="{{ $slotName }} - Available">
-                                    {{ $slotName }}
-                                </div>
+                            @if($hasRealSensor)
+                                @if($isOccupied)
+                                    <!-- Occupied Spot: Show Car Image -->
+                                    <div class="parking-spot-occupied {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
+                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px; transform: rotate({{ $rotation }}deg);"
+                                         title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Occupied {{ !$isActive ? '(Inactive)' : '' }}"
+                                         @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
+                                        <img src="{{ asset('images/car_top.png') }}" alt="Car" class="car-icon-img">
+                                    </div>
+                                @else
+                                    <!-- Available Spot: Show Label -->
+                                    <div class="parking-spot-label available {{ !$isActive ? 'inactive' : '' }} {{ $canEdit ? 'editable' : '' }}"
+                                         style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px; transform: rotate({{ $rotation }}deg);"
+                                         title="Sensor {{ $space->sensor_id }} - {{ $slotName }} - Available {{ !$isActive ? '(Inactive)' : '' }}"
+                                         @if($canEdit) wire:click="openSlotModal({{ $space->id }})" @endif>
+                                        {{ $slotName }}
+                                    </div>
+                                @endif
                             @else
-                                <!-- No Sensor Assigned: Show Label (Gray/Inactive) -->
-                                <div class="parking-spot-box inactive"
-                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
-                                            border: 3px dashed #6c757d; background: rgba(108, 117, 125, 0.2);
-                                            color: #6c757d; font-size: 18px; font-weight: 600;
-                                            display: flex; align-items: center; justify-content: center;
-                                            border-radius: 8px; opacity: 0.6;
-                                            position: absolute; pointer-events: none;
-                                            transform: rotate({{ $rotation }}deg); transform-origin: center center;"
-                                     title="{{ $slotName }} - No Sensor Assigned">
-                                    {{ $slotName }}
-                                </div>
+                                <!-- Inactive/Empty Slot: Hidden (no real sensor data) -->
                             @endif
                         @endforeach
 
@@ -262,7 +344,7 @@
     </div>
 
     <!-- Slot Management Modal -->
-    @if($showSlotModal && auth()->user() && auth()->user()->role === 'admin')
+    @if($showSlotModal && auth()->user() && in_array(auth()->user()->role, ['admin', 'ssd']))
     <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
         <div class="modal-dialog modal-dialog-centered">
             <div class="modal-content">
@@ -287,38 +369,21 @@
                     </div>
 
                     <div class="mb-3">
-                        <label class="form-label fw-bold">Assigned Sensor</label>
-                        @php
-                            $assignedSensor = \App\Models\SensorAssignment::where('space_code', $slotName)->first();
-                        @endphp
-                        @if($assignedSensor)
-                            <div class="card border-success">
-                                <div class="card-body py-2 px-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="badge bg-success me-2">Active</span>
-                                            <code class="text-primary">{{ $assignedSensor->mac_address }}</code>
-                                            @if($assignedSensor->device_name)
-                                                <br><small class="text-muted">{{ $assignedSensor->device_name }}</small>
-                                            @endif
-                                        </div>
-                                        <div class="text-end">
-                                            <small class="text-muted d-block">Last Seen:</small>
-                                            <small class="fw-bold">{{ $assignedSensor->last_seen ? $assignedSensor->last_seen->diffForHumans() : 'Never' }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <small class="text-muted mt-2 d-block">
-                                <i class="fas fa-info-circle me-1"></i>
-                                To reassign or manage sensors, visit <a href="{{ route('admin.sensors') }}" wire:navigate>Sensor Management</a>
+                        <label class="form-label fw-bold">Sensor ID</label>
+                        <select class="form-select" wire:model.live="sensorId">
+                            <option value="">Select a sensor...</option>
+                            @foreach($availableSensors as $sensor)
+                                <option value="{{ $sensor['id'] }}" {{ $sensor['is_taken'] ? 'disabled' : '' }}>
+                                    Sensor {{ $sensor['id'] }}{{ $sensor['is_taken'] ? ' (Already in use)' : '' }}{{ $sensor['is_current'] ? ' (Current)' : '' }}
+                                </option>
+                            @endforeach
+                        </select>
+                        @error('sensorId') <span class="text-danger small">{{ $message }}</span> @enderror
+                        @if(!empty($sensorId))
+                            <small class="text-success mt-1 d-block">
+                                <i class="fas fa-check-circle me-1"></i>
+                                Sensor with real-time API data
                             </small>
-                        @else
-                            <div class="alert alert-warning py-2 px-3">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>No sensor assigned</strong>
-                                <p class="mb-0 small">Assign a sensor to this parking space via <a href="{{ route('admin.sensors') }}" wire:navigate>Sensor Management</a></p>
-                            </div>
                         @endif
                     </div>
 
@@ -332,19 +397,6 @@
                             <option value="4th Floor">4th Floor</option>
                         </select>
                         @error('floorLevel') <span class="text-danger small">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">X Position</label>
-                            <input type="number" class="form-control" wire:model="xPosition" placeholder="e.g., 100">
-                            @error('xPosition') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Y Position</label>
-                            <input type="number" class="form-control" wire:model="yPosition" placeholder="e.g., 200">
-                            @error('yPosition') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
                     </div>
 
                     <div class="form-check form-switch mb-3">
