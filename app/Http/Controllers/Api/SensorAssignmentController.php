@@ -54,9 +54,9 @@ class SensorAssignmentController extends Controller
     }
 
     /**
-     * Register all 5 sensors for an ESP32 on boot
+     * Register single sensor for an ESP32 on boot
      */
-    public function register(Request $request): JsonResponse
+     public function register(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
@@ -110,9 +110,10 @@ class SensorAssignmentController extends Controller
         }
     }
 
+
     /**
      * Get sensor configuration by MAC address (for Arduino to fetch assignment)
-     * Returns all 5 sensors for the ESP32
+     * Returns only sensor index 1 (single sensor per ESP32)
      */
     public function getAssignment(Request $request): JsonResponse
     {
@@ -121,27 +122,27 @@ class SensorAssignmentController extends Controller
                 'mac_address' => 'required|string|max:17'
             ]);
 
-            // Get all sensors for this ESP32 (sensor_index 1-5)
-            $sensors = SensorAssignment::where('mac_address', $validated['mac_address'])
+            // Get only sensor index 1 for this ESP32
+            $sensor = SensorAssignment::where('mac_address', $validated['mac_address'])
+                ->where('sensor_index', 1)
                 ->with('parkingSpace')
-                ->orderBy('sensor_index')
-                ->get();
+                ->first();
 
-            // If no sensors registered yet, return empty array (ESP32 will register on first data send)
-            if ($sensors->isEmpty()) {
+            // If no sensor registered yet, return not_registered status
+            if (!$sensor) {
                 return response()->json([
                     'success' => true,
                     'status' => 'not_registered',
-                    'message' => 'No sensors registered yet. Will register when you send data.',
-                    'mac_address' => $validated['mac_address'],
-                    'sensors' => []
+                    'message' => 'No sensor registered yet. Will register when you send data.',
+                    'mac_address' => $validated['mac_address']
                 ], 200);
             }
 
-            // Build response with all 5 sensors
-            $sensorAssignments = [];
-            foreach ($sensors as $sensor) {
-                $sensorAssignments[] = [
+            return response()->json([
+                'success' => true,
+                'status' => 'registered',
+                'mac_address' => $validated['mac_address'],
+                'sensor' => [
                     'sensor_index' => $sensor->sensor_index,
                     'status' => $sensor->status,
                     'space_code' => $sensor->space_code,
@@ -149,14 +150,7 @@ class SensorAssignmentController extends Controller
                     'is_assigned' => $sensor->isAssigned(),
                     'identify_mode' => $sensor->identify_mode,
                     'parking_space' => $sensor->parkingSpace
-                ];
-            }
-
-            return response()->json([
-                'success' => true,
-                'status' => 'registered',
-                'mac_address' => $validated['mac_address'],
-                'sensors' => $sensorAssignments
+                ]
             ]);
 
         } catch (\Exception $e) {
