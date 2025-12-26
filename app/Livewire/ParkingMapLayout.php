@@ -4,11 +4,12 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\ParkingSpace;
+use App\Models\SensorAssignment;
 use Carbon\Carbon;
 
 class ParkingMapLayout extends Component
 {
-    public $selectedFloor = '1st Floor';
+    public $selectedFloor = '4th Floor';
     public $parkingSpaces = [];
     public $floorStats = [];
     public $availableFloors = [];
@@ -63,8 +64,14 @@ class ParkingMapLayout extends Component
     public function loadParkingData()
     {
         try {
-            // Get all parking spaces for the selected floor
+            // Get all parking spaces for the selected floor with positions
             $this->parkingSpaces = ParkingSpace::forFloor($this->selectedFloor)
+                ->where(function($query) {
+                    $query->whereNotNull('space_code')
+                          ->orWhereNotNull('slot_name');
+                })
+                ->whereNotNull('x_position')
+                ->whereNotNull('y_position')
                 ->orderBy('sensor_id')
                 ->get();
 
@@ -244,11 +251,30 @@ class ParkingMapLayout extends Component
         $this->availableFloors = [];
 
         foreach ($allFloors as $floor) {
-            $count = ParkingSpace::forFloor($floor)->count();
+            // Check if floor has parking spaces with assigned sensors
+            $count = ParkingSpace::forFloor($floor)
+                ->where(function($query) {
+                    $query->whereNotNull('space_code')
+                          ->orWhereNotNull('slot_name');
+                })
+                ->whereNotNull('x_position')
+                ->whereNotNull('y_position')
+                ->whereHas('sensorAssignment')
+                ->count();
             if ($count > 0) {
                 $this->availableFloors[] = $floor;
             }
         }
+    }
+
+    public function getAllFloors()
+    {
+        return ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
+    }
+
+    public function floorHasData($floor)
+    {
+        return in_array($floor, $this->availableFloors);
     }
 
     public function hasFloorData($floor)
@@ -269,14 +295,13 @@ class ParkingMapLayout extends Component
             $this->selectedSlot = ParkingSpace::find($slotId);
 
             if ($this->selectedSlot) {
-                $this->slotName = $this->selectedSlot->slot_name ?? '';
+                $this->slotName = $this->selectedSlot->slot_name ?? $this->selectedSlot->space_code ?? '';
                 $this->sensorId = $this->selectedSlot->sensor_id ?? '';
                 $this->floorLevel = $this->selectedSlot->floor_level ?? $this->selectedFloor;
 
-                // Determine if slot should be active based on sensor
-                // Only sensors 401-405 have real data and can be active
-                $hasRealSensor = in_array($this->selectedSlot->sensor_id, [401, 402, 403, 404, 405]);
-                $this->isSlotActive = $hasRealSensor ? (bool)($this->selectedSlot->is_active ?? true) : false;
+                // Check if slot has an assigned sensor
+                $hasAssignedSensor = SensorAssignment::where('space_code', $this->selectedSlot->space_code)->exists();
+                $this->isSlotActive = $hasAssignedSensor ? (bool)($this->selectedSlot->is_active ?? true) : false;
 
                 $this->xPosition = $this->selectedSlot->x_position ?? 0;
                 $this->yPosition = $this->selectedSlot->y_position ?? 0;
@@ -302,7 +327,7 @@ class ParkingMapLayout extends Component
         $this->floorLevel = $this->selectedFloor;
         $this->slotName = '';
         $this->sensorId = '';
-        // New slots are inactive by default until a real sensor is assigned
+        // New slots are inactive by default until a sensor is assigned
         $this->isSlotActive = false;
         $this->loadAvailableSensors();
         $this->loadTakenSlots();
@@ -449,10 +474,10 @@ class ParkingMapLayout extends Component
 
     public function updatedSensorId($value)
     {
-        // Automatically activate slot if real sensor (401-405) is selected
+        // Automatically activate slot if a sensor is assigned
         if (!empty($value)) {
-            $hasRealSensor = in_array((int)$value, [401, 402, 403, 404, 405]);
-            $this->isSlotActive = $hasRealSensor;
+            $hasAssignedSensor = SensorAssignment::exists();
+            $this->isSlotActive = $hasAssignedSensor;
         } else {
             // No sensor selected, set to inactive
             $this->isSlotActive = false;
