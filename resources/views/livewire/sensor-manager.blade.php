@@ -1,4 +1,4 @@
-<div>
+<div class="container mt-4">
     {{-- Flash Messages --}}
     @if (session()->has('success'))
         <div class="alert alert-success alert-dismissible fade show" role="alert">
@@ -60,10 +60,8 @@
                             <tr>
                                 <th>Status</th>
                                 <th>Sensor ID</th>
-                                <th>Device Name</th>
                                 <th>Assigned Space</th>
                                 <th>Last Seen</th>
-                                <th>Firmware</th>
                                 <th>Actions</th>
                             </tr>
                         </thead>
@@ -95,11 +93,6 @@
                                         </div>
                                     </td>
 
-                                    {{-- Device Name --}}
-                                    <td>
-                                        {{ $sensor->device_name ?? '-' }}
-                                    </td>
-
                                     {{-- Assigned Space --}}
                                     <td>
                                         @if($sensor->space_code)
@@ -129,13 +122,6 @@
                                         @else
                                             <span class="text-muted">Never</span>
                                         @endif
-                                    </td>
-
-                                    {{-- Firmware --}}
-                                    <td>
-                                        <small class="text-muted">
-                                            {{ $sensor->firmware_version ?? 'Unknown' }}
-                                        </small>
                                     </td>
 
                                     {{-- Actions --}}
@@ -206,16 +192,6 @@
                         </div>
 
                         <div class="mb-3">
-                            <label for="deviceName" class="form-label">Device Name (Optional)</label>
-                            <input type="text"
-                                   class="form-control"
-                                   id="deviceName"
-                                   wire:model="deviceName"
-                                   placeholder="e.g., Front Row Sensor 1">
-                            <small class="text-muted">Give this sensor a friendly name for easier identification</small>
-                        </div>
-
-                        <div class="mb-3">
                             <label class="form-label fw-bold">Parking Space Configuration <span class="text-danger">*</span></label>
                             <div class="row g-2">
                                 {{-- Floor --}}
@@ -236,10 +212,10 @@
                                 {{-- Column --}}
                                 <div class="col-4">
                                     <label for="columnCode" class="form-label text-muted small">Column</label>
-                                    <select class="form-select" id="columnCode" wire:model="columnCode">
+                                    <select class="form-select" id="columnCode" wire:model.live="columnCode">
                                         <option value="">-</option>
-                                        @foreach(range('A', 'Z') as $letter)
-                                            <option value="{{ $letter }}">{{ $letter }}</option>
+                                        @foreach($this->getAvailableColumns() as $column)
+                                            <option value="{{ $column }}">{{ $column }}</option>
                                         @endforeach
                                     </select>
                                     @error('columnCode')
@@ -250,13 +226,13 @@
                                 {{-- Slot --}}
                                 <div class="col-4">
                                     <label for="slotNumber" class="form-label text-muted small">Slot</label>
-                                    <select class="form-select" id="slotNumber" wire:model="slotNumber">
+                                    <select class="form-select" id="slotNumber" wire:model="slotNumber" {{ !$columnCode ? 'disabled' : '' }}>
                                         <option value="">-</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
-                                        <option value="5">5</option>
+                                        @if($columnCode)
+                                            @for($i = 1; $i <= $this->getMaxSlotsForColumn(); $i++)
+                                                <option value="{{ $i }}">{{ $i }}</option>
+                                            @endfor
+                                        @endif
                                     </select>
                                     @error('slotNumber')
                                         <div class="text-danger small mt-1">{{ $message }}</div>
