@@ -58,7 +58,11 @@ class ParkingDashboard extends Component
     public function loadParkingData()
     {
         try {
-            $this->allSpaces = ParkingSpace::with('sensorAssignment')->orderBy('sensor_id')->get();
+            // Only load parking spaces that have actual sensor assignments (real data)
+            $this->allSpaces = ParkingSpace::with('sensorAssignment')
+                ->whereHas('sensorAssignment')
+                ->orderBy('sensor_id')
+                ->get();
 
             $this->updateStatistics();
             $this->updateFloorStats();
@@ -244,14 +248,10 @@ class ParkingDashboard extends Component
 
     private function calculateFloorStats($floorName)
     {
+        // Since we're already filtering for spaces with sensor assignments,
+        // we just need to filter by floor
         $floorSpaces = $this->allSpaces->where('floor_level', $floorName);
-
-        // Check if floor has any spaces with sensor assignments
-        $spacesWithSensors = $floorSpaces->filter(function ($space) {
-            return $space->sensorAssignment !== null;
-        });
-
-        $total = $spacesWithSensors->count();
+        $total = $floorSpaces->count();
 
         if ($total === 0) {
             return [
@@ -265,7 +265,7 @@ class ParkingDashboard extends Component
         }
 
         // Handle both boolean and integer values for is_occupied
-        $occupied = $spacesWithSensors->filter(function ($space) {
+        $occupied = $floorSpaces->filter(function ($space) {
             return $space->is_occupied == 1 || $space->is_occupied === true;
         })->count();
 
