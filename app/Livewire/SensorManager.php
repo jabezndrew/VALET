@@ -14,13 +14,26 @@ class SensorManager extends Component
     public $showAssignModal = false;
     public $selectedSensor = null;
     public $selectedSpaceCode = '';
-    public $deviceName = '';
     public $filterStatus = 'all'; // all, assigned, unassigned
 
     // Floor/Column/Slot configuration
     public $floorNumber = '';
     public $columnCode = '';
     public $slotNumber = '';
+
+    // Column configuration (matches parking map)
+    private $columnSlotConfig = [
+        'A' => 1,  // Section A: 1 slot
+        'B' => 4,  // Section B: 4 slots
+        'C' => 2,  // Section C: 2 slots
+        'D' => 7,  // Section D: 7 slots
+        'E' => 3,  // Section E: 3 slots
+        'F' => 7,  // Section F: 7 slots
+        'G' => 5,  // Section G: 5 slots
+        'H' => 3,  // Section H: 3 slots
+        'I' => 5,  // Section I: 5 slots
+        'J' => 5,  // Section J: 5 slots
+    ];
 
     protected $listeners = ['refreshSensors' => '$refresh'];
 
@@ -68,7 +81,6 @@ class SensorManager extends Component
     public function openAssignModal($sensorId)
     {
         $this->selectedSensor = SensorAssignment::find($sensorId);
-        $this->deviceName = $this->selectedSensor->device_name ?? '';
 
         // Parse existing space_code if assigned
         if ($this->selectedSensor->space_code) {
@@ -90,11 +102,13 @@ class SensorManager extends Component
 
     public function assignSensor()
     {
+        // Get max slots for the selected column
+        $maxSlots = $this->columnSlotConfig[$this->columnCode] ?? 1;
+
         $this->validate([
             'floorNumber' => 'required|integer|min:1|max:4',
-            'columnCode' => 'required|string|size:1|regex:/^[A-Z]$/',
-            'slotNumber' => 'required|integer|min:1|max:5',
-            'deviceName' => 'nullable|string|max:100'
+            'columnCode' => 'required|string|size:1|in:A,B,C,D,E,F,G,H,I,J',
+            'slotNumber' => "required|integer|min:1|max:{$maxSlots}"
         ]);
 
         try {
@@ -151,7 +165,6 @@ class SensorManager extends Component
 
             $this->selectedSensor->update([
                 'space_code' => $spaceCode,
-                'device_name' => $this->deviceName,
                 'status' => 'active'
             ]);
 
@@ -177,7 +190,6 @@ class SensorManager extends Component
             // Reset ALL sensor fields
             $sensor->update([
                 'space_code' => null,
-                'device_name' => null,
                 'status' => 'unassigned'
             ]);
 
@@ -236,7 +248,6 @@ class SensorManager extends Component
         $this->showAssignModal = false;
         $this->selectedSensor = null;
         $this->selectedSpaceCode = '';
-        $this->deviceName = '';
         $this->floorNumber = '';
         $this->columnCode = '';
         $this->slotNumber = '';
@@ -245,6 +256,25 @@ class SensorManager extends Component
     public function updatedFilterStatus()
     {
         $this->loadSensors();
+    }
+
+    public function updatedColumnCode()
+    {
+        // Reset slot number when column changes
+        $this->slotNumber = '';
+    }
+
+    public function getAvailableColumns()
+    {
+        return array_keys($this->columnSlotConfig);
+    }
+
+    public function getMaxSlotsForColumn()
+    {
+        if (!$this->columnCode || !isset($this->columnSlotConfig[$this->columnCode])) {
+            return 0;
+        }
+        return $this->columnSlotConfig[$this->columnCode];
     }
 
     public function render()
