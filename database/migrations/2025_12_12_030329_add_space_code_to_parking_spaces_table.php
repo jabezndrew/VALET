@@ -17,7 +17,6 @@ return new class extends Migration
             $table->string('column_code', 5)->nullable()->after('floor_number');
             $table->integer('slot_number')->nullable()->after('column_code');
 
-            $table->index('space_code');
             $table->index(['floor_number', 'column_code', 'slot_number']);
         });
     }
@@ -28,8 +27,8 @@ return new class extends Migration
     public function down(): void
     {
         Schema::table('parking_spaces', function (Blueprint $table) {
-            $table->dropIndex(['parking_spaces_space_code_unique']);
-            $table->dropIndex(['parking_spaces_floor_number_column_code_slot_number_index']);
+            $table->dropUnique(['space_code']);
+            $table->dropIndex(['floor_number', 'column_code', 'slot_number']);
             $table->dropColumn(['space_code', 'floor_number', 'column_code', 'slot_number']);
         });
     }
