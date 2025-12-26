@@ -9,6 +9,7 @@ use App\Livewire\FeedbackManager;
 use App\Livewire\VehicleManager;
 use App\Livewire\UserManager;
 use App\Livewire\PendingAccountManager;
+use App\Livewire\SensorManager;
 
 Route::get('/', fn() => auth()->check() ? redirect('/dashboard') : redirect('/login'));
 
@@ -39,9 +40,10 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:ssd')->group(function () {
         Route::get('/admin/users', UserManager::class)->name('admin.users');
     });
-    
+
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/pending-accounts', PendingAccountManager::class)->name('pending-accounts');
+        Route::get('/sensors', SensorManager::class)->name('sensors');
     });
     
 });
