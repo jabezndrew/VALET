@@ -410,5 +410,5 @@
 @endpush
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/parking-map-layout.css') }}">
+<link rel="stylesheet" href="{{ asset('css/parking-map-layout.css?v=' . time()) }}">
 @endpush
