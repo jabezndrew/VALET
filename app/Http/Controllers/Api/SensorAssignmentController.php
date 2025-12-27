@@ -142,14 +142,16 @@ class SensorAssignmentController extends Controller
                 'success' => true,
                 'status' => 'registered',
                 'mac_address' => $validated['mac_address'],
-                'sensor' => [
-                    'sensor_index' => $sensor->sensor_index,
-                    'status' => $sensor->status,
-                    'space_code' => $sensor->space_code,
-                    'device_name' => $sensor->device_name,
-                    'is_assigned' => $sensor->isAssigned(),
-                    'identify_mode' => $sensor->identify_mode,
-                    'parking_space' => $sensor->parkingSpace
+                'sensors' => [
+                    [
+                        'sensor_index' => $sensor->sensor_index,
+                        'status' => $sensor->status,
+                        'space_code' => $sensor->space_code,
+                        'device_name' => $sensor->device_name,
+                        'is_assigned' => $sensor->isAssigned(),
+                        'identify_mode' => $sensor->identify_mode,
+                        'parking_space' => $sensor->parkingSpace
+                    ]
                 ]
             ]);
 
