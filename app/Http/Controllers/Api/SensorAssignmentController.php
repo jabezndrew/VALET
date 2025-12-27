@@ -113,7 +113,7 @@ class SensorAssignmentController extends Controller
 
     /**
      * Get sensor configuration by MAC address (for Arduino to fetch assignment)
-     * Returns only sensor index 1 (single sensor per ESP32)
+     * Returns all 5 sensors for this ESP32
      */
     public function getAssignment(Request $request): JsonResponse
     {
@@ -122,37 +122,40 @@ class SensorAssignmentController extends Controller
                 'mac_address' => 'required|string|max:17'
             ]);
 
-            // Get only sensor index 1 for this ESP32
-            $sensor = SensorAssignment::where('mac_address', $validated['mac_address'])
-                ->where('sensor_index', 1)
+            // Get all 5 sensors for this ESP32
+            $sensors = SensorAssignment::where('mac_address', $validated['mac_address'])
                 ->with('parkingSpace')
-                ->first();
+                ->orderBy('sensor_index')
+                ->get();
 
-            // If no sensor registered yet, return not_registered status
-            if (!$sensor) {
+            // If no sensors registered yet, return not_registered status
+            if ($sensors->isEmpty()) {
                 return response()->json([
                     'success' => true,
                     'status' => 'not_registered',
-                    'message' => 'No sensor registered yet. Will register when you send data.',
+                    'message' => 'No sensors registered yet. Will register when you send data.',
                     'mac_address' => $validated['mac_address']
                 ], 200);
             }
+
+            // Format sensor data
+            $sensorData = $sensors->map(function($sensor) {
+                return [
+                    'sensor_index' => $sensor->sensor_index,
+                    'status' => $sensor->status,
+                    'space_code' => $sensor->space_code,
+                    'device_name' => $sensor->device_name,
+                    'is_assigned' => $sensor->isAssigned(),
+                    'identify_mode' => $sensor->identify_mode,
+                    'parking_space' => $sensor->parkingSpace
+                ];
+            });
 
             return response()->json([
                 'success' => true,
                 'status' => 'registered',
                 'mac_address' => $validated['mac_address'],
-                'sensors' => [
-                    [
-                        'sensor_index' => $sensor->sensor_index,
-                        'status' => $sensor->status,
-                        'space_code' => $sensor->space_code,
-                        'device_name' => $sensor->device_name,
-                        'is_assigned' => $sensor->isAssigned(),
-                        'identify_mode' => $sensor->identify_mode,
-                        'parking_space' => $sensor->parkingSpace
-                    ]
-                ]
+                'sensors' => $sensorData
             ]);
 
         } catch (\Exception $e) {
