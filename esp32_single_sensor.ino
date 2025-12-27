@@ -7,13 +7,14 @@ const char* password = "PLDTWIFIJz7TD";
 const char* serverURL = "https://valetdevelop.up.railway.app/api/public/parking";
 const char* assignmentURL = "https://valetdevelop.up.railway.app/api/public/sensor/assignment";
 const char* registerURL = "https://valetdevelop.up.railway.app/api/public/sensor/register";
-const char* FIRMWARE_VERSION = "v3.1.0-SINGLE";
+const char* FIRMWARE_VERSION = "v3.2.0-SINGLE";
 
 // MAC address will be auto-detected
 String macAddress = "";
 
 // Sensor assignment (fetched from server)
 bool isAssigned = false;
+bool wasJustAssigned = false;  // Track if sensor was just assigned
 String spaceCode = "";
 bool identifyMode = false;
 
@@ -32,10 +33,14 @@ bool previousStatus = false;
 unsigned long lastStatusChange = 0;
 
 const unsigned long DEBOUNCE_DELAY = 2000;
-const unsigned long ASSIGNMENT_CHECK_INTERVAL = 30000;
+const unsigned long ASSIGNMENT_CHECK_INTERVAL = 5000;  // Check every 5 seconds (faster response)
 const unsigned long REGISTRATION_RETRY_INTERVAL = 10000;
 unsigned long lastAssignmentCheck = 0;
 unsigned long lastRegistrationAttempt = 0;
+
+// Animation timers
+unsigned long assignmentBlinkStart = 0;
+bool isBlinkingGreen = false;
 
 void setup() {
     Serial.begin(9600);
@@ -66,8 +71,8 @@ void setup() {
     // Get MAC address
     macAddress = WiFi.macAddress();
     Serial.println("=========================================");
-    Serial.println("VALET SMART SENSOR SYSTEM v3.1.0");
-    Serial.println("SINGLE SENSOR MODE");
+    Serial.println("VALET SMART SENSOR SYSTEM v3.2.0");
+    Serial.println("SINGLE SENSOR MODE - Fast Response");
     Serial.println("=========================================");
     Serial.print("MAC Address: ");
     Serial.println(macAddress);
@@ -125,9 +130,15 @@ void loop() {
         lastAssignmentCheck = millis();
     }
 
-    // Handle identify mode (yellow LED blinking)
+    // Handle identify mode (yellow LED blinking) - HIGHEST PRIORITY
     if (identifyMode) {
         handleIdentifyMode();
+        return;
+    }
+
+    // Handle green blink animation when newly assigned
+    if (isBlinkingGreen) {
+        handleAssignmentBlink();
         return;
     }
 
@@ -250,9 +261,20 @@ void checkAssignment() {
                         int sensorIndex = sensor["sensor_index"];
 
                         if (sensorIndex == 1) {
-                            isAssigned = sensor["is_assigned"] | false;
-                            spaceCode = sensor["space_code"] | "";
-                            identifyMode = sensor["identify_mode"] | false;
+                            bool newIsAssigned = sensor["is_assigned"] | false;
+                            String newSpaceCode = sensor["space_code"] | "";
+                            bool newIdentifyMode = sensor["identify_mode"] | false;
+
+                            // Detect if sensor was just assigned
+                            if (!isAssigned && newIsAssigned) {
+                                Serial.println("✓✓✓ SENSOR JUST ASSIGNED! Starting green blink animation...");
+                                isBlinkingGreen = true;
+                                assignmentBlinkStart = millis();
+                            }
+
+                            isAssigned = newIsAssigned;
+                            spaceCode = newSpaceCode;
+                            identifyMode = newIdentifyMode;
 
                             Serial.print("Sensor 1: ");
                             if (isAssigned) {
@@ -263,7 +285,7 @@ void checkAssignment() {
                             }
 
                             if (identifyMode) {
-                                Serial.println("  IDENTIFY MODE: ACTIVE");
+                                Serial.println("  ⚡ IDENTIFY MODE: ACTIVE (Yellow LED blinking)");
                             }
                             break;
                         }
@@ -296,6 +318,30 @@ void handleIdentifyMode() {
             digitalWrite(GREEN_LED_PIN, LOW);
         }
 
+        lastBlink = millis();
+    }
+}
+
+void handleAssignmentBlink() {
+    // Blink green for 3 seconds when newly assigned
+    const unsigned long BLINK_DURATION = 3000;
+    static unsigned long lastBlink = 0;
+    static bool ledState = false;
+
+    // Check if animation should end
+    if (millis() - assignmentBlinkStart > BLINK_DURATION) {
+        isBlinkingGreen = false;
+        digitalWrite(GREEN_LED_PIN, HIGH);  // Leave it on green
+        digitalWrite(RED_LED_PIN, LOW);
+        Serial.println("Green blink animation complete!");
+        return;
+    }
+
+    // Fast green blink
+    if (millis() - lastBlink > 200) {
+        ledState = !ledState;
+        digitalWrite(GREEN_LED_PIN, ledState ? HIGH : LOW);
+        digitalWrite(RED_LED_PIN, LOW);
         lastBlink = millis();
     }
 }
