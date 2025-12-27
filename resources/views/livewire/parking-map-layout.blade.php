@@ -108,7 +108,7 @@
                     <p class="text-muted">No parking spaces configured for {{ $selectedFloor }}</p>
                 </div>
             @else
-                <!-- Parking Map Layout -->
+                <!-- Parking Map Layout - Updated 2025-12-28 -->
                 <div class="parking-map-wrapper">
                     <div class="parking-map-container" id="parkingMapContainer">
 
