@@ -61,6 +61,7 @@
                                 <th>Status</th>
                                 <th>Sensor ID</th>
                                 <th>Assigned Space</th>
+                                <th>Firmware</th>
                                 <th>Last Seen</th>
                                 <th>Actions</th>
                             </tr>
@@ -110,6 +111,15 @@
                                         @endif
                                     </td>
 
+                                    {{-- Firmware Version --}}
+                                    <td>
+                                        @if($sensor->firmware_version)
+                                            <code class="text-success">{{ $sensor->firmware_version }}</code>
+                                        @else
+                                            <span class="text-muted">-</span>
+                                        @endif
+                                    </td>
+
                                     {{-- Last Seen --}}
                                     <td>
                                         @if($sensor->last_seen)
@@ -129,13 +139,13 @@
                                         @if($sensor->identify_mode)
                                             <button wire:click="stopIdentify({{ $sensor->id }})"
                                                     class="btn btn-sm btn-info"
-                                                    title="Stop Identify (Blue LED Blinking)">
+                                                    title="Stop Identify (Yellow LED Blinking)">
                                                 <i class="fas fa-stop-circle"></i>
                                             </button>
                                         @else
                                             <button wire:click="startIdentify({{ $sensor->id }})"
                                                     class="btn btn-sm btn-outline-info"
-                                                    title="Identify (Blink Blue LED)">
+                                                    title="Identify (Blink Yellow LED)">
                                                 <i class="fas fa-lightbulb"></i>
                                             </button>
                                         @endif
