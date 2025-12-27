@@ -18,13 +18,25 @@ Route::middleware('guest')->group(function () {
 });
 
 Route::middleware('auth')->group(function () {
-    
+
     Route::post('/logout', function () {
         auth()->logout();
         request()->session()->invalidate();
         request()->session()->regenerateToken();
         return redirect('/login');
     })->name('logout');
+
+    // Admin-only route to seed parking spaces
+    Route::get('/admin/seed-parking', function () {
+        if (!auth()->user() || auth()->user()->role !== 'admin') {
+            abort(403, 'Unauthorized');
+        }
+
+        \Artisan::call('parking:seed');
+        $output = \Artisan::output();
+
+        return response('<pre>' . $output . '</pre><br><a href="/parking-map">Go to Parking Map</a>');
+    })->name('admin.seed-parking');
     
     Route::middleware('role:user')->group(function () {
         Route::get('/dashboard', ParkingDashboard::class)->name('dashboard');
