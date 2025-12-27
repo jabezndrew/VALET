@@ -13,6 +13,18 @@ use App\Livewire\SensorManager;
 
 Route::get('/', fn() => auth()->check() ? redirect('/dashboard') : redirect('/login'));
 
+// Public route to seed parking spaces (protected by secret key)
+Route::get('/seed-parking-spaces/{secret}', function ($secret) {
+    if ($secret !== 'valet2025secret') {
+        abort(403, 'Unauthorized');
+    }
+
+    \Artisan::call('parking:seed');
+    $output = \Artisan::output();
+
+    return response('<pre>' . $output . '</pre><br><a href="/parking-map">Go to Parking Map</a>');
+})->name('public.seed-parking');
+
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');
 });
