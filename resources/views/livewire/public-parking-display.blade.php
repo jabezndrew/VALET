@@ -97,7 +97,7 @@
                 </div>
 
                 <!-- Parking Map -->
-                <div class="campus-section" style="background: #2a2a2a; margin: 0; padding: 20px; min-height: calc(100vh - 90px); display: flex; align-items: center; justify-content: center;">
+                <div class="campus-section" style="background: #2a2a2a; margin: 0; padding: 20px; min-height: calc(100vh - 90px); overflow-y: auto; overflow-x: auto;">
 
             @if($parkingSpaces->isEmpty())
                 <div class="text-center py-5">
@@ -231,38 +231,43 @@
         letter-spacing: 0.5px;
     }
 
-    /* Make parking map large and fit screen */
+    /* Make parking map large and scrollable */
     .parking-map-wrapper {
         width: 100% !important;
-        height: calc(100vh - 120px) !important;
-        overflow: hidden !important;
-        display: flex !important;
-        align-items: center !important;
-        justify-content: center !important;
+        min-height: 700px !important;
+        display: block !important;
+        margin: 0 auto !important;
     }
 
     .parking-map-container {
-        transform: scale(0.8) rotate(90deg) !important;
+        transform: scale(1.0) rotate(90deg) !important;
         transform-origin: center center !important;
+        margin: 50px auto !important;
     }
 
     /* Responsive scaling for different screen sizes */
     @media (min-width: 1600px) {
         .parking-map-container {
-            transform: scale(1.0) rotate(90deg) !important;
+            transform: scale(1.1) rotate(90deg) !important;
         }
     }
 
     @media (min-width: 1920px) {
         .parking-map-container {
-            transform: scale(1.2) rotate(90deg) !important;
+            transform: scale(1.3) rotate(90deg) !important;
         }
     }
 
     @media (max-width: 1400px) {
         .parking-map-container {
-            transform: scale(0.65) rotate(90deg) !important;
+            transform: scale(0.75) rotate(90deg) !important;
         }
+    }
+
+    /* Allow scrolling */
+    .campus-section {
+        overflow-y: auto !important;
+        overflow-x: auto !important;
     }
 </style>
 @endpush
