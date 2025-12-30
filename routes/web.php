@@ -10,6 +10,10 @@ use App\Livewire\VehicleManager;
 use App\Livewire\UserManager;
 use App\Livewire\PendingAccountManager;
 use App\Livewire\SensorManager;
+use App\Livewire\PublicParkingDisplay;
+
+// Public route - no authentication required
+Route::get('/parking-display', PublicParkingDisplay::class)->name('parking.display.public');
 
 Route::get('/', fn() => auth()->check() ? redirect('/dashboard') : redirect('/login'));
 
