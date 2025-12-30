@@ -126,7 +126,7 @@ class ParkingSpacesSeeder extends Seeder
                 'floor_level' => '4th Floor',
                 'x_position' => 675.00,
                 'y_position' => 142.50,
-                'rotation' => 0,
+                'rotation' => 90,
                 'width' => 80.00,
                 'height' => 120.00,
             ],

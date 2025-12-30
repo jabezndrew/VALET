@@ -24,7 +24,7 @@
                     <div class="d-flex gap-2 align-items-center">
                         <!-- View Map Button - Styled with maroon gradient -->
                         <a href="{{ route('parking.map') }}" class="btn btn-view-map btn-sm" wire:navigate>
-                            <i class="fas fa-map-marked-alt me-1"></i> View Map
+                            View Map
                         </a>
                         @if(auth()->user()->role !== 'user')
                         <button wire:click="openVerifyModal" class="btn btn-outline-success btn-sm">
