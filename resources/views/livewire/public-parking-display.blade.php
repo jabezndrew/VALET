@@ -105,104 +105,126 @@
                     <p class="text-muted">No parking spaces configured for {{ $selectedFloor }}</p>
                 </div>
             @else
-                <!-- Parking Map Layout -->
+                <!-- Parking Map Layout - Updated 2025-12-28 -->
                 <div class="parking-map-wrapper">
                     <div class="parking-map-container" id="parkingMapContainer">
-                    <!-- Facilities -->
-                    <div class="facility elevator" style="left: 675px; top: 315px; width: 90px; height: 60px;">
-                        <span>Elevator</span>
-                    </div>
-                    <div class="facility elevator" style="left: 690px; top: 787px; width: 127px; height: 60px;">
-                        <span>Elevator</span>
-                    </div>
-                    <div class="facility elevator rotated-left" style="left: 985px; top: 742px; width: 127px; height: 60px;">
-                        <span>Elevator</span>
-                    </div>
-                    <div class="facility stairs rotated-left" style="left: 45px; top: 337px; width: 120px; height: 45px;">
-                        <span>STAIRS</span>
-                    </div>
-                    <div class="facility entrance" style="right: 135px; top: 390px; width: 135px; height: 60px;">
-                        <span>Entrance</span>
-                    </div>
-                    <div class="facility exit-sign" style="right: 180px; top: 600px; width: 150px; height: 67px;">
-                        <span>EXIT</span>
-                    </div>
 
-                    <!-- Direction Arrows -->
-                    <i class="fas fa-arrow-up arrow" style="right: 210px; top: 255px;"></i>
-                    <i class="fas fa-arrow-left arrow" style="right: 240px; top: 180px;"></i>
-                    <i class="fas fa-arrow-left arrow" style="right: 345px; top: 180px;"></i>
-                    <i class="fas fa-arrow-down arrow" style="right: 405px; top: 240px;"></i>
-                    <i class="fas fa-arrow-down arrow" style="right: 405px; top: 390px;"></i>
-                    <i class="fas fa-arrow-left arrow" style="right: 525px; top: 427px;"></i>
-                    <i class="fas fa-arrow-left arrow" style="right: 705px; top: 427px;"></i>
-                    <i class="fas fa-arrow-left arrow" style="right: 900px; top: 427px;"></i>
-                    <i class="fas fa-arrow-down arrow" style="right: 975px; top: 585px;"></i>
-                    <i class="fas fa-arrow-right arrow" style="right: 870px; top: 705px;"></i>
-                    <i class="fas fa-arrow-right arrow" style="right: 645px; top: 705px;"></i>
-                    <i class="fas fa-arrow-right arrow" style="right: 420px; top: 705px;"></i>
-                    <i class="fas fa-arrow-down arrow" style="right: 330px; top: 765px;"></i>
-                    <i class="fas fa-arrow-down arrow" style="right: 330px; top: 930px;"></i>
-                    <i class="fas fa-arrow-down arrow" style="right: 330px; top: 1125px;"></i>
-                    <i class="fas fa-arrow-right arrow" style="right: 270px; top: 1260px;"></i>
-                    <i class="fas fa-arrow-up arrow" style="right: 210px; top: 1125px;"></i>
-                    <i class="fas fa-arrow-up arrow" style="right: 210px; top: 930px;"></i>
-                    <i class="fas fa-arrow-up arrow" style="right: 210px; top: 735px;"></i>
-                    <i class="fas fa-arrow-right arrow" style="right: 135px; top: 615px;"></i>
+                        <!-- Elevator 1 -->
+                        <div class="facility elevator" style="left: 675px; top: 315px; width: 90px; height: 60px;">
+                            <span>Elevator</span>
+                        </div>
 
-                    <!-- Parking Spots -->
-                    @foreach($parkingSpaces as $space)
-                        @php
-                            $hasAssignedSensor = $space->sensorAssignment !== null;
-                            $slotName = $space->slot_name ?? '';
-                            $x = $space->x_position ?? 0;
-                            $y = $space->y_position ?? 0;
-                            $rotation = $space->rotation ?? 0;
-                            $isOccupied = $space->is_occupied;
-                            $slotWidth = 60;
-                            $slotHeight = 85;
-                        @endphp
+                        <!-- Elevator 2 -->
+                        <div class="facility elevator" style="left: 690px; top: 787px; width: 127px; height: 60px;">
+                            <span>Elevator</span>
+                        </div>
 
-                        @if($hasAssignedSensor && $isOccupied)
-                            <!-- Occupied Spot: Solid Red Box -->
-                            <div class="parking-spot-box occupied"
-                                 style="left: {{ $x }}px; top: {{ $y }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
-                                        border: 4px solid #dc3545; background: linear-gradient(135deg, #ff4757 0%, #dc3545 100%);
-                                        color: white; font-size: 22px; font-weight: 700;
-                                        display: flex; align-items: center; justify-content: center;
-                                        border-radius: 8px; box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
-                                        position: absolute; pointer-events: none;
-                                        transform: rotate({{ $rotation }}deg); transform-origin: center center;">
-                                {{ $slotName }}
-                            </div>
-                        @elseif($hasAssignedSensor && !$isOccupied)
-                            <!-- Available Spot with Sensor: Show Label (Green) -->
-                            <div class="parking-spot-box available"
-                                 style="left: {{ $x }}px; top: {{ $y }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
-                                        border: 4px solid #28a745; background: linear-gradient(135deg, #2ed573 0%, #28a745 100%);
-                                        color: white; font-size: 22px; font-weight: 700;
-                                        display: flex; align-items: center; justify-content: center;
-                                        border-radius: 8px; box-shadow: 0 4px 12px rgba(46, 213, 115, 0.4);
-                                        position: absolute; pointer-events: none;
-                                        transform: rotate({{ $rotation }}deg); transform-origin: center center;">
-                                {{ $slotName }}
-                            </div>
-                        @else
-                            <!-- No Sensor Assigned: Show Label (Gray/Inactive) -->
-                            <div class="parking-spot-box inactive"
-                                 style="left: {{ $x }}px; top: {{ $y }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
-                                        border: 3px dashed #6c757d; background: rgba(108, 117, 125, 0.2);
-                                        color: #6c757d; font-size: 18px; font-weight: 600;
-                                        display: flex; align-items: center; justify-content: center;
-                                        border-radius: 8px; opacity: 0.6;
-                                        position: absolute; pointer-events: none;
-                                        transform: rotate({{ $rotation }}deg); transform-origin: center center;">
-                                {{ $slotName }}
-                            </div>
-                        @endif
-                    @endforeach
+                        <!-- Elevator 3 -->
+                        <div class="facility elevator rotated-left" style="left: 985px; top: 742px; width: 127px; height: 60px;">
+                            <span>Elevator</span>
+                        </div>
+
+                        <!-- Stairs -->
+                        <div class="facility stairs rotated-left" style="left: 45px; top: 337px; width: 120px; height: 45px;">
+                            <span>STAIRS</span>
+                        </div>
+
+                        <!-- Entrance -->
+                        <div class="facility entrance" style="right: 135px; top: 390px; width: 135px; height: 60px;">
+                            <span>Entrance</span>
+                        </div>
+
+                        <!-- Exit Sign -->
+                        <div class="facility exit-sign" style="right: 180px; top: 600px; width: 150px; height: 67px;">
+                            <span>EXIT</span>
+                        </div>
+
+                        <!-- Direction Arrows -->
+                        <i class="fas fa-arrow-up arrow" style="right: 210px; top: 255px;"></i>
+                        <i class="fas fa-arrow-left arrow" style="right: 240px; top: 180px;"></i>
+                        <i class="fas fa-arrow-left arrow" style="right: 345px; top: 180px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 405px; top: 240px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 405px; top: 390px;"></i>
+                        <i class="fas fa-arrow-left arrow" style="right: 525px; top: 427px;"></i>
+                        <i class="fas fa-arrow-left arrow" style="right: 705px; top: 427px;"></i>
+                        <i class="fas fa-arrow-left arrow" style="right: 900px; top: 427px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 975px; top: 585px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 870px; top: 705px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 645px; top: 705px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 420px; top: 705px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 330px; top: 765px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 330px; top: 930px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 330px; top: 1125px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 270px; top: 1260px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 210px; top: 1125px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 210px; top: 930px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 210px; top: 735px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 135px; top: 615px;"></i>
+
+                        <!-- Parking Spot Labels (Dynamic from Database) -->
+                        @foreach($parkingSpaces as $space)
+                            @php
+                                // Check if slot has an assigned sensor via sensor_assignments table
+                                $hasAssignedSensor = $space->sensorAssignment !== null;
+
+                                $slotName = $space->slot_name ?? '';
+                                $x = $space->x_position ?? 0;
+                                $y = $space->y_position ?? 0;
+                                $rotation = $space->rotation ?? 0;
+                                $isOccupied = $space->is_occupied;
+                                $isActive = $space->is_active ?? true;
+
+                                // Slot dimensions adjusted for proper spacing
+                                $slotWidth = 60;
+                                $slotHeight = 85;
+                                $adjustedX = $x;
+                                $adjustedY = $y;
+                            @endphp
+
+                            @if($hasAssignedSensor && $isOccupied)
+                                <!-- Occupied Spot: Solid Red Box -->
+                                <div class="parking-spot-box occupied"
+                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
+                                            border: 4px solid #dc3545; background: linear-gradient(135deg, #ff4757 0%, #dc3545 100%);
+                                            color: white; font-size: 22px; font-weight: 700;
+                                            display: flex; align-items: center; justify-content: center;
+                                            border-radius: 8px; box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+                                            position: absolute; pointer-events: none;
+                                            transform: rotate({{ $rotation }}deg); transform-origin: center center;"
+                                     title="{{ $slotName }} - Occupied">
+                                    {{ $slotName }}
+                                </div>
+                            @elseif($hasAssignedSensor && !$isOccupied)
+                                <!-- Available Spot with Sensor: Show Label (Green) -->
+                                <div class="parking-spot-box available"
+                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
+                                            border: 4px solid #28a745; background: linear-gradient(135deg, #2ed573 0%, #28a745 100%);
+                                            color: white; font-size: 22px; font-weight: 700;
+                                            display: flex; align-items: center; justify-content: center;
+                                            border-radius: 8px; box-shadow: 0 4px 12px rgba(46, 213, 115, 0.4);
+                                            position: absolute; pointer-events: none;
+                                            transform: rotate({{ $rotation }}deg); transform-origin: center center;"
+                                     title="{{ $slotName }} - Available">
+                                    {{ $slotName }}
+                                </div>
+                            @else
+                                <!-- No Sensor Assigned: Show Label (Gray/Inactive) -->
+                                <div class="parking-spot-box inactive"
+                                     style="left: {{ $adjustedX }}px; top: {{ $adjustedY }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
+                                            border: 3px dashed #6c757d; background: rgba(108, 117, 125, 0.2);
+                                            color: #6c757d; font-size: 18px; font-weight: 600;
+                                            display: flex; align-items: center; justify-content: center;
+                                            border-radius: 8px; opacity: 0.6;
+                                            position: absolute; pointer-events: none;
+                                            transform: rotate({{ $rotation }}deg); transform-origin: center center;"
+                                     title="{{ $slotName }} - No Sensor Assigned">
+                                    {{ $slotName }}
+                                </div>
+                            @endif
+                        @endforeach
+
+                    </div>
                 </div>
-            </div>
             @endif
         </div>
 
@@ -232,103 +254,125 @@
         letter-spacing: 0.5px;
     }
 
-    /* Make parking map fit screen without scrolling */
+    /* Parking Map - Fixed Container Approach (same as parking-map-layout) */
     .parking-map-wrapper {
         width: 100% !important;
-        height: calc(100vh - 90px) !important;
+        height: auto !important;
+        min-height: 580px !important;
+        max-height: 620px !important;
+        overflow: hidden !important;
+        background: #2a2a2a !important;
+        border-radius: 15px !important;
+        padding: 15px !important;
         display: flex !important;
         align-items: center !important;
         justify-content: center !important;
-        overflow: hidden !important;
+        position: relative !important;
     }
 
     .parking-map-container {
+        position: relative !important;
+        width: 1400px !important;
+        height: 1700px !important;
+        background: #2a2a2a !important;
         transform: scale(0.40) rotate(90deg) !important;
         transform-origin: center center !important;
+        transition: none !important;
     }
 
-    /* Comprehensive responsive scaling - optimized for all screen sizes */
-    /* Extra small devices (phones, less than 576px) */
+    /* Responsive scaling - maintains fixed positions */
+    /* Mobile devices (portrait) */
     @media (max-width: 575.98px) {
+        .parking-map-wrapper {
+            min-height: 300px !important;
+            max-height: 350px !important;
+        }
         .parking-map-container {
-            transform: scale(0.20) rotate(90deg) !important;
+            transform: scale(0.18) rotate(90deg) !important;
         }
     }
 
-    /* Small devices (landscape phones, 576px to 767px) */
+    /* Mobile devices (landscape) and small tablets */
     @media (min-width: 576px) and (max-width: 767.98px) {
+        .parking-map-wrapper {
+            min-height: 350px !important;
+            max-height: 400px !important;
+        }
         .parking-map-container {
-            transform: scale(0.25) rotate(90deg) !important;
+            transform: scale(0.22) rotate(90deg) !important;
         }
     }
 
-    /* Medium devices (tablets, 768px to 991px) */
+    /* Tablets */
     @media (min-width: 768px) and (max-width: 991.98px) {
+        .parking-map-wrapper {
+            min-height: 450px !important;
+            max-height: 500px !important;
+        }
         .parking-map-container {
-            transform: scale(0.30) rotate(90deg) !important;
+            transform: scale(0.28) rotate(90deg) !important;
         }
     }
 
-    /* Large devices (desktops, 992px to 1199px) */
+    /* Small laptops */
     @media (min-width: 992px) and (max-width: 1199.98px) {
+        .parking-map-wrapper {
+            min-height: 500px !important;
+            max-height: 550px !important;
+        }
         .parking-map-container {
-            transform: scale(0.35) rotate(90deg) !important;
+            transform: scale(0.32) rotate(90deg) !important;
         }
     }
 
-    /* Extra large devices (large desktops, 1200px to 1399px) */
+    /* Standard laptops */
     @media (min-width: 1200px) and (max-width: 1399.98px) {
+        .parking-map-wrapper {
+            min-height: 550px !important;
+            max-height: 600px !important;
+        }
         .parking-map-container {
-            transform: scale(0.38) rotate(90deg) !important;
+            transform: scale(0.36) rotate(90deg) !important;
         }
     }
 
-    /* XX-Large devices (1400px to 1599px) */
+    /* Large laptops and small desktops (default) */
     @media (min-width: 1400px) and (max-width: 1599.98px) {
         .parking-map-container {
             transform: scale(0.40) rotate(90deg) !important;
         }
     }
 
-    /* Full HD (1600px to 1919px) */
+    /* Full HD displays */
     @media (min-width: 1600px) and (max-width: 1919.98px) {
+        .parking-map-wrapper {
+            min-height: 650px !important;
+            max-height: 700px !important;
+        }
         .parking-map-container {
             transform: scale(0.45) rotate(90deg) !important;
         }
     }
 
-    /* 2K displays (1920px to 2399px) */
-    @media (min-width: 1920px) and (max-width: 2399.98px) {
+    /* 2K displays */
+    @media (min-width: 1920px) and (max-width: 2559.98px) {
+        .parking-map-wrapper {
+            min-height: 700px !important;
+            max-height: 750px !important;
+        }
         .parking-map-container {
-            transform: scale(0.50) rotate(90deg) !important;
+            transform: scale(0.48) rotate(90deg) !important;
         }
     }
 
-    /* 2.5K displays (2400px to 2559px) */
-    @media (min-width: 2400px) and (max-width: 2559.98px) {
+    /* Wide 2K+ and 4K displays */
+    @media (min-width: 2560px) {
+        .parking-map-wrapper {
+            min-height: 800px !important;
+            max-height: 900px !important;
+        }
         .parking-map-container {
             transform: scale(0.55) rotate(90deg) !important;
-        }
-    }
-
-    /* Wide 2K+ displays (2560px to 2999px) */
-    @media (min-width: 2560px) and (max-width: 2999.98px) {
-        .parking-map-container {
-            transform: scale(0.58) rotate(90deg) !important;
-        }
-    }
-
-    /* 3K displays (3000px to 3839px) */
-    @media (min-width: 3000px) and (max-width: 3839.98px) {
-        .parking-map-container {
-            transform: scale(0.70) rotate(90deg) !important;
-        }
-    }
-
-    /* 4K displays (3840px and above) */
-    @media (min-width: 3840px) {
-        .parking-map-container {
-            transform: scale(0.85) rotate(90deg) !important;
         }
     }
 
