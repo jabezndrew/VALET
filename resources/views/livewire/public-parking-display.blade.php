@@ -164,15 +164,16 @@
                         @endphp
 
                         @if($hasAssignedSensor && $isOccupied)
-                            <!-- Occupied Spot: Show Car Image -->
+                            <!-- Occupied Spot: Solid Red Box -->
                             <div class="parking-spot-box occupied"
                                  style="left: {{ $x }}px; top: {{ $y }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
-                                        border: 4px solid #dc3545; background: rgba(220, 53, 69, 0.1);
+                                        border: 4px solid #dc3545; background: linear-gradient(135deg, #ff4757 0%, #dc3545 100%);
+                                        color: white; font-size: 22px; font-weight: 700;
                                         display: flex; align-items: center; justify-content: center;
                                         border-radius: 8px; box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
                                         position: absolute; pointer-events: none;
                                         transform: rotate({{ $rotation }}deg); transform-origin: center center;">
-                                <img src="{{ asset('images/car_top.png') }}" alt="Car" style="max-width: 90%; max-height: 90%;">
+                                {{ $slotName }}
                             </div>
                         @elseif($hasAssignedSensor && !$isOccupied)
                             <!-- Available Spot with Sensor: Show Label (Green) -->
@@ -231,43 +232,88 @@
         letter-spacing: 0.5px;
     }
 
-    /* Make parking map large and scrollable */
+    /* Make parking map fit screen without scrolling */
     .parking-map-wrapper {
         width: 100% !important;
-        min-height: 700px !important;
-        display: block !important;
-        margin: 0 auto !important;
+        height: calc(100vh - 90px) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        overflow: hidden !important;
     }
 
     .parking-map-container {
-        transform: scale(1.0) rotate(90deg) !important;
+        transform: scale(0.52) rotate(90deg) !important;
         transform-origin: center center !important;
-        margin: 50px auto !important;
     }
 
-    /* Responsive scaling for different screen sizes */
-    @media (min-width: 1600px) {
+    /* Comprehensive responsive scaling - 9 breakpoints */
+    /* Extra small devices (phones, less than 576px) */
+    @media (max-width: 575.98px) {
         .parking-map-container {
-            transform: scale(1.1) rotate(90deg) !important;
+            transform: scale(0.25) rotate(90deg) !important;
         }
     }
 
-    @media (min-width: 1920px) {
+    /* Small devices (landscape phones, 576px to 767px) */
+    @media (min-width: 576px) and (max-width: 767.98px) {
         .parking-map-container {
-            transform: scale(1.3) rotate(90deg) !important;
+            transform: scale(0.30) rotate(90deg) !important;
         }
     }
 
-    @media (max-width: 1400px) {
+    /* Medium devices (tablets, 768px to 991px) */
+    @media (min-width: 768px) and (max-width: 991.98px) {
         .parking-map-container {
-            transform: scale(0.75) rotate(90deg) !important;
+            transform: scale(0.38) rotate(90deg) !important;
         }
     }
 
-    /* Allow scrolling */
+    /* Large devices (desktops, 992px to 1199px) */
+    @media (min-width: 992px) and (max-width: 1199.98px) {
+        .parking-map-container {
+            transform: scale(0.45) rotate(90deg) !important;
+        }
+    }
+
+    /* Extra large devices (large desktops, 1200px to 1399px) */
+    @media (min-width: 1200px) and (max-width: 1399.98px) {
+        .parking-map-container {
+            transform: scale(0.50) rotate(90deg) !important;
+        }
+    }
+
+    /* XX-Large devices (1400px to 1599px) */
+    @media (min-width: 1400px) and (max-width: 1599.98px) {
+        .parking-map-container {
+            transform: scale(0.52) rotate(90deg) !important;
+        }
+    }
+
+    /* Full HD (1600px to 1919px) */
+    @media (min-width: 1600px) and (max-width: 1919.98px) {
+        .parking-map-container {
+            transform: scale(0.60) rotate(90deg) !important;
+        }
+    }
+
+    /* 2K displays (1920px to 2559px) */
+    @media (min-width: 1920px) and (max-width: 2559.98px) {
+        .parking-map-container {
+            transform: scale(0.70) rotate(90deg) !important;
+        }
+    }
+
+    /* 4K displays (2560px and above) */
+    @media (min-width: 2560px) {
+        .parking-map-container {
+            transform: scale(0.90) rotate(90deg) !important;
+        }
+    }
+
+    /* No scrolling - fit everything on screen */
     .campus-section {
-        overflow-y: auto !important;
-        overflow-x: auto !important;
+        overflow: hidden !important;
     }
 </style>
 @endpush
