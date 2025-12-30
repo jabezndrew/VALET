@@ -38,6 +38,11 @@ class ParkingSpace extends Model
         'is_occupied',
         'distance_cm',
         'floor_level',
+        'slot_name',
+        'x_position',
+        'y_position',
+        'rotation',
+        'is_active',
     ];
 
     /**
@@ -155,5 +160,13 @@ class ParkingSpace extends Model
     public function markAsAvailable(): bool
     {
         return $this->update(['is_occupied' => false]);
+    }
+
+    /**
+     * Get the sensor assignment for this parking space
+     */
+    public function sensorAssignment()
+    {
+        return $this->hasOne(SensorAssignment::class, 'space_code', 'space_code');
     }
 }
