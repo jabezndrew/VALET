@@ -243,71 +243,92 @@
     }
 
     .parking-map-container {
-        transform: scale(0.52) rotate(90deg) !important;
+        transform: scale(0.40) rotate(90deg) !important;
         transform-origin: center center !important;
     }
 
-    /* Comprehensive responsive scaling - 9 breakpoints */
+    /* Comprehensive responsive scaling - optimized for all screen sizes */
     /* Extra small devices (phones, less than 576px) */
     @media (max-width: 575.98px) {
         .parking-map-container {
-            transform: scale(0.25) rotate(90deg) !important;
+            transform: scale(0.20) rotate(90deg) !important;
         }
     }
 
     /* Small devices (landscape phones, 576px to 767px) */
     @media (min-width: 576px) and (max-width: 767.98px) {
         .parking-map-container {
-            transform: scale(0.30) rotate(90deg) !important;
+            transform: scale(0.25) rotate(90deg) !important;
         }
     }
 
     /* Medium devices (tablets, 768px to 991px) */
     @media (min-width: 768px) and (max-width: 991.98px) {
         .parking-map-container {
-            transform: scale(0.38) rotate(90deg) !important;
+            transform: scale(0.30) rotate(90deg) !important;
         }
     }
 
     /* Large devices (desktops, 992px to 1199px) */
     @media (min-width: 992px) and (max-width: 1199.98px) {
         .parking-map-container {
-            transform: scale(0.45) rotate(90deg) !important;
+            transform: scale(0.35) rotate(90deg) !important;
         }
     }
 
     /* Extra large devices (large desktops, 1200px to 1399px) */
     @media (min-width: 1200px) and (max-width: 1399.98px) {
         .parking-map-container {
-            transform: scale(0.50) rotate(90deg) !important;
+            transform: scale(0.38) rotate(90deg) !important;
         }
     }
 
     /* XX-Large devices (1400px to 1599px) */
     @media (min-width: 1400px) and (max-width: 1599.98px) {
         .parking-map-container {
-            transform: scale(0.52) rotate(90deg) !important;
+            transform: scale(0.40) rotate(90deg) !important;
         }
     }
 
     /* Full HD (1600px to 1919px) */
     @media (min-width: 1600px) and (max-width: 1919.98px) {
         .parking-map-container {
-            transform: scale(0.60) rotate(90deg) !important;
+            transform: scale(0.45) rotate(90deg) !important;
         }
     }
 
-    /* 2K displays (1920px to 2559px) */
-    @media (min-width: 1920px) and (max-width: 2559.98px) {
+    /* 2K displays (1920px to 2399px) */
+    @media (min-width: 1920px) and (max-width: 2399.98px) {
+        .parking-map-container {
+            transform: scale(0.50) rotate(90deg) !important;
+        }
+    }
+
+    /* 2.5K displays (2400px to 2559px) */
+    @media (min-width: 2400px) and (max-width: 2559.98px) {
+        .parking-map-container {
+            transform: scale(0.55) rotate(90deg) !important;
+        }
+    }
+
+    /* Wide 2K+ displays (2560px to 2999px) */
+    @media (min-width: 2560px) and (max-width: 2999.98px) {
+        .parking-map-container {
+            transform: scale(0.58) rotate(90deg) !important;
+        }
+    }
+
+    /* 3K displays (3000px to 3839px) */
+    @media (min-width: 3000px) and (max-width: 3839.98px) {
         .parking-map-container {
             transform: scale(0.70) rotate(90deg) !important;
         }
     }
 
-    /* 4K displays (2560px and above) */
-    @media (min-width: 2560px) {
+    /* 4K displays (3840px and above) */
+    @media (min-width: 3840px) {
         .parking-map-container {
-            transform: scale(0.90) rotate(90deg) !important;
+            transform: scale(0.85) rotate(90deg) !important;
         }
     }
 
