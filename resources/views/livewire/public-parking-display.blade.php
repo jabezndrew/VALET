@@ -1,5 +1,5 @@
 <div wire:poll.5s="loadParkingData">
-    <div class="container-fluid px-4 py-3" style="background: #f5f5f5; min-height: 100vh;">
+    <div class="container-fluid px-4 py-3" style="background: #f5f5f5;">
 
         <!-- Header -->
         <div class="row mb-4">
@@ -209,6 +209,11 @@
 <link rel="stylesheet" href="{{ asset('css/parking-map-layout.css') }}">
 <style>
     /* Additional styles for public display */
+    body {
+        overflow-y: auto !important;
+        overflow-x: hidden;
+    }
+
     .live-badge {
         font-size: 1.3rem !important;
         padding: 10px 20px !important;
@@ -221,6 +226,12 @@
     /* Larger text for public viewing */
     h1, h4, h6 {
         letter-spacing: 0.5px;
+    }
+
+    /* Ensure parking map wrapper is visible */
+    .parking-map-wrapper {
+        min-height: 600px !important;
+        max-height: 700px !important;
     }
 </style>
 @endpush
