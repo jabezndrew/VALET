@@ -1,27 +1,25 @@
 <div wire:poll.5s="loadParkingData">
-    <div class="container-fluid px-4 py-3" style="background: #f5f5f5;">
+    <div class="container-fluid p-0" style="background: #1a1a1a; min-height: 100vh;">
 
-        <!-- Header -->
-        <div class="row mb-4">
+        <!-- Compact Header Bar -->
+        <div class="row g-0">
             <div class="col-12">
-                <div class="campus-section" style="background: linear-gradient(135deg, #B22020 0%, #8B0000 100%); color: white; padding: 30px;">
-                    <div class="row align-items-center">
-                        <div class="col-md-8">
-                            <div class="d-flex align-items-center gap-3">
-                                <img src="{{ asset('images/valet-logo.jpg') }}" alt="VALET Logo" style="width: 80px; height: 80px; border-radius: 50%; border: 4px solid white;">
-                                <div>
-                                    <h1 class="mb-0" style="font-size: 2.5rem; font-weight: 700;">VALET Parking System</h1>
-                                    <p class="mb-0" style="font-size: 1.2rem; opacity: 0.9;">USJ-R Quadricentennial Campus</p>
-                                </div>
+                <div style="background: linear-gradient(135deg, #B22020 0%, #8B0000 100%); color: white; padding: 15px 30px;">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <div class="d-flex align-items-center gap-3">
+                            <img src="{{ asset('images/valet-logo.jpg') }}" alt="VALET Logo" style="width: 50px; height: 50px; border-radius: 50%; border: 3px solid white;">
+                            <div>
+                                <h1 class="mb-0" style="font-size: 1.8rem; font-weight: 700;">VALET Parking</h1>
+                                <p class="mb-0" style="font-size: 0.9rem; opacity: 0.9;">USJ-R Campus</p>
                             </div>
                         </div>
-                        <div class="col-md-4 text-end">
+                        <div class="d-flex align-items-center gap-3">
                             <span class="live-badge">
                                 <i class="fas fa-circle text-white me-1" style="font-size: 0.5rem;"></i>LIVE
                             </span>
                             @if($lastUpdate)
-                            <div class="mt-2">
-                                <i class="fas fa-clock me-1"></i>Updated: {{ $lastUpdate }}
+                            <div style="font-size: 0.9rem;">
+                                <i class="fas fa-clock me-1"></i>{{ $lastUpdate }}
                             </div>
                             @endif
                         </div>
@@ -30,71 +28,76 @@
             </div>
         </div>
 
-        <!-- Floor Selection and Stats -->
-        <div class="campus-section mb-4">
-            <!-- Floor Selector -->
-            <div class="row mb-4">
-                <div class="col-md-12">
-                    <label class="form-label fw-bold text-muted mb-2" style="font-size: 1.1rem;">
-                        <i class="fas fa-layer-group me-2"></i>Select Floor Level
-                    </label>
-                    <div class="btn-group w-100 floor-selector" role="group">
-                        @foreach(['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'] as $floor)
-                            @php
-                                $hasData = $this->hasFloorData($floor);
-                            @endphp
-                            <button wire:click="changeFloor('{{ $floor }}')"
-                                    class="btn btn-floor-select {{ $selectedFloor === $floor ? 'active' : '' }} {{ !$hasData ? 'disabled' : '' }}"
-                                    {{ !$hasData ? 'disabled' : '' }}
-                                    style="font-size: 1.2rem; padding: 18px 25px;"
-                                    title="{{ !$hasData ? 'No data available for this floor' : 'View ' . $floor }}">
-                                <i class="fas fa-building me-2"></i>{{ $floor }}
-                                @if(!$hasData)
-                                    <i class="fas fa-ban ms-2" style="font-size: 0.8rem; opacity: 0.5;"></i>
+        <!-- Main Content: Map with Floor Selector -->
+        <div class="row g-0">
+            <div class="col-12 position-relative">
+
+                <!-- Floor Selector - Top Right Dropdown -->
+                <div style="position: absolute; top: 30px; right: 30px; z-index: 1000;">
+                    @php
+                        $allFloors = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
+                        $currentData = null;
+                        foreach($allFloors as $floor) {
+                            if($floor === $selectedFloor) {
+                                $spaces = \App\Models\ParkingSpace::where('floor_level', $floor)->with('sensorAssignment')->get();
+                                $total = $spaces->count();
+                                $spacesWithSensors = $spaces->filter(fn($s) => $s->sensorAssignment !== null);
+                                $occupied = $spacesWithSensors->filter(fn($s) => $s->is_occupied)->count();
+                                $available = $spacesWithSensors->count() - $occupied;
+                                $currentData = [
+                                    'total' => $total,
+                                    'available' => $available,
+                                    'occupied' => $occupied
+                                ];
+                                break;
+                            }
+                        }
+                    @endphp
+
+                    <div style="background: rgba(255, 255, 255, 0.95); border-radius: 15px; padding: 20px; box-shadow: 0 8px 30px rgba(0,0,0,0.3); min-width: 320px;">
+                        <label style="font-size: 0.9rem; font-weight: 600; color: #666; margin-bottom: 10px; display: block;">
+                            <i class="fas fa-building me-2"></i>Select Floor
+                        </label>
+                        <select wire:model.live="selectedFloor"
+                                style="width: 100%; padding: 12px 15px; font-size: 1.1rem; font-weight: 600;
+                                       border: 2px solid #B22020; border-radius: 10px; background: white;
+                                       color: #3A3A3C; cursor: pointer; outline: none;">
+                            @foreach($allFloors as $floor)
+                                @php
+                                    $hasData = \App\Models\ParkingSpace::where('floor_level', $floor)->exists();
+                                @endphp
+                                @if($hasData)
+                                    <option value="{{ $floor }}">{{ $floor }}</option>
                                 @endif
-                            </button>
-                        @endforeach
-                    </div>
-                </div>
-            </div>
+                            @endforeach
+                        </select>
 
-            <!-- Floor Statistics -->
-            <div class="row text-center mb-4">
-                <div class="col-md-3">
-                    <div class="stat-circle" style="background: conic-gradient(#007bff 100%, #e9ecef 100%); width: 140px; height: 140px;">
-                        <div class="stat-number" style="width: 105px; height: 105px; font-size: 3rem;">{{ $floorStats['total'] ?? 0 }}</div>
+                        @if($currentData)
+                        <div style="margin-top: 20px; padding-top: 20px; border-top: 2px solid #f0f0f0;">
+                            <div class="d-flex justify-content-between align-items-center mb-3">
+                                <div class="text-center" style="flex: 1;">
+                                    <div style="font-size: 2.5rem; font-weight: 700; color: #28a745; line-height: 1;">
+                                        {{ $currentData['available'] }}
+                                    </div>
+                                    <div style="font-size: 0.85rem; color: #666; margin-top: 5px;">Available</div>
+                                </div>
+                                <div class="text-center" style="flex: 1;">
+                                    <div style="font-size: 2.5rem; font-weight: 700; color: #dc3545; line-height: 1;">
+                                        {{ $currentData['occupied'] }}
+                                    </div>
+                                    <div style="font-size: 0.85rem; color: #666; margin-top: 5px;">Occupied</div>
+                                </div>
+                            </div>
+                            <div class="text-center" style="font-size: 0.9rem; color: #999;">
+                                Total: {{ $currentData['total'] }} spaces
+                            </div>
+                        </div>
+                        @endif
                     </div>
-                    <h6 class="text-muted mt-2" style="font-size: 1.1rem; font-weight: 600;">Total Spots</h6>
                 </div>
-                <div class="col-md-3">
-                    <div class="stat-circle" style="background: conic-gradient(#28a745 {{ $floorStats['total'] > 0 ? ($floorStats['available'] / $floorStats['total']) * 100 : 0 }}%, #e9ecef {{ $floorStats['total'] > 0 ? ($floorStats['available'] / $floorStats['total']) * 100 : 0 }}%); width: 140px; height: 140px;">
-                        <div class="stat-number" style="width: 105px; height: 105px; font-size: 3rem;">{{ $floorStats['available'] ?? 0 }}</div>
-                    </div>
-                    <h6 class="text-muted mt-2" style="font-size: 1.1rem; font-weight: 600;">Available</h6>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-circle" style="background: conic-gradient(#dc3545 {{ $floorStats['total'] > 0 ? ($floorStats['occupied'] / $floorStats['total']) * 100 : 0 }}%, #e9ecef {{ $floorStats['total'] > 0 ? ($floorStats['occupied'] / $floorStats['total']) * 100 : 0 }}%); width: 140px; height: 140px;">
-                        <div class="stat-number" style="width: 105px; height: 105px; font-size: 3rem;">{{ $floorStats['occupied'] ?? 0 }}</div>
-                    </div>
-                    <h6 class="text-muted mt-2" style="font-size: 1.1rem; font-weight: 600;">Occupied</h6>
-                </div>
-                <div class="col-md-3">
-                    <div class="stat-circle" style="background: conic-gradient(#fd7e14 {{ $floorStats['occupancy_rate'] ?? 0 }}%, #e9ecef {{ $floorStats['occupancy_rate'] ?? 0 }}%); width: 140px; height: 140px;">
-                        <div class="stat-number" style="width: 105px; height: 105px; font-size: 3rem;">{{ $floorStats['occupancy_rate'] ?? 0 }}%</div>
-                    </div>
-                    <h6 class="text-muted mt-2" style="font-size: 1.1rem; font-weight: 600;">Occupancy</h6>
-                </div>
-            </div>
-        </div>
 
-        <!-- Parking Map Visualization -->
-        <div class="campus-section">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h4 class="mb-0 fw-bold" style="color: #3A3A3C; font-size: 1.8rem;">
-                    <i class="fas fa-parking me-2" style="color: #B22020;"></i>
-                    {{ $selectedFloor }} - Parking Layout
-                </h4>
-            </div>
+                <!-- Parking Map -->
+                <div class="campus-section" style="background: #2a2a2a; margin: 0; padding: 20px; min-height: calc(100vh - 90px); display: flex; align-items: center; justify-content: center;">
 
             @if($parkingSpaces->isEmpty())
                 <div class="text-center py-5">
@@ -228,10 +231,38 @@
         letter-spacing: 0.5px;
     }
 
-    /* Ensure parking map wrapper is visible */
+    /* Make parking map large and fit screen */
     .parking-map-wrapper {
-        min-height: 600px !important;
-        max-height: 700px !important;
+        width: 100% !important;
+        height: calc(100vh - 120px) !important;
+        overflow: hidden !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .parking-map-container {
+        transform: scale(0.8) rotate(90deg) !important;
+        transform-origin: center center !important;
+    }
+
+    /* Responsive scaling for different screen sizes */
+    @media (min-width: 1600px) {
+        .parking-map-container {
+            transform: scale(1.0) rotate(90deg) !important;
+        }
+    }
+
+    @media (min-width: 1920px) {
+        .parking-map-container {
+            transform: scale(1.2) rotate(90deg) !important;
+        }
+    }
+
+    @media (max-width: 1400px) {
+        .parking-map-container {
+            transform: scale(0.65) rotate(90deg) !important;
+        }
     }
 </style>
 @endpush
