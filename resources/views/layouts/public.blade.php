@@ -19,7 +19,7 @@
 
     @livewireStyles
 </head>
-<body style="margin: 0; padding: 0; overflow: hidden; background: #1a1a1a;">
+<body style="margin: 0; padding: 0; background: #f5f5f5;">
     {{ $slot }}
 
     @livewireScripts
