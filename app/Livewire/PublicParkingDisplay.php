@@ -18,6 +18,11 @@ class PublicParkingDisplay extends Component
         $this->loadParkingData();
     }
 
+    public function updatedSelectedFloor()
+    {
+        $this->loadParkingData();
+    }
+
     public function loadParkingData()
     {
         // Load parking spaces for selected floor with sensor assignments
