@@ -97,7 +97,7 @@
                 </div>
 
                 <!-- Parking Map -->
-                <div class="campus-section" style="background: #2a2a2a; margin: 0; padding: 20px; min-height: calc(100vh - 90px); overflow-y: auto; overflow-x: auto;">
+                <div class="campus-section" style="background: #2a2a2a; margin: 0; padding: 20px; height: calc(100vh - 90px); overflow: hidden;">
 
             @if($parkingSpaces->isEmpty())
                 <div class="text-center py-5">
@@ -231,43 +231,208 @@
         letter-spacing: 0.5px;
     }
 
-    /* Make parking map large and scrollable */
+    /* Make parking map fit screen without scrolling */
     .parking-map-wrapper {
         width: 100% !important;
-        min-height: 700px !important;
-        display: block !important;
-        margin: 0 auto !important;
+        height: calc(100vh - 110px) !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+        position: relative !important;
+        overflow: hidden !important;
     }
 
     .parking-map-container {
-        transform: scale(1.0) rotate(90deg) !important;
+        transform: scale(0.52) rotate(90deg) !important;
         transform-origin: center center !important;
-        margin: 50px auto !important;
+        position: relative !important;
+    }
+
+    /* Increase parking slot sizes for better visibility */
+    .parking-spot-box,
+    .parking-slot {
+        width: 70px !important;
+        height: 95px !important;
+        font-size: 24px !important;
+    }
+
+    /* Larger arrows */
+    .arrow {
+        font-size: 32px !important;
+    }
+
+    /* Larger facilities */
+    .facility {
+        font-size: 24px !important;
+    }
+
+    /* Floor selector responsive */
+    .col-12.position-relative > div:first-child {
+        position: fixed !important;
+        top: 110px !important;
+        right: 30px !important;
+        z-index: 2000 !important;
     }
 
     /* Responsive scaling for different screen sizes */
-    @media (min-width: 1600px) {
+
+    /* Extra small devices (phones, less than 576px) */
+    @media (max-width: 575px) {
         .parking-map-container {
-            transform: scale(1.1) rotate(90deg) !important;
+            transform: scale(0.25) rotate(90deg) !important;
+        }
+
+        .col-12.position-relative > div:first-child {
+            right: 10px !important;
+            top: 100px !important;
+        }
+
+        .col-12.position-relative > div:first-child > div {
+            min-width: 240px !important;
+            padding: 15px !important;
+        }
+
+        .campus-section {
+            padding: 10px !important;
         }
     }
 
-    @media (min-width: 1920px) {
+    /* Small devices (tablets, 576px and up) */
+    @media (min-width: 576px) and (max-width: 767px) {
         .parking-map-container {
-            transform: scale(1.3) rotate(90deg) !important;
+            transform: scale(0.30) rotate(90deg) !important;
+        }
+
+        .col-12.position-relative > div:first-child {
+            right: 15px !important;
+        }
+
+        .col-12.position-relative > div:first-child > div {
+            min-width: 260px !important;
         }
     }
 
-    @media (max-width: 1400px) {
+    /* Medium devices (tablets, 768px and up) */
+    @media (min-width: 768px) and (max-width: 991px) {
         .parking-map-container {
-            transform: scale(0.75) rotate(90deg) !important;
+            transform: scale(0.38) rotate(90deg) !important;
+        }
+
+        .parking-spot-box,
+        .parking-slot {
+            width: 68px !important;
+            height: 93px !important;
+            font-size: 23px !important;
         }
     }
 
-    /* Allow scrolling */
+    /* Large devices (desktops, 992px and up) */
+    @media (min-width: 992px) and (max-width: 1199px) {
+        .parking-map-container {
+            transform: scale(0.45) rotate(90deg) !important;
+        }
+
+        .parking-spot-box,
+        .parking-slot {
+            width: 70px !important;
+            height: 95px !important;
+            font-size: 24px !important;
+        }
+    }
+
+    /* Extra large devices (large desktops, 1200px and up) */
+    @media (min-width: 1200px) and (max-width: 1399px) {
+        .parking-map-container {
+            transform: scale(0.50) rotate(90deg) !important;
+        }
+
+        .parking-spot-box,
+        .parking-slot {
+            width: 72px !important;
+            height: 97px !important;
+            font-size: 25px !important;
+        }
+    }
+
+    /* XX-Large devices (larger desktops, 1400px and up) */
+    @media (min-width: 1400px) and (max-width: 1599px) {
+        .parking-map-container {
+            transform: scale(0.52) rotate(90deg) !important;
+        }
+
+        .parking-spot-box,
+        .parking-slot {
+            width: 73px !important;
+            height: 98px !important;
+            font-size: 25px !important;
+        }
+    }
+
+    /* Full HD displays (1600px and up) */
+    @media (min-width: 1600px) and (max-width: 1919px) {
+        .parking-map-container {
+            transform: scale(0.60) rotate(90deg) !important;
+        }
+
+        .parking-spot-box,
+        .parking-slot {
+            width: 75px !important;
+            height: 100px !important;
+            font-size: 26px !important;
+        }
+    }
+
+    /* 2K displays (1920px and up) */
+    @media (min-width: 1920px) and (max-width: 2559px) {
+        .parking-map-container {
+            transform: scale(0.70) rotate(90deg) !important;
+        }
+
+        .parking-spot-box,
+        .parking-slot {
+            width: 80px !important;
+            height: 105px !important;
+            font-size: 28px !important;
+        }
+
+        .arrow {
+            font-size: 36px !important;
+        }
+
+        .facility {
+            font-size: 26px !important;
+        }
+    }
+
+    /* 4K displays (2560px and up) */
+    @media (min-width: 2560px) {
+        .parking-map-container {
+            transform: scale(0.90) rotate(90deg) !important;
+        }
+
+        .parking-spot-box,
+        .parking-slot {
+            width: 85px !important;
+            height: 110px !important;
+            font-size: 30px !important;
+        }
+
+        .arrow {
+            font-size: 40px !important;
+        }
+
+        .facility {
+            font-size: 28px !important;
+        }
+    }
+
+    /* No scrolling */
     .campus-section {
-        overflow-y: auto !important;
-        overflow-x: auto !important;
+        overflow: hidden !important;
+    }
+
+    body {
+        overflow: hidden !important;
     }
 </style>
 @endpush
