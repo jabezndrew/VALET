@@ -164,15 +164,16 @@
                         @endphp
 
                         @if($hasAssignedSensor && $isOccupied)
-                            <!-- Occupied Spot: Show Car Image -->
+                            <!-- Occupied Spot: Solid Red Box -->
                             <div class="parking-spot-box occupied"
                                  style="left: {{ $x }}px; top: {{ $y }}px; width: {{ $slotWidth }}px; height: {{ $slotHeight }}px;
-                                        border: 4px solid #dc3545; background: rgba(220, 53, 69, 0.1);
+                                        border: 4px solid #dc3545; background: linear-gradient(135deg, #ff4757 0%, #dc3545 100%);
+                                        color: white; font-size: 22px; font-weight: 700;
                                         display: flex; align-items: center; justify-content: center;
                                         border-radius: 8px; box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
                                         position: absolute; pointer-events: none;
                                         transform: rotate({{ $rotation }}deg); transform-origin: center center;">
-                                <img src="{{ asset('images/car_top.png') }}" alt="Car" style="max-width: 90%; max-height: 90%;">
+                                {{ $slotName }}
                             </div>
                         @elseif($hasAssignedSensor && !$isOccupied)
                             <!-- Available Spot with Sensor: Show Label (Green) -->
