@@ -70,6 +70,7 @@ body {
 .facility.stairs {
     background-color: #d5d821;
     color: black;
+    font-size: 28px;
 }
 
 .facility.entrance {
@@ -102,7 +103,6 @@ body {
 }
 
 /* Parking Slots */
-.parking-slot,
 .parking-spot-box {
     position: absolute;
     width: 60px;
@@ -115,6 +115,7 @@ body {
     justify-content: center;
     cursor: pointer;
     transition: all 0.3s ease;
+    background: #242627;
 }
 
 .parking-spot-box {
@@ -137,7 +138,7 @@ body {
 }
 
 .parking-spot-box.inactive {
-    border: 3px dashed #3a3e42;
+    border: 3px dashed #242627;
     background: rgba(33, 35, 37, 0.2);
     color: black;
     font-size: 18px;
@@ -169,7 +170,7 @@ body {
 
 .parking-slot.inactive {
     opacity: 0.4;
-    border-color: #3a3e42;
+    border-color: #2c2e30;
     background-color: rgba(2, 2, 2, 0.2);
 }
 
