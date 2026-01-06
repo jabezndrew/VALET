@@ -2,18 +2,6 @@
     <div id="alert-container"></div>
 
     <div class="container mt-4">
-        <!-- Header -->
-        <div class="d-flex justify-content-between align-items-right mb-4">
-
-            <div class="d-flex gap-2">
-                <button wire:click="refreshNow" class="btn btn-refresh">
-                    <i class="fas fa-sync-alt me-1"></i> Refresh
-                </button>
-                <a href="{{ route('dashboard') }}" class="btn btn-back-dashboard" wire:navigate>
-                    <i class="fas fa-arrow-left me-1"></i> Back to Dashboard
-                </a>
-            </div>
-        </div>
 
         <!-- Floor Selection and Stats -->
         <div class="campus-section mb-4">
@@ -37,7 +25,7 @@
             <div class="row mb-4">
                 <div class="col-md-12">
                     <label class="form-label fw-bold text-muted mb-2">
-                        <i class="fas fa-layer-group me-2"></i>Select Floor Level
+                        Select Floor Level
                     </label>
                     <div class="btn-group w-100 floor-selector" role="group">
                         @foreach(['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'] as $floor)
@@ -168,31 +156,69 @@
                         </div>
 
                         <!-- Exit Sign -->
-                        <div class="facility exit-sign" style="right: 180px; top: 600px; width: 150px; height: 67px;">
+                        <div class="facility exit-sign" style="">
                             <span>EXIT</span>
                         </div>
 
                         <!-- Direction Arrows -->
-                        <i class="fas fa-arrow-up arrow" style="right: 210px; top: 255px;"></i>
-                        <i class="fas fa-arrow-left arrow" style="right: 240px; top: 180px;"></i>
-                        <i class="fas fa-arrow-left arrow" style="right: 345px; top: 180px;"></i>
-                        <i class="fas fa-arrow-down arrow" style="right: 405px; top: 240px;"></i>
-                        <i class="fas fa-arrow-down arrow" style="right: 405px; top: 390px;"></i>
-                        <i class="fas fa-arrow-left arrow" style="right: 525px; top: 427px;"></i>
-                        <i class="fas fa-arrow-left arrow" style="right: 705px; top: 427px;"></i>
-                        <i class="fas fa-arrow-left arrow" style="right: 900px; top: 427px;"></i>
-                        <i class="fas fa-arrow-down arrow" style="right: 975px; top: 585px;"></i>
-                        <i class="fas fa-arrow-right arrow" style="right: 870px; top: 705px;"></i>
-                        <i class="fas fa-arrow-right arrow" style="right: 645px; top: 705px;"></i>
-                        <i class="fas fa-arrow-right arrow" style="right: 420px; top: 705px;"></i>
-                        <i class="fas fa-arrow-down arrow" style="right: 330px; top: 765px;"></i>
-                        <i class="fas fa-arrow-down arrow" style="right: 330px; top: 930px;"></i>
-                        <i class="fas fa-arrow-down arrow" style="right: 330px; top: 1125px;"></i>
-                        <i class="fas fa-arrow-right arrow" style="right: 270px; top: 1260px;"></i>
-                        <i class="fas fa-arrow-up arrow" style="right: 210px; top: 1125px;"></i>
-                        <i class="fas fa-arrow-up arrow" style="right: 210px; top: 930px;"></i>
-                        <i class="fas fa-arrow-up arrow" style="right: 210px; top: 735px;"></i>
-                        <i class="fas fa-arrow-right arrow" style="right: 135px; top: 615px;"></i>
+                        <!-- Top right section - vertical arrows between A slots -->
+                        <i class="fas fa-arrow-left arrow" style="right: 265px; top: 85px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 345px; top: 115px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 115px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 345px; top: 190px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 190px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 345px; top: 265px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 265px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 345px; top: 340px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 340px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 345px; top: 415px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 415px;"></i>
+
+                        <!-- Section I - left arrows -->
+                        <i class="fas fa-arrow-left arrow" style="right: 1050px; top: 415px;"></i>
+                        <i class="fas fa-arrow-left arrow" style="right: 1140px; top: 415px;"></i>
+
+                        <!-- Section B/C middle vertical -->
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 490px;"></i>
+                        <i class="fas fa-arrow-down arrow" style="right: 345px; top: 490px;"></i>
+
+                        <!-- Middle horizontal corridor (Section J/C/D) -->
+                        <i class="fas fa-arrow-left arrow" style="right: 405px; top: 635px;"></i>
+                        <i class="fas fa-arrow-left arrow" style="right: 515px; top: 635px;"></i>
+                        <i class="fas fa-arrow-left arrow" style="right: 625px; top: 635px;"></i>
+                        <i class="fas fa-arrow-left arrow" style="right: 735px; top: 635px;"></i>
+
+                        <!-- Left side Section F/E/D vertical -->
+                        <i class="fas fa-arrow-down arrow" style="right: 95px; top: 450px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 155px; top: 515px;"></i>
+
+                        <!-- Bottom Section I - left arrows -->
+                        <i class="fas fa-arrow-left arrow" style="right: 1050px; top: 880px;"></i>
+                        <i class="fas fa-arrow-left arrow" style="right: 1140px; top: 880px;"></i>
+
+                        <!-- Bottom horizontal corridor (near elevators) -->
+                        <i class="fas fa-arrow-right arrow" style="right: 850px; top: 1025px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 740px; top: 1025px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 630px; top: 1025px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 520px; top: 1025px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 410px; top: 1025px;"></i>
+                        <i class="fas fa-arrow-right arrow" style="right: 300px; top: 1025px;"></i>
+
+                        <!-- Center vertical between elevators -->
+                        <i class="fas fa-arrow-down arrow" style="right: 265px; top: 1090px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 1090px;"></i>
+
+                        <!-- Right side vertical corridor (return path) -->
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 1425px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 1315px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 1205px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 950px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 840px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 730px;"></i>
+                        <i class="fas fa-arrow-up arrow" style="right: 185px; top: 620px;"></i>
+
+                        <!-- Bottom exit area -->
+                        <i class="fas fa-arrow-down arrow" style="right: 265px; top: 1500px;"></i>
 
                         <!-- Parking Spot Labels (Dynamic from Database) -->
                         @foreach($parkingSpaces as $space)
@@ -224,7 +250,7 @@
                                             position: absolute; pointer-events: none;
                                             transform: rotate({{ $rotation }}deg); transform-origin: center center;"
                                      title="{{ $slotName }} - Occupied">
-                                    <img src="{{ asset('images/car_top.png') }}" alt="Car" style="max-width: 90%; max-height: 90%;">
+
                                 </div>
                             @elseif($hasAssignedSensor && !$isOccupied)
                                 <!-- Available Spot with Sensor: Show Label (Green) -->
@@ -261,152 +287,13 @@
         </div>
     </div>
 
-    <!-- Slot Management Modal -->
-    @if($showSlotModal && auth()->user() && auth()->user()->role === 'admin')
-    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5);">
-        <div class="modal-dialog modal-dialog-centered">
-            <div class="modal-content">
-                <div class="modal-header" style="background: linear-gradient(135deg, #B22020 0%, #8a1818 100%); color: white;">
-                    <h5 class="modal-title">
-                        <i class="fas {{ $isCreatingNew ? 'fa-plus-circle' : 'fa-cog' }} me-2"></i>
-                        {{ $isCreatingNew ? 'Create New Parking Slot' : 'Manage Parking Slot' }}
-                    </h5>
-                    <button type="button" class="btn-close btn-close-white" wire:click="closeSlotModal"></button>
-                </div>
-                <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Slot Name</label>
-                        <input type="text" class="form-control" wire:model.live="slotName" placeholder="e.g., 4A1">
-                        @error('slotName') <span class="text-danger small">{{ $message }}</span> @enderror
-                        @if($isSlotNameTaken)
-                            <div class="alert alert-warning mt-2 py-2 px-3">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>This slot name is already taken!</strong>
-                            </div>
-                        @endif
-                    </div>
 
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Assigned Sensor</label>
-                        @php
-                            $assignedSensor = \App\Models\SensorAssignment::where('space_code', $slotName)->first();
-                        @endphp
-                        @if($assignedSensor)
-                            <div class="card border-success">
-                                <div class="card-body py-2 px-3">
-                                    <div class="d-flex justify-content-between align-items-center">
-                                        <div>
-                                            <span class="badge bg-success me-2">Active</span>
-                                            <code class="text-primary">{{ $assignedSensor->mac_address }}</code>
-                                            @if($assignedSensor->device_name)
-                                                <br><small class="text-muted">{{ $assignedSensor->device_name }}</small>
-                                            @endif
-                                        </div>
-                                        <div class="text-end">
-                                            <small class="text-muted d-block">Last Seen:</small>
-                                            <small class="fw-bold">{{ $assignedSensor->last_seen ? $assignedSensor->last_seen->diffForHumans() : 'Never' }}</small>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            <small class="text-muted mt-2 d-block">
-                                <i class="fas fa-info-circle me-1"></i>
-                                To reassign or manage sensors, visit <a href="{{ route('admin.sensors') }}" wire:navigate>Sensor Management</a>
-                            </small>
-                        @else
-                            <div class="alert alert-warning py-2 px-3">
-                                <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>No sensor assigned</strong>
-                                <p class="mb-0 small">Assign a sensor to this parking space via <a href="{{ route('admin.sensors') }}" wire:navigate>Sensor Management</a></p>
-                            </div>
-                        @endif
-                    </div>
-
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">Floor Level</label>
-                        <select class="form-select" wire:model="floorLevel">
-                            <option value="">Select Floor</option>
-                            <option value="1st Floor">1st Floor</option>
-                            <option value="2nd Floor">2nd Floor</option>
-                            <option value="3rd Floor">3rd Floor</option>
-                            <option value="4th Floor">4th Floor</option>
-                        </select>
-                        @error('floorLevel') <span class="text-danger small">{{ $message }}</span> @enderror
-                    </div>
-
-                    <div class="row mb-3">
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">X Position</label>
-                            <input type="number" class="form-control" wire:model="xPosition" placeholder="e.g., 100">
-                            @error('xPosition') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-                        <div class="col-md-6">
-                            <label class="form-label fw-bold">Y Position</label>
-                            <input type="number" class="form-control" wire:model="yPosition" placeholder="e.g., 200">
-                            @error('yPosition') <span class="text-danger small">{{ $message }}</span> @enderror
-                        </div>
-                    </div>
-
-                    <div class="form-check form-switch mb-3">
-                        @php
-                            $hasRealSensor = !empty($sensorId) && in_array((int)$sensorId, [401, 402, 403, 404, 405]);
-                            $canToggle = $hasRealSensor;
-                        @endphp
-                        <input class="form-check-input" type="checkbox" id="isActiveSwitch" wire:model="isSlotActive" {{ !$canToggle ? 'disabled' : '' }}>
-                        <label class="form-check-label fw-bold" for="isActiveSwitch">
-                            <span class="badge {{ $isSlotActive ? 'bg-success' : 'bg-secondary' }} me-2">
-                                {{ $isSlotActive ? 'ACTIVE' : 'INACTIVE' }}
-                            </span>
-                            Slot Status
-                            <small class="text-muted d-block">
-                                @if($canToggle)
-                                    {{ $isSlotActive ? 'This slot is active and can receive parking assignments' : 'This slot is inactive and will appear grayed out on the map' }}
-                                @else
-                                    Only slots with real sensors (401-405) can be activated
-                                @endif
-                            </small>
-                        </label>
-                    </div>
-
-                    <div class="alert {{ $isSlotActive ? 'alert-info' : 'alert-warning' }}">
-                        <i class="fas {{ $isSlotActive ? 'fa-info-circle' : 'fa-exclamation-triangle' }} me-2"></i>
-                        <strong>{{ $isSlotActive ? 'Active Slot' : 'Inactive Slot' }}:</strong>
-                        @if($isSlotActive)
-                            This slot will appear on the map with a label and can accept parking assignments from sensors.
-                        @else
-                            @if($hasRealSensor)
-                                This slot will be grayed out on the map with a dashed border and strikethrough text. It will not accept any parking assignments until reactivated.
-                            @else
-                                This slot requires a real sensor (401-405) to be activated. Future sensors (406-442) and custom sensors (1000+) cannot be activated.
-                            @endif
-                        @endif
-                    </div>
-                </div>
-                <div class="modal-footer">
-                    <button type="button" class="btn btn-secondary" wire:click="closeSlotModal">
-                        <i class="fas fa-times me-1"></i>Cancel
-                    </button>
-                    @if(!$isCreatingNew)
-                    <button type="button" class="btn btn-danger" wire:click="deleteSlot">
-                        <i class="fas fa-trash me-1"></i>Delete Slot
-                    </button>
-                    @endif
-                    <button type="button" class="btn btn-success" wire:click="saveSlot">
-                        <i class="fas fa-save me-1"></i>{{ $isCreatingNew ? 'Create Slot' : 'Save Changes' }}
-                    </button>
-                </div>
-            </div>
-        </div>
-    </div>
-    @endif
 </div>
 
 @push('scripts')
 <script>
-    // Pass user permissions to JavaScript
     window.userCanEdit = @json(auth()->user() && in_array(auth()->user()->role, ['admin', 'ssd']));
 </script>
-<script src="{{ asset('js/parking-map-layout.js') }}"></script>
 @endpush
 
 @push('styles')
