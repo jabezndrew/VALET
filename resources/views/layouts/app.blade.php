@@ -719,8 +719,8 @@ main, .container, .valet-header + * {
                        </a>
                        @endif
 
-                        <a class="nav-link {{ request()->routeIs('parking.map') ? 'active' : '' }}"
-                          href="{{ route('parking.map') }}"
+                        <a class="nav-link {{ request()->routeIs('parking-display') ? 'active' : '' }}"
+                          href="{{ route('parking-display') }}"
                           wire:navigate>
                            Parking Map
                         </a>
