@@ -400,7 +400,7 @@ main, .container, .valet-header + * {
 
 .nav-link {
    color: rgba(255,255,255,0.9) !important;
-   font-weight: 500;
+   font-weight: 600;
    border-radius: 8px;
    padding: 8px 16px !important;
    transition: all 0.3s ease;
