@@ -68,12 +68,7 @@ class PublicParkingDisplay extends Component
     public function changeFloor($floor)
     {
         $this->selectedFloor = $floor;
-
-        // Only load parking spaces for the selected floor, don't refresh all stats
-        $this->parkingSpaces = ParkingSpace::where('floor_level', $this->selectedFloor)
-            ->with('sensorAssignment')
-            ->orderBy('slot_name')
-            ->get();
+        $this->loadParkingData();
     }
 
     public function hasFloorData($floor)
