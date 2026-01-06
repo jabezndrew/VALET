@@ -86,7 +86,14 @@
                                 <div class="facility elevator" style="left: 675px; top: 315px; width: 127px; height: 60px;">
                                     <span>ELEVATOR</span>
                                 </div>
-
+                                <!-- Elevator 2 -->
+                                 <div class="facility elevator" style="left: 690px; top: 787px; width: 127px; height: 60px;">
+                                    <span>ELEVATOR</span> </div>
+                                <!-- Elevator 3 -->
+                                  <div class="facility elevator rotated-left" style="left: 1005px; top: 742px; width: 127px; height: 60px;">
+                                    <span>ELEVATOR</span> </div>
+                                <!-- Stairs --> <div class="facility stairs rotated-left" style="left: 45px; top: 337px; width: 127px; height: 60px;">
+                                    <span>STAIRS</span> </div>
                                 <div class="facility stairs rotated-left" style="left: 45px; top: 337px; width: 127px; height: 60px;">
                                     <span>STAIRS</span>
                                 </div>
