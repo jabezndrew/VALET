@@ -23,7 +23,7 @@
                 <div class="col-auto">
                     <div class="d-flex gap-2 align-items-center">
                         <!-- View Map Button - Styled with maroon gradient -->
-                        <a href="{{ route('parking.map') }}" class="btn btn-view-map btn-sm" wire:navigate>
+                        <a href="{{ route('parking-display') }}" class="btn btn-view-map btn-sm" wire:navigate>
                             View Map
                         </a>
                         @if(auth()->user()->role !== 'user')
@@ -157,7 +157,7 @@
 
                                 <!-- View Map Overlay - Slides up on hover -->
                                 <div class="floor-map-overlay">
-                                    <a href="{{ route('parking.map', ['floor' => $floorStat['floor_level']]) }}"
+                                    <a href="{{ route('parking-display', ['floor' => $floorStat['floor_level']]) }}"
                                        class="btn btn-view-floor-map btn-sm"
                                        wire:navigate
                                        onclick="event.stopPropagation();">
@@ -285,7 +285,7 @@
                                                             {{ \Carbon\Carbon::parse($spaceObj->updated_at)->diffForHumans() }}
                                                         </div>
                                                     </div>
-                                                    <a href="{{ route('parking.map', ['floor' => $selectedFloor]) }}"
+                                                    <a href="{{ route('parking-display', ['floor' => $selectedFloor]) }}"
                                                        class="popup-map-btn"
                                                        wire:navigate>
                                                         <i class="fas fa-map-marked-alt"></i> View on Map
@@ -306,7 +306,7 @@
                 </div>
                 <div class="modal-footer">
                     <!-- View on Map Button in Modal Footer -->
-                    <a href="{{ route('parking.map', ['floor' => $selectedFloor]) }}"
+                    <a href="{{ route('parking-display', ['floor' => $selectedFloor]) }}"
                        class="btn btn-view-map"
                        wire:navigate>
                         <i class="fas fa-map-marked-alt me-1"></i> View on Map
