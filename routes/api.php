@@ -26,7 +26,7 @@ Route::prefix('public')->group(function () {
 });
 
 Route::middleware('auth:sanctum')->group(function () {
-    
+
     Route::controller(AuthController::class)->group(function () {
         Route::post('/logout', 'logout');
         Route::get('/profile', 'profile');
@@ -34,7 +34,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/reset-password', 'resetPassword');
         Route::post('/set-default-passwords', 'setDefaultPasswords');
     });
-    
+
     Route::controller(FeedbackController::class)->prefix('feedbacks')->group(function () {
         Route::get('/', 'index');
         Route::post('/', 'store');
@@ -44,7 +44,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::put('/{id}', 'update');
         Route::delete('/{id}', 'destroy');
     });
-    
+
     Route::controller(ParkingController::class)->prefix('parking')->group(function () {
         Route::get('/', 'index');
         Route::post('/', 'store');

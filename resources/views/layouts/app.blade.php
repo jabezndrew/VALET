@@ -400,7 +400,7 @@ main, .container, .valet-header + * {
 
 .nav-link {
    color: rgba(255,255,255,0.9) !important;
-   font-weight: 500;
+   font-weight: 600;
    border-radius: 8px;
    padding: 8px 16px !important;
    transition: all 0.3s ease;
@@ -719,8 +719,8 @@ main, .container, .valet-header + * {
                        </a>
                        @endif
 
-                        <a class="nav-link {{ request()->routeIs('parking.map') ? 'active' : '' }}"
-                          href="{{ route('parking.map') }}"
+                        <a class="nav-link {{ request()->routeIs('parking-display') ? 'active' : '' }}"
+                          href="{{ route('parking-display') }}"
                           wire:navigate>
                            Parking Map
                         </a>
