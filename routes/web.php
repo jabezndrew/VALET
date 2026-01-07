@@ -80,6 +80,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:user')->group(function () {
         Route::get('/dashboard', ParkingDashboard::class)->name('dashboard');
         Route::get('/parking-map/{floor?}', ParkingMapLayout::class)->name('parking.map');
+        Route::get('/parking-display', PublicParkingDisplay::class)->name('parking-display');
         Route::get('/floor/{floor}', FloorDetail::class)->name('floor.detail');
         Route::get('/feedback', FeedbackManager::class)->name('feedback.index');
     });
