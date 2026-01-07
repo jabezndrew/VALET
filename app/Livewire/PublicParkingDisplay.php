@@ -12,10 +12,38 @@ class PublicParkingDisplay extends Component
     public $parkingSpaces = [];
     public $floorStats = [];
     public $lastUpdate;
+    public $availableFloors = [];
+    public $allFloorStats = [];
 
     public function mount()
     {
+        $this->loadAllFloorStats();
         $this->loadParkingData();
+    }
+
+    public function loadAllFloorStats()
+    {
+        $allFloors = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
+        $this->allFloorStats = [];
+
+        foreach ($allFloors as $floor) {
+            $spaces = ParkingSpace::where('floor_level', $floor)->with('sensorAssignment')->get();
+
+            if ($spaces->isEmpty()) {
+                continue;
+            }
+
+            $total = $spaces->count();
+            $spacesWithSensors = $spaces->filter(fn($s) => $s->sensorAssignment !== null);
+            $occupied = $spacesWithSensors->filter(fn($s) => $s->is_occupied)->count();
+            $available = $spacesWithSensors->count() - $occupied;
+
+            $this->allFloorStats[$floor] = [
+                'total' => $total,
+                'available' => $available,
+                'occupied' => $occupied,
+            ];
+        }
     }
 
     public function updatedSelectedFloor()
@@ -31,24 +59,8 @@ class PublicParkingDisplay extends Component
             ->orderBy('slot_name')
             ->get();
 
-        // Calculate statistics
-        $total = $this->parkingSpaces->count();
-        $spacesWithSensors = $this->parkingSpaces->filter(function($space) {
-            return $space->sensorAssignment !== null;
-        });
-
-        $occupied = $spacesWithSensors->filter(function($space) {
-            return $space->is_occupied;
-        })->count();
-
-        $available = $spacesWithSensors->count() - $occupied;
-
-        $this->floorStats = [
-            'total' => $total,
-            'available' => $available,
-            'occupied' => $occupied,
-            'occupancy_rate' => $total > 0 ? round(($occupied / $total) * 100) : 0,
-        ];
+        // Refresh all floor stats
+        $this->loadAllFloorStats();
 
         $this->lastUpdate = now()->format('H:i:s');
     }
@@ -73,6 +85,6 @@ class PublicParkingDisplay extends Component
     public function render()
     {
         return view('livewire.public-parking-display')
-            ->layout('layouts.public');
+            ->layout('layouts.app');
     }
 }

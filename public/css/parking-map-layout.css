@@ -142,7 +142,7 @@
     min-height: 580px;
     max-height: 620px;
     overflow: hidden;
-    background: #2a2a2a;
+    background: #f3f3f3;
     border-radius: 15px;
     padding: 15px;
     display: flex;
@@ -155,10 +155,11 @@
     position: relative;
     width: 1400px;
     height: 1700px;
-    background: #2a2a2a;
+    background: #f3f3f3;
     transform: scale(0.50) rotate(90deg);
     transform-origin: center center;
     transition: none;
+    justify-content: center;
 }
 
 /* Divider Lines */
@@ -212,9 +213,13 @@
 
 .facility.exit-sign {
     background-color: transparent;
-    color: white;
+    color: rgb(63, 62, 62);
     font-size: 24px;
     font-weight: bold;
+    right: 180px;
+    top: 600px;
+    width: 150px;
+    height: 67px;
 }
 
 .facility.rotated {
@@ -229,7 +234,7 @@
 .arrow {
     position: absolute;
     font-size: 28px;
-    color: white;
+    color: rgb(63, 62, 62);
 }
 
 /* Parking Slots */
@@ -268,9 +273,9 @@
 }
 
 .parking-spot-box.inactive {
-    border: 3px dashed #6c757d;
-    background: rgba(108, 117, 125, 0.2);
-    color: #6c757d;
+    border: 3px dashed #3a3e42;
+    background: rgba(33, 35, 37, 0.2);
+    color:black;
     font-size: 18px;
     font-weight: 600;
     opacity: 0.6;
@@ -300,15 +305,15 @@
 
 .parking-slot.inactive {
     opacity: 0.4;
-    border-color: #6c757d;
-    background-color: rgba(108, 117, 125, 0.2);
+    border-color: #3a3e42;
+    background-color: rgba(2, 2, 2, 0.2);
 }
 
 .parking-label {
     position: absolute;
     font-size: 16px;
     font-weight: bold;
-    color: white;
+    color: black;
     text-align: center;
     width: 60px;
     text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.9);
@@ -350,12 +355,12 @@
 .parking-spot-occupied.inactive {
     opacity: 0.4;
     filter: grayscale(100%) brightness(0.6);
-    background: rgba(108, 117, 125, 0.3) !important;
+    background: rgba(18, 18, 19, 0.3) !important;
     border: 2px dashed #6c757d !important;
 }
 
 .parking-spot-label.inactive {
-    color: #6c757d !important;
+    color: #3a3e42 !important;
     text-decoration: line-through;
     font-style: italic;
 }
@@ -363,108 +368,6 @@
 .parking-spot-occupied.inactive .car-icon-img {
     opacity: 0.3;
     filter: grayscale(100%);
-}
-
-/* Editable slots */
-.parking-spot-label.editable,
-.parking-spot-occupied.editable {
-    pointer-events: auto;
-    cursor: pointer !important;
-    transition: all 0.2s ease;
-}
-
-.parking-spot-label.editable:hover,
-.parking-spot-occupied.editable:hover {
-    transform: scale(1.1);
-    filter: brightness(1.2);
-    cursor: pointer !important;
-}
-
-/* Make all slot elements clickable with pointer cursor */
-.parking-spot-label,
-.parking-spot-occupied {
-    cursor: default;
-}
-
-.parking-spot-label.editable *,
-.parking-spot-occupied.editable * {
-    cursor: pointer !important;
-}
-
-/* Occupied Spot with Car Image */
-.parking-spot-occupied {
-    position: absolute;
-    z-index: 15;
-    pointer-events: none;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: linear-gradient(135deg, #ff4757 0%, #dc3545 100%);
-    border: 3px solid #fff;
-    border-radius: 6px;
-    box-shadow: 0 2px 8px rgba(255, 71, 87, 0.4);
-}
-
-.car-icon-img {
-    width: 100%;
-    height: 100%;
-    object-fit: contain;
-    filter: drop-shadow(0 2px 6px rgba(0, 0, 0, 0.5));
-    padding: 5px;
-}
-
-.slot-icon {
-    font-size: 32px;
-    color: white;
-}
-
-/* Empty/Inactive Slots */
-.parking-slot-empty {
-    position: absolute;
-    z-index: 15;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    background: rgba(108, 117, 125, 0.15);
-    border: 2px dashed rgba(108, 117, 125, 0.4);
-    border-radius: 6px;
-    opacity: 0.4;
-    pointer-events: none;
-    cursor: default;
-}
-
-.parking-slot-empty .slot-config-icon {
-    font-size: 18px;
-    color: rgba(255, 255, 255, 0.3);
-}
-
-/* Modal Enhancements */
-.modal-content {
-    border-radius: 15px;
-    border: none;
-    overflow: hidden;
-}
-
-.modal-body {
-    padding: 25px;
-}
-
-.modal-body .alert {
-    font-size: 0.875rem;
-    margin-bottom: 0;
-}
-
-.modal-body .form-select,
-.modal-body .form-control {
-    border-radius: 8px;
-    border: 1px solid #dee2e6;
-    padding: 10px 15px;
-}
-
-.modal-body .form-select:focus,
-.modal-body .form-control:focus {
-    border-color: #B22020;
-    box-shadow: 0 0 0 0.2rem rgba(178, 32, 32, 0.15);
 }
 
 /* Responsive */
