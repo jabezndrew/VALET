@@ -44,6 +44,11 @@ class PublicParkingDisplay extends Component
                 'occupied' => $occupied,
             ];
         }
+
+        // Sort floors by available spots (descending)
+        uasort($this->allFloorStats, function($a, $b) {
+            return $b['available'] - $a['available'];
+        });
     }
 
     public function updatedSelectedFloor()
