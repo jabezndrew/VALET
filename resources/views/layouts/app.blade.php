@@ -5,12 +5,12 @@
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <meta name="csrf-token" content="{{ csrf_token() }}">
    <title>@yield('title', 'VALET Smart Parking')</title>
-   
+
    <!-- Bootstrap CSS -->
    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
    <!-- Font Awesome -->
    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-   
+
    <style>
    /* Anti-flash CSS */
 html {
@@ -669,7 +669,7 @@ main, .container, .valet-header + * {
    @php
        use Illuminate\Support\Facades\DB;
    @endphp
-   
+
    <!-- Header Section -->
    <div class="valet-header">
        <div class="container">
@@ -684,7 +684,7 @@ main, .container, .valet-header + * {
                        <span class="text-white-50">Your Virtual Parking Buddy</span>
                    </div>
                </div>
-               
+
                <!-- Navigation -->
                @auth
                <div class="d-flex align-items-center">
@@ -695,12 +695,6 @@ main, .container, .valet-header + * {
                            Dashboard
                        </a>
 
-                       <a class="nav-link {{ request()->routeIs('parking.map') ? 'active' : '' }}"
-                          href="{{ route('parking.map') }}"
-                          wire:navigate>
-                           Parking Map
-                       </a>
-
                        @if(auth()->user()->canViewCars())
                        <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}"
                           href="{{ route('cars.index') }}"
@@ -708,7 +702,7 @@ main, .container, .valet-header + * {
                            Vehicles
                        </a>
                        @endif
-                       
+
                        @if(auth()->user()->canManageUsers())
                        <a class="nav-link {{ request()->routeIs('admin.users') ? 'active' : '' }}"
                           href="{{ route('admin.users') }}"
@@ -725,6 +719,11 @@ main, .container, .valet-header + * {
                        </a>
                        @endif
 
+                        <a class="nav-link {{ request()->routeIs('parking.map') ? 'active' : '' }}"
+                          href="{{ route('parking.map') }}"
+                          wire:navigate>
+                           Parking Map
+                        </a>
                        @if(auth()->user()->role === 'admin')
                        <a class="nav-link {{ request()->routeIs('admin.sensors') ? 'active' : '' }}"
                           href="{{ route('admin.sensors') }}"
@@ -740,14 +739,14 @@ main, .container, .valet-header + * {
                            Feedback
                        </a>
                    </nav>
-                   
+
                    <!-- User Dropdown - ONLY this has button styling -->
                    <div class="user-dropdown-wrapper">
                        <button class="user-dropdown" onclick="toggleUserDropdown()">
                            {{ auth()->user()->name }}
                            <i class="fas fa-chevron-down ms-2"></i>
                        </button>
-                       
+
                        <div class="user-dropdown-menu" id="userDropdownMenu">
                            <div class="dropdown-role-info">
                                <strong>{{ auth()->user()->getRoleDisplayName() }}</strong>
@@ -783,7 +782,7 @@ main, .container, .valet-header + * {
                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
            </div>
        @endif
-       
+
        @if(session('error'))
            <div class="alert alert-danger alert-dismissible fade show" role="alert">
                <i class="fas fa-exclamation-circle me-2"></i>
@@ -791,7 +790,7 @@ main, .container, .valet-header + * {
                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
            </div>
        @endif
-       
+
        @if(session('warning'))
            <div class="alert alert-warning alert-dismissible fade show" role="alert">
                <i class="fas fa-exclamation-triangle me-2"></i>
@@ -799,7 +798,7 @@ main, .container, .valet-header + * {
                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
            </div>
        @endif
-       
+
        @if(session('info'))
            <div class="alert alert-info alert-dismissible fade show" role="alert">
                <i class="fas fa-info-circle me-2"></i>
@@ -812,13 +811,13 @@ main, .container, .valet-header + * {
 
    <!-- Page Content -->
    {{ $slot }}
-  
+
    <!-- Bootstrap JS -->
    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
-   
+
    <!-- Livewire Scripts -->
    @livewireScripts
-   
+
    <script>
        // Simple dropdown toggle
        function toggleUserDropdown() {
@@ -830,7 +829,7 @@ main, .container, .valet-header + * {
        document.addEventListener('click', function(event) {
            const wrapper = document.querySelector('.user-dropdown-wrapper');
            const menu = document.getElementById('userDropdownMenu');
-           
+
            if (!wrapper.contains(event.target)) {
                menu.classList.remove('show');
            }
@@ -847,7 +846,7 @@ main, .container, .valet-header + * {
                });
            }, 5000);
        });
-       
+
        // Global Livewire configuration
        document.addEventListener('livewire:init', () => {
            setInterval(() => {
@@ -864,14 +863,14 @@ main, .container, .valet-header + * {
        document.addEventListener('livewire:navigated', function() {
            document.getElementById('navigation-loading').style.display = 'none';
            document.body.classList.remove('nav-loading');
-           
+
            // Close dropdown on navigation
            const menu = document.getElementById('userDropdownMenu');
            if (menu) {
                menu.classList.remove('show');
            }
        });
-       
+
        // Logout function
        function logout() {
            fetch('/logout', {

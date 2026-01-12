@@ -20,6 +20,9 @@ Route::prefix('public')->group(function () {
 
     // Sensor assignment endpoint (for Arduino to fetch its assignment)
     Route::post('/sensor/assignment', [SensorAssignmentController::class, 'getAssignment']);
+
+    // Sensor registration endpoint (for Arduino to register all sensors on boot)
+    Route::post('/sensor/register', [SensorAssignmentController::class, 'register']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
