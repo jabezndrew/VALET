@@ -58,20 +58,15 @@ class ParkingController extends Controller
                     'firmware_version' => $validated['firmware_version'] ?? $sensor->firmware_version
                 ]);
 
-                // If sensor is not assigned, return assignment request response
-                if (!$sensor->isAssigned()) {
-                    return response()->json([
-                        'success' => false,
-                        'status' => 'unassigned',
-                        'message' => 'Sensor registered but not assigned to a parking space',
-                        'mac_address' => $sensor->mac_address,
-                        'sensor_index' => $sensor->sensor_index,
-                        'instruction' => 'Please assign this sensor to a parking space via the web interface'
-                    ], 200);
+                // If sensor is assigned, use the space_code from assignment
+                if ($sensor->isAssigned()) {
+                    $validated['space_code'] = $sensor->space_code;
+                } else {
+                    // For unassigned sensors, create a temporary space_code based on MAC last 4 chars + sensor index
+                    // Format: "T" + last 4 MAC chars + sensor index (e.g., "TABCD1") - fits in 10 chars
+                    $macShort = substr(str_replace(':', '', $validated['mac_address']), -4);
+                    $validated['space_code'] = 'T' . $macShort . $validated['sensor_index'];
                 }
-
-                // Use the assigned space_code from sensor assignment
-                $validated['space_code'] = $sensor->space_code;
             }
 
             // Parse space_code if provided
@@ -93,7 +88,24 @@ class ParkingController extends Controller
                 );
             }
 
-            // Set default floor level if not provided
+            // Set floor_level based on floor_number if not provided
+            if (!isset($validated['floor_level']) && isset($validated['floor_number'])) {
+                $floorNames = [
+                    1 => '1st Floor',
+                    2 => '2nd Floor',
+                    3 => '3rd Floor',
+                    4 => '4th Floor',
+                    5 => '5th Floor',
+                    6 => '6th Floor',
+                    7 => '7th Floor',
+                    8 => '8th Floor',
+                    9 => '9th Floor',
+                    10 => '10th Floor'
+                ];
+                $validated['floor_level'] = $floorNames[$validated['floor_number']] ?? $validated['floor_number'] . 'th Floor';
+            }
+
+            // Default to 4th Floor if nothing else is set
             $validated['floor_level'] = $validated['floor_level'] ?? '4th Floor';
 
             // Determine unique identifier (prefer space_code, fallback to sensor_id)
@@ -110,9 +122,19 @@ class ParkingController extends Controller
             // Insert or update parking space using Eloquent
             $space = ParkingSpace::updateOrCreate($uniqueField, $validated);
 
+            // Determine if this is an assigned sensor or temporary tracking
+            $isAssigned = isset($sensor) && $sensor->isAssigned();
+            $responseStatus = $isAssigned ? 'assigned' : 'unassigned';
+
             return response()->json([
                 'success' => true,
-                'message' => 'Parking data updated successfully',
+                'status' => $responseStatus,
+                'message' => $isAssigned
+                    ? 'Parking data updated successfully'
+                    : 'Sensor data received but not assigned to parking space',
+                'instruction' => !$isAssigned
+                    ? 'Please assign this sensor to a parking space via the web interface'
+                    : null,
                 'data' => [
                     'sensor_id' => $space->sensor_id,
                     'space_code' => $space->space_code,
