@@ -14,6 +14,9 @@ class PublicParkingDisplay extends Component
     public $lastUpdate;
     public $availableFloors = [];
     public $allFloorStats = [];
+    public $showRoute = false;
+    public $selectedSpot = null;
+    public $selectedSection = null;
 
     public function mount()
     {
@@ -85,6 +88,25 @@ class PublicParkingDisplay extends Component
     {
         $assignment = SensorAssignment::find($sensorId);
         return $assignment ? $assignment->space_code : 'N/A';
+    }
+
+    public function toggleRoute()
+    {
+        $this->showRoute = !$this->showRoute;
+    }
+
+    public function selectParkingSpot($slotName, $columnCode)
+    {
+        $this->selectedSpot = $slotName;
+        $this->selectedSection = $columnCode;
+        $this->showRoute = true;
+    }
+
+    public function clearRoute()
+    {
+        $this->selectedSpot = null;
+        $this->selectedSection = null;
+        $this->showRoute = false;
     }
 
     public function render()
