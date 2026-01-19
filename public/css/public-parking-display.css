@@ -126,6 +126,12 @@ body {
     border: 4px solid #dc3545;
     background: rgba(220, 53, 69, 0.1);
     box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
+    cursor: not-allowed !important;
+    opacity: 0.7;
+}
+
+.parking-spot-box.occupied:hover {
+    box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3) !important;
 }
 
 .parking-spot-box.available {
@@ -135,6 +141,13 @@ body {
     font-size: 22px;
     font-weight: 700;
     box-shadow: 0 4px 12px rgba(46, 213, 115, 0.4);
+    transition: all 0.3s ease;
+}
+
+.parking-spot-box.available:hover {
+    border-color: #2ed573 !important;
+    background: linear-gradient(135deg, #28a745 0%, #2ed573 100%);
+    box-shadow: 0 0 15px 3px rgba(46, 213, 115, 0.6);
 }
 
 .parking-spot-box.inactive {
@@ -351,5 +364,135 @@ body {
     .parking-map-wrapper {
         height: calc(100vh - 120px) !important;
         min-height: 400px !important;
+    }
+}
+
+/* ========================================
+   Route Overlay Styles (Entrance → A → E → J)
+   ======================================== */
+
+/* SVG Route Overlay */
+.route-overlay {
+    opacity: 1;
+    transition: opacity 0.3s ease;
+}
+
+.route-overlay.hidden {
+    opacity: 0;
+    pointer-events: none;
+}
+
+/* Route path animation */
+.route-path-group path {
+    stroke-dasharray: 1000;
+    stroke-dashoffset: 1000;
+    animation: drawPath 3s ease forwards;
+}
+
+@keyframes drawPath {
+    to {
+        stroke-dashoffset: 0;
+    }
+}
+
+/* Waypoint pulse animation */
+.route-waypoint {
+    animation: pulsate 2s ease-in-out infinite;
+}
+
+@keyframes pulsate {
+    0%, 100% {
+        opacity: 1;
+        transform: scale(1);
+    }
+    50% {
+        opacity: 0.6;
+        transform: scale(1.3);
+    }
+}
+
+/* Route labels */
+.route-label {
+    text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
+    animation: fadeIn 0.5s ease forwards;
+    animation-delay: 2.5s;
+    opacity: 0;
+}
+
+@keyframes fadeIn {
+    to {
+        opacity: 1;
+    }
+}
+
+/* Route Toggle Button */
+.route-toggle-btn {
+    position: absolute;
+    top: 30px;
+    left: 30px;
+    z-index: 1000;
+    background: linear-gradient(135deg, #2ed573 0%, #28a745 100%);
+    color: white;
+    border: none;
+    border-radius: 12px;
+    padding: 15px 25px;
+    font-size: 16px;
+    font-weight: 700;
+    cursor: pointer;
+    box-shadow: 0 6px 20px rgba(46, 213, 115, 0.4);
+    transition: all 0.3s ease;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.route-toggle-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(46, 213, 115, 0.6);
+}
+
+.route-toggle-btn:active {
+    transform: translateY(0);
+}
+
+.route-toggle-btn.active {
+    background: linear-gradient(135deg, #B22020 0%, #8B0000 100%);
+    box-shadow: 0 6px 20px rgba(178, 32, 32, 0.4);
+}
+
+.route-toggle-btn.active:hover {
+    box-shadow: 0 8px 25px rgba(178, 32, 32, 0.6);
+}
+
+/* Icon rotation animation */
+.route-toggle-btn .icon {
+    transition: transform 0.3s ease;
+}
+
+.route-toggle-btn.active .icon {
+    transform: rotate(180deg);
+}
+
+/* ========================================
+   Interactive Parking Spot Selection
+   ======================================== */
+
+/* Parking spot hover effect */
+.parking-spot-box:hover {
+    z-index: 550 !important;
+    transform-origin: center center;
+}
+
+/* Selected parking spot highlight */
+.parking-spot-box.selected-spot {
+    animation: selectedPulse 1.5s ease-in-out infinite !important;
+}
+
+@keyframes selectedPulse {
+    0%, 100% {
+        box-shadow: 0 0 20px 5px #FFD700;
+    }
+    50% {
+        box-shadow: 0 0 30px 8px #FFD700;
     }
 }
