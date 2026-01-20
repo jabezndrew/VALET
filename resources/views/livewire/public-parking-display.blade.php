@@ -1,0 +1,310 @@
+<div wire:poll.3s="loadParkingData">
+    <div class="container-fluid p-0" style="background: white; min-height: 100vh;">
+
+        <!-- Main Content -->
+        <div class="row g-0">
+            <div class="col-12 position-relative">
+
+                <!-- Route Control Buttons - Top Left -->
+                <div style="position: absolute; top: 30px; left: 30px; z-index: 1000; display: flex; gap: 10px;">
+                    @if($selectedSpot)
+                        <!-- Clear Route Button -->
+                        <button wire:click="clearRoute" class="route-toggle-btn active">
+                            <svg class="icon" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
+                            </svg>
+                            <span>Clear Route to {{ $selectedSpot }}</span>
+                        </button>
+                    @else
+                        <!-- Info Button -->
+                        <div class="route-toggle-btn" style="cursor: default; background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%); box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);">
+                            <svg class="icon" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
+                                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                            </svg>
+                            <span>Click any parking spot to see route</span>
+                        </div>
+                    @endif
+                </div>
+
+                <!-- Floor Selector - Top Right Cards -->
+                <div style="position: absolute; top: 30px; right: 30px; z-index: 1000; width: 320px;">
+                    <div style="background: rgba(255,255,255,0.95); border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
+                        <h6 style="font-size: 1.3rem; font-weight: 700; color: #3A3A3C; margin-bottom: 20px;">
+                            Select Floor
+                        </h6>
+
+                        <div style="display: flex; flex-direction: column; gap: 15px;">
+                            @foreach($allFloorStats as $floor => $stats)
+                                @php
+                                    $hasData = $this->hasFloorData($floor);
+                                @endphp
+
+                                <div
+                                    wire:key="floor-card-{{ $floor }}"
+                                    wire:click="{{ $hasData ? 'changeFloor(\'' . $floor . '\')' : '' }}"
+                                    style="
+                                        background: {{ $selectedFloor === $floor
+                                            ? 'linear-gradient(135deg, #B22020 0%, #8B0000 100%)'
+                                            : 'white' }};
+                                        border: 3px solid {{ $selectedFloor === $floor ? '#B22020' : '#e0e0e0' }};
+                                        border-radius: 12px;
+                                        padding: 20px;
+                                        opacity: {{ $hasData ? '1' : '0.4' }};
+                                        transition: all 0.3s ease;
+                                        box-shadow: {{ $selectedFloor === $floor
+                                            ? '0 6px 18px rgba(178, 32, 32, 0.4)'
+                                            : '0 3px 10px rgba(0,0,0,0.15)' }};
+                                        cursor: {{ $hasData ? 'pointer' : 'not-allowed' }};
+                                        {{ !$hasData ? 'pointer-events: none;' : '' }}
+                                    "
+                                    title="{{ !$hasData ? 'No data available for this floor' : 'View ' . $floor }}"
+                                >
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div style="flex: 1;">
+                                            <div style="font-weight:700;font-size:1.3rem;color:{{ $selectedFloor === $floor ? 'white' : '#3A3A3C' }};">
+                                                {{ $floor }}
+                                            </div>
+                                            <small style="color: {{ $selectedFloor === $floor ? 'rgba(255,255,255,0.85)' : '#999' }};">
+                                                Total: {{ $stats['total'] }}
+                                            </small>
+                                        </div>
+
+                                        <div class="d-flex gap-4">
+                                            <div class="text-center">
+                                                <div style="font-size:2rem;font-weight:700;color:#28a745;">
+                                                    {{ $stats['available'] }}
+                                                </div>
+                                                <small style="color: {{ $selectedFloor === $floor ? 'rgba(255,255,255,0.85)' : '#2e2d2dff' }};">Available</small>
+                                            </div>
+                                            <div class="text-center">
+                                                <div style="font-size:2rem;font-weight:700;color:#dc3545;">
+                                                    {{ $stats['occupied'] }}
+                                                </div>
+                                                <small style="color: {{ $selectedFloor === $floor ? 'rgba(255,255,255,0.85)' : '#2e2d2dff' }};">Occupied</small>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Parking Map -->
+                <div class="map-section">
+                    @if($parkingSpaces->isEmpty())
+                        <div class="text-center py-5">
+                            <i class="fas fa-database text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                            <p class="text-muted">No parking spaces configured for {{ $selectedFloor }}</p>
+                        </div>
+                    @else
+                        <div class="parking-map-wrapper">
+                            <div class="parking-map-container">
+
+                                <!-- Facilities -->
+                                <div class="facility elevator" style="left: 675px; top: 315px; width: 127px; height: 60px;">
+                                    <span>ELEVATOR</span>
+                                </div>
+                                <!-- Elevator 2 -->
+                                 <div class="facility elevator" style="left: 690px; top: 787px; width: 127px; height: 60px;">
+                                    <span>ELEVATOR</span> </div>
+                                <!-- Elevator 3 -->
+                                  <div class="facility elevator rotated-left" style="left: 1005px; top: 742px; width: 127px; height: 60px;">
+                                    <span>ELEVATOR</span> </div>
+                                <!-- Stairs --> <div class="facility stairs rotated-left" style="left: 45px; top: 337px; width: 127px; height: 60px;">
+                                    <span>STAIRS</span> </div>
+                                <div class="facility stairs rotated-left" style="left: 45px; top: 337px; width: 127px; height: 60px;">
+                                    <span>STAIRS</span>
+                                </div>
+
+                                <div class="facility entrance" style="right: 135px; top: 390px; width: 135px; height: 60px;">
+                                    <span>ENTRANCE</span>
+                                </div>
+
+                                <div class="facility exit-sign">
+                                    <span>EXIT</span>
+                                </div>
+
+                                <!-- Parking Spots -->
+                                @foreach($parkingSpaces as $space)
+                                    @php
+                                        $hasAssignedSensor = $space->sensorAssignment !== null;
+                                        $slotName = $space->slot_name ?? '';
+                                        $x = $space->x_position ?? 0;
+                                        $y = $space->y_position ?? 0;
+                                        $rotation = $space->rotation ?? 0;
+                                        $isOccupied = $space->is_occupied;
+                                        $isSelected = $selectedSpot === $slotName;
+                                        $columnCode = $space->column_code ?? '';
+                                    @endphp
+
+                                    <div class="parking-spot-box {{ $hasAssignedSensor ? ($isOccupied ? 'occupied' : 'available') : 'inactive' }} {{ $isSelected ? 'selected-spot' : '' }}"
+                                         wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}')"
+                                         style="
+                                            left: {{ $x }}px;
+                                            top: {{ $y }}px;
+                                            width: 60px;
+                                            height: 85px;
+                                            font-size: 22px;
+                                            transform: rotate({{ $rotation }}deg);
+                                            pointer-events: auto;
+                                            cursor: pointer;
+                                            transition: all 0.3s ease;
+                                            {{ $isSelected ? 'box-shadow: 0 0 20px 5px #FFD700; border: 3px solid #FFD700 !important; z-index: 600;' : '' }}
+                                         "
+                                         title="Click to show route to {{ $slotName }}"
+                                    >
+                                        {{ $slotName }}
+                                    </div>
+                                @endforeach
+
+                                <!-- Route SVG Overlay (Dynamic based on selected section) -->
+                                @if($showRoute && $selectedSection)
+                                <svg class="route-overlay" viewBox="0 0 1200 1400" style="position: absolute; top: 0; left: 0; width: 1200px; height: 1400px; pointer-events: none; z-index: 500;">
+                                    <defs>
+                                        <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
+                                            <polygon points="0 0, 10 3, 0 6" fill="#2ed573" />
+                                        </marker>
+                                    </defs>
+
+                                    <g class="route-path-group">
+                                        @if($selectedSection === 'A')
+                                            <!-- Route to Section A (Bottom Right from Entrance) -->
+                                            <!-- Start at Entrance, move right along bottom -->
+                                            <path d="M 920 670 L 1040 670 L 1040 154"
+                                                  stroke="#2ed573" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)" />
+
+                                            <!-- Waypoint markers -->
+                                            <circle cx="920" cy="670" r="12" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="1040" cy="670" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="1040" cy="154" r="14" fill="#FFD700" stroke="#fff" stroke-width="4" class="route-waypoint" />
+
+                                            <!-- Direction arrows along path -->
+                                            <text x="980" y="665" fill="#2ed573" font-size="28" font-weight="bold">→</text>
+                                            <text x="1045" y="400" fill="#2ed573" font-size="28" font-weight="bold">↑</text>
+
+                                            <!-- Labels -->
+                                            <text x="870" y="700" fill="#2ed573" font-size="22" font-weight="bold" class="route-label">START</text>
+                                            <text x="1050" y="150" fill="#FFD700" font-size="28" font-weight="bold" class="route-label">A1</text>
+
+                                        @elseif($selectedSection === 'B')
+                                            <!-- Route to Section B (Top) -->
+                                            <path d="M 1065 390 L 1065 100 L 900 80"
+                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
+                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="900" cy="80" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
+                                            <text x="905" y="75" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">B</text>
+
+                                        @elseif($selectedSection === 'C')
+                                            <!-- Route to Section C (Right Middle) -->
+                                            <path d="M 1065 390 L 900 390 L 730 200"
+                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
+                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="730" cy="200" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
+                                            <text x="735" y="195" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">C</text>
+
+                                        @elseif($selectedSection === 'D')
+                                            <!-- Route to Section D (Middle Left) -->
+                                            <path d="M 1065 390 L 600 390 L 400 340"
+                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
+                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="400" cy="340" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
+                                            <text x="405" y="335" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">D</text>
+
+                                        @elseif($selectedSection === 'E')
+                                            <!-- Route to Section E (Top Left from Entrance) -->
+                                            <!-- Start at Entrance, move left, then up to E section -->
+                                            <path d="M 920 670 L 250 670 L 250 200 L 84 120"
+                                                  stroke="#2ed573" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)" />
+
+                                            <!-- Waypoint markers -->
+                                            <circle cx="920" cy="670" r="12" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="250" cy="670" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="250" cy="200" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="84" cy="120" r="14" fill="#FFD700" stroke="#fff" stroke-width="4" class="route-waypoint" />
+
+                                            <!-- Direction arrows along path -->
+                                            <text x="550" y="665" fill="#2ed573" font-size="28" font-weight="bold">←</text>
+                                            <text x="255" y="400" fill="#2ed573" font-size="28" font-weight="bold">↑</text>
+                                            <text x="150" y="155" fill="#2ed573" font-size="28" font-weight="bold">←</text>
+
+                                            <!-- Labels -->
+                                            <text x="870" y="700" fill="#2ed573" font-size="22" font-weight="bold" class="route-label">START</text>
+                                            <text x="30" y="115" fill="#FFD700" font-size="28" font-weight="bold" class="route-label">E</text>
+
+                                        @elseif($selectedSection === 'F')
+                                            <!-- Route to Section F (Bottom Left) -->
+                                            <path d="M 1065 390 L 600 390 L 400 700 L 400 820"
+                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
+                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="400" cy="820" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
+                                            <text x="405" y="815" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">F</text>
+
+                                        @elseif($selectedSection === 'G')
+                                            <!-- Route to Section G (Bottom Center-Right) -->
+                                            <path d="M 1065 390 L 900 650 L 780 1000"
+                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
+                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="780" cy="1000" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
+                                            <text x="785" y="995" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">G</text>
+
+                                        @elseif($selectedSection === 'H')
+                                            <!-- Route to Section H (Bottom Center) -->
+                                            <path d="M 1065 390 L 900 800 L 900 1340"
+                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
+                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="900" cy="1340" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
+                                            <text x="905" y="1335" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">H</text>
+
+                                        @elseif($selectedSection === 'I')
+                                            <!-- Route to Section I (Bottom Right) -->
+                                            <path d="M 1065 390 L 1065 800 L 1050 1000"
+                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
+                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="1050" cy="1000" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
+                                            <text x="1055" y="995" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">I</text>
+
+                                        @elseif($selectedSection === 'J')
+                                            <!-- Route to Section J (Left Side from Entrance) -->
+                                            <!-- Start at Entrance, move left to J section -->
+                                            <path d="M 920 670 L 550 670 L 550 559"
+                                                  stroke="#2ed573" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)" />
+
+                                            <!-- Waypoint markers -->
+                                            <circle cx="920" cy="670" r="12" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="550" cy="670" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
+                                            <circle cx="550" cy="559" r="14" fill="#FFD700" stroke="#fff" stroke-width="4" class="route-waypoint" />
+
+                                            <!-- Direction arrows along path -->
+                                            <text x="720" y="665" fill="#2ed573" font-size="28" font-weight="bold">←</text>
+                                            <text x="555" y="620" fill="#2ed573" font-size="28" font-weight="bold">↑</text>
+
+                                            <!-- Labels -->
+                                            <text x="870" y="700" fill="#2ed573" font-size="22" font-weight="bold" class="route-label">START</text>
+                                            <text x="560" y="555" fill="#FFD700" font-size="28" font-weight="bold" class="route-label">J</text>
+                                        @endif
+                                    </g>
+                                </svg>
+                                @endif
+
+                            </div>
+                        </div>
+                    @endif
+                </div>
+
+            </div>
+        </div>
+    </div>
+</div>
+
+@push('styles')
+<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=1.3') }}">
+@endpush
