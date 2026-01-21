@@ -113,8 +113,8 @@
                                         // Right side lane - towards Columns A, B, C, D
                                         ['x' => 1000, 'y' => 350, 'rotation' => 270, 'type' => 'normal'],
                                         ['x' => 1000, 'y' => 200, 'rotation' => 180, 'type' => 'normal'],
-                                        ['x' => 900, 'y' => 200, 'rotation' => 180, 'type' => 'normal'],
-                                        ['x' => 800, 'y' => 200, 'rotation' => 90, 'type' => 'normal'],
+                                        ['x' => 925, 'y' => 200, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 200, 'rotation' => 90, 'type' => 'normal'],
                                         ['x' => 850, 'y' => 350, 'rotation' => 90, 'type' => 'normal'],
 
 
@@ -123,7 +123,7 @@
                                         ['x' => 700, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
                                         ['x' => 550, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
                                         ['x' => 400, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
-                                        ['x' => 250, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 250, 'y' => 480, 'rotation' => 90, 'type' => 'normal'],
 
                                         // Left side - going down towards G, H, I
                                         ['x' => 248, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
