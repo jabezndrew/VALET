@@ -102,6 +102,84 @@
                         <div class="parking-map-wrapper">
                             <div class="parking-map-container">
 
+                                <!-- Traffic Flow Arrows - Individual Directional Indicators -->
+                                @php
+                                    // Define flow arrow positions and directions for 1st Floor
+                                    // Format: [x, y, rotation] - rotation in degrees (0=right, 90=down, 180=left, 270=up)
+                                    $flowArrows = [
+                                        // Entry area - from ENTRANCE going into parking
+                                        ['x' => 1050, 'y' => 430, 'rotation' => 180, 'type' => 'entry'],
+
+                                        // Right side lane - towards Columns A, B, C, D
+                                        ['x' => 1000, 'y' => 350, 'rotation' => 270, 'type' => 'normal'],
+                                        ['x' => 1000, 'y' => 200, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 900, 'y' => 200, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 800, 'y' => 200, 'rotation' => 90, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 350, 'rotation' => 90, 'type' => 'normal'],
+
+
+                                        // Top lane - going left towards E, F
+                                        ['x' => 850, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 700, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 550, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 400, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 250, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+
+                                        // Left side - going down towards G, H, I
+                                        ['x' => 248, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                        ['x' => 400, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                        ['x' => 550, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                        ['x' => 700, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 700, 'rotation' => 90, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 900, 'rotation' => 90, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 1100, 'rotation' => 90, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 1280, 'rotation' => 0, 'type' => 'normal'],
+                                        ['x' => 925, 'y' => 1280, 'rotation' => 0, 'type' => 'normal'],
+
+                                        // Bottom lane - going right towards EXIT
+                                        ['x' => 1000, 'y' => 1280, 'rotation' => 270, 'type' => 'normal'],
+                                        ['x' => 1000, 'y' => 1100, 'rotation' => 270, 'type' => 'normal'],
+                                        ['x' => 1000, 'y' => 900, 'rotation' => 270, 'type' => 'normal'],
+                                        ['x' => 1000, 'y' => 700, 'rotation' => 270, 'type' => 'normal'],
+
+                                        // Middle section - Column J, F area
+                                        ['x' => 248, 'y' => 595, 'rotation' => 90, 'type' => 'normal'],
+                                        
+
+                                        // Exit area
+                                        ['x' => 1050, 'y' => 628, 'rotation' => 0, 'type' => 'exit'],
+                                    ];
+                                @endphp
+
+                                @foreach($flowArrows as $arrow)
+                                    <div class="flow-arrow-indicator {{ $arrow['type'] }}"
+                                         style="
+                                            position: absolute;
+                                            left: {{ $arrow['x'] - 20 }}px;
+                                            top: {{ $arrow['y'] - 20 }}px;
+                                            width: 40px;
+                                            height: 40px;
+                                            z-index: 95;
+                                            pointer-events: none;
+                                         ">
+                                        <svg width="40" height="40" viewBox="0 0 40 40" style="transform: rotate({{ $arrow['rotation'] }}deg);">
+                                            @if($arrow['type'] === 'entry')
+                                                <!-- Green entry arrow -->
+                                                <circle cx="20" cy="20" r="18" fill="#2F623D"/>
+                                                <path d="M12 20 L26 20 M26 20 L21 14 M26 20 L21 26" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                            @elseif($arrow['type'] === 'exit')
+                                                <!-- Red exit arrow -->
+                                                <circle cx="20" cy="20" r="18" fill="#B22020"/>
+                                                <path d="M12 20 L26 20 M26 20 L21 14 M26 20 L21 26" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                            @else
+                                                <!-- Gray normal flow arrow -->
+                                                <circle cx="20" cy="20" r="18" fill="#505050"/>
+                                                <path d="M12 20 L26 20 M26 20 L21 14 M26 20 L21 26" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                            @endif
+                                        </svg>
+                                    </div>
+                                @endforeach
+
                                 <!-- Facilities -->
                                 <div class="facility elevator" style="left: 675px; top: 315px; width: 127px; height: 60px;">
                                     <span>ELEVATOR</span>
@@ -306,5 +384,5 @@
 </div>
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=1.3') }}">
+<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=1.6') }}">
 @endpush

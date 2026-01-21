@@ -496,3 +496,17 @@ body {
         box-shadow: 0 0 30px 8px #FFD700;
     }
 }
+
+/* ========================================
+   Traffic Flow Arrows - Individual Indicators
+   ======================================== */
+
+/* Individual flow arrow indicator - static, no animation */
+.flow-arrow-indicator {
+    opacity: 0.9;
+}
+
+/* Dim flow arrows when route is displayed */
+.parking-map-container:has(.route-overlay) .flow-arrow-indicator {
+    opacity: 0.3;
+}
