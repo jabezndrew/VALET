@@ -77,6 +77,9 @@ class PublicParkingDisplay extends Component
 
     public function changeFloor($floor)
     {
+        // Clear any active navigation when switching floors
+        $this->clearRoute();
+
         $this->selectedFloor = $floor;
         $this->loadParkingData();
     }

@@ -341,10 +341,14 @@
 
                                             $pathData = "M {$entranceX} {$entranceY}";
 
+                                            // Convert spot name to floor 1 equivalent for waypoint lookup
+                                            // e.g., '2B3' -> '1B3', '3D5' -> '1D5', '4A1' -> '1A1'
+                                            $baseSpotName = preg_replace('/^[2-4]/', '1', $selectedSpot);
+
                                             // Check for individual spot route first, then fall back to section
                                             $waypoints = [];
-                                            if (isset($spotWaypoints[$selectedSpot])) {
-                                                $waypoints = $spotWaypoints[$selectedSpot];
+                                            if (isset($spotWaypoints[$baseSpotName])) {
+                                                $waypoints = $spotWaypoints[$baseSpotName];
                                             } elseif (isset($sectionWaypoints[$selectedSection])) {
                                                 $waypoints = $sectionWaypoints[$selectedSection];
                                             }
