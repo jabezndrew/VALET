@@ -104,7 +104,6 @@
 
                                 <!-- Traffic Flow Arrows - Individual Directional Indicators -->
                                 @php
-                                    // Define flow arrow positions and directions for 1st Floor
                                     // Format: [x, y, rotation] - rotation in degrees (0=right, 90=down, 180=left, 270=up)
                                     $flowArrows = [
                                         // Entry area - from ENTRANCE going into parking
@@ -239,18 +238,43 @@
 
                                 {{-- ============================================
                                     ROUTE - ENTRANCE TO EXACT PARKING SPOT
-                                    Edit ENTRANCE coordinates below if needed
+                                    You can define routes for:
+                                    1. Individual spots (e.g., '1D1', '1D2')
+                                    2. Sections as fallback (e.g., 'D')
                                 ============================================ --}}
                                 @php
                                     // ENTRANCE position - edit this if ENTRANCE moves
                                     $entranceX = 1050;
                                     $entranceY = 425;
 
-                                    // Waypoints for each section (path from entrance to section area)
-                                    // Format: [[x1,y1], [x2,y2], ...] - intermediate points before reaching spot
+                                    // INDIVIDUAL SPOT waypoints - define unique routes for specific spots
+                                    // Format: 'SpotName' => [[x1,y1], [x2,y2], ...]
+                                    $spotWaypoints = [
+                                        //Different routes for each B spot
+                                         '1B1' => [[999, 425]],
+                                         '1B2' => [[990, 425], [990, 190], [935, 190]],
+                                         '1B3' => [[990, 425], [990, 190], [870, 190]],
+                                         '1B4' => [[990, 425], [990, 190], [800, 190]],
+
+                                        //Different routes for each C spot
+                                         '1D1' => [[628, 430]],
+                                         '1D2' => [[560, 430]],
+
+                                        //Different routes for each D spot
+                                         '1D1' => [[628, 430]],
+                                         '1D2' => [[560, 430]],
+                                         '1D3' => [[800, 430], [750, 250]],
+                                         '1D4' => [[700, 430], [700, 200]],
+                                         '1D5' => [[700, 430], [700, 150]],
+                                         '1D6' => [[650, 430], [650, 100]],
+                                         '1D7' => [[650, 430], [650, 80]],
+                                    ];
+
+                                    // SECTION waypoints - fallback if no individual spot route defined
+                                    // Format: 'Section' => [[x1,y1], [x2,y2], ...]
                                     $sectionWaypoints = [
-                                        'A' => [[965, 390], [965, 200]],  
-                                        'B' => [[965, 390], [965, 300]],
+                                        'A' => [[965, 425], [965, 200]],
+                                        'B' => [[965, 390], [965, 300]],   
                                         'C' => [[900, 250]],
                                         'D' => [[628, 430]],
                                         'E' => [[600, 390], [600, 50]],
@@ -272,16 +296,22 @@
                                     <g class="route-path-group">
                                         @php
                                             // Build path: ENTRANCE → Waypoints → Exact Spot
-                                            $spotX = $selectedSpotX + 30; // Center of parking spot (60px width / 2)
-                                            $spotY = $selectedSpotY + 42; // Center of parking spot (85px height / 2)
+                                            $spotX = $selectedSpotX + 30; // Center of parking spot
+                                            $spotY = $selectedSpotY + 42; // Center of parking spot
 
                                             $pathData = "M {$entranceX} {$entranceY}";
 
-                                            // Add section waypoints if defined
-                                            if (isset($sectionWaypoints[$selectedSection])) {
-                                                foreach ($sectionWaypoints[$selectedSection] as $waypoint) {
-                                                    $pathData .= " L {$waypoint[0]} {$waypoint[1]}";
-                                                }
+                                            // Check for individual spot route first, then fall back to section
+                                            $waypoints = [];
+                                            if (isset($spotWaypoints[$selectedSpot])) {
+                                                $waypoints = $spotWaypoints[$selectedSpot];
+                                            } elseif (isset($sectionWaypoints[$selectedSection])) {
+                                                $waypoints = $sectionWaypoints[$selectedSection];
+                                            }
+
+                                            // Add waypoints to path
+                                            foreach ($waypoints as $waypoint) {
+                                                $pathData .= " L {$waypoint[0]} {$waypoint[1]}";
                                             }
 
                                             // End at exact parking spot
