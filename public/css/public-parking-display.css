@@ -382,47 +382,19 @@ body {
     pointer-events: none;
 }
 
-/* Route path animation */
+/* Route path - static, no animation */
 .route-path-group path {
-    stroke-dasharray: 1000;
-    stroke-dashoffset: 1000;
-    animation: drawPath 3s ease forwards;
+    /* No animation */
 }
 
-@keyframes drawPath {
-    to {
-        stroke-dashoffset: 0;
-    }
-}
-
-/* Waypoint pulse animation */
+/* Waypoint markers - static */
 .route-waypoint {
-    animation: pulsate 2s ease-in-out infinite;
+    /* No animation */
 }
 
-@keyframes pulsate {
-    0%, 100% {
-        opacity: 1;
-        transform: scale(1);
-    }
-    50% {
-        opacity: 0.6;
-        transform: scale(1.3);
-    }
-}
-
-/* Route labels */
+/* Route labels - static */
 .route-label {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
-    animation: fadeIn 0.5s ease forwards;
-    animation-delay: 2.5s;
-    opacity: 0;
-}
-
-@keyframes fadeIn {
-    to {
-        opacity: 1;
-    }
 }
 
 /* Route Toggle Button */
@@ -495,4 +467,18 @@ body {
     50% {
         box-shadow: 0 0 30px 8px #FFD700;
     }
+}
+
+/* ========================================
+   Traffic Flow Arrows - Individual Indicators
+   ======================================== */
+
+/* Individual flow arrow indicator - static, no animation */
+.flow-arrow-indicator {
+    opacity: 0.9;
+}
+
+/* Dim flow arrows when route is displayed */
+.parking-map-container:has(.route-overlay) .flow-arrow-indicator {
+    opacity: 0.3;
 }

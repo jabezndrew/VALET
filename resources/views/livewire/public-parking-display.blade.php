@@ -6,23 +6,22 @@
             <div class="col-12 position-relative">
 
                 <!-- Route Control Buttons - Top Left -->
-                <div style="position: absolute; top: 30px; left: 30px; z-index: 1000; display: flex; gap: 10px;">
+                <div style="position: absolute; top: 30px; left: 30px; z-index: 1000;">
                     @if($selectedSpot)
-                        <!-- Clear Route Button -->
-                        <button wire:click="clearRoute" class="route-toggle-btn active">
-                            <svg class="icon" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
+                        <!-- Clear Route Button (Red) -->
+                        <button wire:click="clearRoute" class="route-toggle-btn active" style="padding: 12px 18px; font-size: 14px;">
+                            <svg class="icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
                             </svg>
-                            <span>Clear Route to {{ $selectedSpot }}</span>
+                            <span>Clear Route</span>
                         </button>
                     @else
-                        <!-- Info Button -->
-                        <div class="route-toggle-btn" style="cursor: default; background: linear-gradient(135deg, #4a90e2 0%, #357abd 100%); box-shadow: 0 6px 20px rgba(74, 144, 226, 0.4);">
-                            <svg class="icon" width="20" height="20" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8 15A7 7 0 1 1 8 1a7 7 0 0 1 0 14zm0 1A8 8 0 1 0 8 0a8 8 0 0 0 0 16z"/>
-                                <path d="m8.93 6.588-2.29.287-.082.38.45.083c.294.07.352.176.288.469l-.738 3.468c-.194.897.105 1.319.808 1.319.545 0 1.178-.252 1.465-.598l.088-.416c-.2.176-.492.246-.686.246-.275 0-.375-.193-.304-.533L8.93 6.588zM9 4.5a1 1 0 1 1-2 0 1 1 0 0 1 2 0z"/>
+                        <!-- Info Button (Green) -->
+                        <div class="route-toggle-btn" style="cursor: default; padding: 12px 18px; font-size: 14px;">
+                            <svg class="icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
+                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
                             </svg>
-                            <span>Click any parking spot to see route</span>
+                            <span>Select a spot</span>
                         </div>
                     @endif
                 </div>
@@ -102,6 +101,83 @@
                         <div class="parking-map-wrapper">
                             <div class="parking-map-container">
 
+                                <!-- Traffic Flow Arrows - Individual Directional Indicators -->
+                                @php
+                                    // Format: [x, y, rotation] - rotation in degrees (0=right, 90=down, 180=left, 270=up)
+                                    $flowArrows = [
+                                        // Entry area - from ENTRANCE going into parking
+                                        ['x' => 1050, 'y' => 430, 'rotation' => 180, 'type' => 'entry'],
+
+                                        // Right side lane - towards Columns A, B, C, D
+                                        ['x' => 1000, 'y' => 350, 'rotation' => 270, 'type' => 'normal'],
+                                        ['x' => 1000, 'y' => 200, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 925, 'y' => 200, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 200, 'rotation' => 90, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 350, 'rotation' => 90, 'type' => 'normal'],
+
+
+                                        // Top lane - going left towards E, F
+                                        ['x' => 850, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 700, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 550, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 400, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                        ['x' => 250, 'y' => 480, 'rotation' => 90, 'type' => 'normal'],
+
+                                        // Left side - going down towards G, H, I
+                                        ['x' => 248, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                        ['x' => 400, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                        ['x' => 550, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                        ['x' => 700, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 700, 'rotation' => 90, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 900, 'rotation' => 90, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 1100, 'rotation' => 90, 'type' => 'normal'],
+                                        ['x' => 850, 'y' => 1280, 'rotation' => 0, 'type' => 'normal'],
+                                        ['x' => 925, 'y' => 1280, 'rotation' => 0, 'type' => 'normal'],
+
+                                        // Bottom lane - going right towards EXIT
+                                        ['x' => 1000, 'y' => 1280, 'rotation' => 270, 'type' => 'normal'],
+                                        ['x' => 1000, 'y' => 1100, 'rotation' => 270, 'type' => 'normal'],
+                                        ['x' => 1000, 'y' => 900, 'rotation' => 270, 'type' => 'normal'],
+                                        ['x' => 1000, 'y' => 700, 'rotation' => 270, 'type' => 'normal'],
+
+                                        // Middle section - Column J, F area
+                                        ['x' => 248, 'y' => 595, 'rotation' => 90, 'type' => 'normal'],
+                                        
+
+                                        // Exit area
+                                        ['x' => 1050, 'y' => 628, 'rotation' => 0, 'type' => 'exit'],
+                                    ];
+                                @endphp
+
+                                @foreach($flowArrows as $arrow)
+                                    <div class="flow-arrow-indicator {{ $arrow['type'] }}"
+                                         style="
+                                            position: absolute;
+                                            left: {{ $arrow['x'] - 20 }}px;
+                                            top: {{ $arrow['y'] - 20 }}px;
+                                            width: 40px;
+                                            height: 40px;
+                                            z-index: 95;
+                                            pointer-events: none;
+                                         ">
+                                        <svg width="40" height="40" viewBox="0 0 40 40" style="transform: rotate({{ $arrow['rotation'] }}deg);">
+                                            @if($arrow['type'] === 'entry')
+                                                <!-- Green entry arrow -->
+                                                <circle cx="20" cy="20" r="18" fill="#2F623D"/>
+                                                <path d="M12 20 L26 20 M26 20 L21 14 M26 20 L21 26" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                            @elseif($arrow['type'] === 'exit')
+                                                <!-- Red exit arrow -->
+                                                <circle cx="20" cy="20" r="18" fill="#B22020"/>
+                                                <path d="M12 20 L26 20 M26 20 L21 14 M26 20 L21 26" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                            @else
+                                                <!-- Gray normal flow arrow -->
+                                                <circle cx="20" cy="20" r="18" fill="#505050"/>
+                                                <path d="M12 20 L26 20 M26 20 L21 14 M26 20 L21 26" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                            @endif
+                                        </svg>
+                                    </div>
+                                @endforeach
+
                                 <!-- Facilities -->
                                 <div class="facility elevator" style="left: 675px; top: 315px; width: 127px; height: 60px;">
                                     <span>ELEVATOR</span>
@@ -140,7 +216,7 @@
                                     @endphp
 
                                     <div class="parking-spot-box {{ $hasAssignedSensor ? ($isOccupied ? 'occupied' : 'available') : 'inactive' }} {{ $isSelected ? 'selected-spot' : '' }}"
-                                         wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}')"
+                                         wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}', {{ $x }}, {{ $y }})"
                                          style="
                                             left: {{ $x }}px;
                                             top: {{ $y }}px;
@@ -159,138 +235,135 @@
                                     </div>
                                 @endforeach
 
-                                <!-- Route SVG Overlay (Dynamic based on selected section) -->
-                                @if($showRoute && $selectedSection)
+                                {{-- ============================================
+                                    ROUTE - ENTRANCE TO EXACT PARKING SPOT
+                                    You can define routes for:
+                                    1. Individual spots (e.g., '1D1', '1D2')
+                                    2. Sections as fallback (e.g., 'D')
+                                ============================================ --}}
+                                @php
+                                    // ENTRANCE position - edit this if ENTRANCE moves
+                                    $entranceX = 1050;
+                                    $entranceY = 425;
+
+                                    // INDIVIDUAL SPOT waypoints - define unique routes for specific spots
+                                    // Format: 'SpotName' => [[x1,y1], [x2,y2], ...]
+                                    $spotWaypoints = [
+                                        //Different routes for each B spot
+                                         '1B1' => [[999, 425]],
+                                         '1B2' => [[990, 425], [990, 190], [935, 190]],
+                                         '1B3' => [[990, 425], [990, 190], [870, 190]],
+                                         '1B4' => [[990, 425], [990, 190], [800, 190]],
+
+                                        //Different routes for each C spot
+                                         '1C1' => [[965, 425], [965, 170]],
+                                         '1C2' => [[965, 425], [965, 252]],
+
+                                        //Different routes for each D spot
+                                         '1D1' => [[628, 430]],
+                                         '1D2' => [[560, 430]],
+                                         '1D3' => [[492, 430]],
+                                         '1D4' => [[424, 430]],
+                                         '1D5' => [[356, 430]],
+                                         '1D6' => [[288, 430]],
+                                         '1D7' => [[220, 430]],
+
+                                        //Different routes for each E spot
+                                         '1E1' => [[230, 430], [230, 685]],
+                                         '1E2' => [[230, 430], [230, 610]],
+                                         '1E3' => [[230, 430], [230, 530]],
+
+                                        //Different routes for each F spot
+                                         '1F1' => [[210, 430]],
+                                         '1F2' => [[272, 430]],
+                                         '1F3' => [[272, 430], [272, 705], [355, 705]],
+                                         '1F4' => [[272, 430], [272, 705], [422, 705]],
+                                         '1F5' => [[272, 430], [272, 705], [489, 705]],
+                                         '1F6' => [[272, 430], [272, 705], [572, 705]],
+                                         '1F7' => [[272, 430], [272, 705], [640, 705]],
+
+                                        //Different routes for each G spot
+                                         '1G1' => [[272, 430], [272, 705], [850, 705], [850, 928]],
+                                         '1G2' => [[272, 430], [272, 705], [850, 705], [850, 1012]],
+                                         '1G3' => [[272, 430], [272, 705], [850, 705], [850, 1100]],
+                                         '1G4' => [[272, 430], [272, 705], [850, 705], [850, 1190]],
+                                         '1G5' => [[272, 430], [272, 705], [850, 705], [850, 1280]],
+
+                                        //Different routes for each H spot
+                                         '1H1' => [[272, 430], [272, 705], [850, 705]],
+                                         '1H2' => [[272, 430], [272, 705], [850, 705], [850, 1275], [928, 1275]],
+                                         '1H3' => [[272, 430], [272, 705], [850, 705], [850, 1275], [1000, 1275]],
+
+                                        //Different routes for each I spot
+                                         '1I1' => [[272, 430], [272, 705], [850, 705], [850, 1280]],
+                                         '1I2' => [[272, 430], [272, 705], [850, 705], [850, 1275], [1000, 1275], [1000, 1192]],
+                                         '1I3' => [[272, 430], [272, 705], [850, 705], [850, 1275], [1000, 1275], [1000, 1100]],
+                                         '1I4' => [[272, 430], [272, 705], [850, 705], [850, 1275], [1000, 1275], [1000, 1012]],
+                                         '1I5' => [[272, 430], [272, 705], [850, 705], [850, 1275], [1000, 1275], [1000, 930]],
+
+                                        //Different routes for each D spot
+                                         '1J1' => [[763, 430]],
+                                         '1J2' => [[670, 430]],
+                                         '1J3' => [[577, 430]],
+                                         '1J4' => [[490, 430]],
+                                         '1J5' => [[395, 430]],
+                                    ];
+
+                                    // SECTION waypoints - fallback if no individual spot route defined
+                                    // Format: 'Section' => [[x1,y1], [x2,y2], ...]
+                                    $sectionWaypoints = [
+                                        'A' => [[965, 425], [965, 200]],
+                                        'B' => [[965, 390], [965, 300]],   
+                                        'C' => [[900, 250]],
+                                        'D' => [[628, 430]],
+                                        'E' => [[600, 390], [600, 50]],
+                                        'F' => [[550, 390], [550, 300]],
+                                        'G' => [[450, 390], [450, 470]],
+                                        'H' => [[300, 390], [300, 500], [150, 500]],
+                                        'I' => [[300, 390], [300, 650]],
+                                        'J' => [[650, 390], [650, 300]],
+                                    ];
+                                @endphp
+
+                                @if($showRoute && $selectedSpot && $selectedSpotX > 0)
                                 <svg class="route-overlay" viewBox="0 0 1200 1400" style="position: absolute; top: 0; left: 0; width: 1200px; height: 1400px; pointer-events: none; z-index: 500;">
                                     <defs>
                                         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
                                             <polygon points="0 0, 10 3, 0 6" fill="#2ed573" />
                                         </marker>
                                     </defs>
-
                                     <g class="route-path-group">
-                                        @if($selectedSection === 'A')
-                                            <!-- Route to Section A (Bottom Right from Entrance) -->
-                                            <!-- Start at Entrance, move right along bottom -->
-                                            <path d="M 920 670 L 1040 670 L 1040 154"
-                                                  stroke="#2ed573" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)" />
+                                        @php
+                                            // Build path: ENTRANCE → Waypoints → Exact Spot
+                                            $spotX = $selectedSpotX + 30; // Center of parking spot
+                                            $spotY = $selectedSpotY + 42; // Center of parking spot
 
-                                            <!-- Waypoint markers -->
-                                            <circle cx="920" cy="670" r="12" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="1040" cy="670" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="1040" cy="154" r="14" fill="#FFD700" stroke="#fff" stroke-width="4" class="route-waypoint" />
+                                            $pathData = "M {$entranceX} {$entranceY}";
 
-                                            <!-- Direction arrows along path -->
-                                            <text x="980" y="665" fill="#2ed573" font-size="28" font-weight="bold">→</text>
-                                            <text x="1045" y="400" fill="#2ed573" font-size="28" font-weight="bold">↑</text>
+                                            // Convert spot name to floor 1 equivalent for waypoint lookup
+                                            // e.g., '2B3' -> '1B3', '3D5' -> '1D5', '4A1' -> '1A1'
+                                            $baseSpotName = preg_replace('/^[2-4]/', '1', $selectedSpot);
 
-                                            <!-- Labels -->
-                                            <text x="870" y="700" fill="#2ed573" font-size="22" font-weight="bold" class="route-label">START</text>
-                                            <text x="1050" y="150" fill="#FFD700" font-size="28" font-weight="bold" class="route-label">A1</text>
+                                            // Check for individual spot route first, then fall back to section
+                                            $waypoints = [];
+                                            if (isset($spotWaypoints[$baseSpotName])) {
+                                                $waypoints = $spotWaypoints[$baseSpotName];
+                                            } elseif (isset($sectionWaypoints[$selectedSection])) {
+                                                $waypoints = $sectionWaypoints[$selectedSection];
+                                            }
 
-                                        @elseif($selectedSection === 'B')
-                                            <!-- Route to Section B (Top) -->
-                                            <path d="M 1065 390 L 1065 100 L 900 80"
-                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
-                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="900" cy="80" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
-                                            <text x="905" y="75" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">B</text>
+                                            // Add waypoints to path
+                                            foreach ($waypoints as $waypoint) {
+                                                $pathData .= " L {$waypoint[0]} {$waypoint[1]}";
+                                            }
 
-                                        @elseif($selectedSection === 'C')
-                                            <!-- Route to Section C (Right Middle) -->
-                                            <path d="M 1065 390 L 900 390 L 730 200"
-                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
-                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="730" cy="200" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
-                                            <text x="735" y="195" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">C</text>
-
-                                        @elseif($selectedSection === 'D')
-                                            <!-- Route to Section D (Middle Left) -->
-                                            <path d="M 1065 390 L 600 390 L 400 340"
-                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
-                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="400" cy="340" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
-                                            <text x="405" y="335" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">D</text>
-
-                                        @elseif($selectedSection === 'E')
-                                            <!-- Route to Section E (Top Left from Entrance) -->
-                                            <!-- Start at Entrance, move left, then up to E section -->
-                                            <path d="M 920 670 L 250 670 L 250 200 L 84 120"
-                                                  stroke="#2ed573" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)" />
-
-                                            <!-- Waypoint markers -->
-                                            <circle cx="920" cy="670" r="12" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="250" cy="670" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="250" cy="200" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="84" cy="120" r="14" fill="#FFD700" stroke="#fff" stroke-width="4" class="route-waypoint" />
-
-                                            <!-- Direction arrows along path -->
-                                            <text x="550" y="665" fill="#2ed573" font-size="28" font-weight="bold">←</text>
-                                            <text x="255" y="400" fill="#2ed573" font-size="28" font-weight="bold">↑</text>
-                                            <text x="150" y="155" fill="#2ed573" font-size="28" font-weight="bold">←</text>
-
-                                            <!-- Labels -->
-                                            <text x="870" y="700" fill="#2ed573" font-size="22" font-weight="bold" class="route-label">START</text>
-                                            <text x="30" y="115" fill="#FFD700" font-size="28" font-weight="bold" class="route-label">E</text>
-
-                                        @elseif($selectedSection === 'F')
-                                            <!-- Route to Section F (Bottom Left) -->
-                                            <path d="M 1065 390 L 600 390 L 400 700 L 400 820"
-                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
-                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="400" cy="820" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
-                                            <text x="405" y="815" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">F</text>
-
-                                        @elseif($selectedSection === 'G')
-                                            <!-- Route to Section G (Bottom Center-Right) -->
-                                            <path d="M 1065 390 L 900 650 L 780 1000"
-                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
-                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="780" cy="1000" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
-                                            <text x="785" y="995" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">G</text>
-
-                                        @elseif($selectedSection === 'H')
-                                            <!-- Route to Section H (Bottom Center) -->
-                                            <path d="M 1065 390 L 900 800 L 900 1340"
-                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
-                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="900" cy="1340" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
-                                            <text x="905" y="1335" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">H</text>
-
-                                        @elseif($selectedSection === 'I')
-                                            <!-- Route to Section I (Bottom Right) -->
-                                            <path d="M 1065 390 L 1065 800 L 1050 1000"
-                                                  stroke="#2ed573" stroke-width="6" fill="none" stroke-linecap="round" marker-end="url(#arrowhead)" />
-                                            <circle cx="1065" cy="390" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="1050" cy="1000" r="12" fill="#FFD700" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <text x="1070" y="385" fill="#2ed573" font-size="20" font-weight="bold" class="route-label">Entrance</text>
-                                            <text x="1055" y="995" fill="#FFD700" font-size="24" font-weight="bold" class="route-label">I</text>
-
-                                        @elseif($selectedSection === 'J')
-                                            <!-- Route to Section J (Left Side from Entrance) -->
-                                            <!-- Start at Entrance, move left to J section -->
-                                            <path d="M 920 670 L 550 670 L 550 559"
-                                                  stroke="#2ed573" stroke-width="8" fill="none" stroke-linecap="round" stroke-linejoin="round" marker-end="url(#arrowhead)" />
-
-                                            <!-- Waypoint markers -->
-                                            <circle cx="920" cy="670" r="12" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="550" cy="670" r="10" fill="#2ed573" stroke="#fff" stroke-width="3" class="route-waypoint" />
-                                            <circle cx="550" cy="559" r="14" fill="#FFD700" stroke="#fff" stroke-width="4" class="route-waypoint" />
-
-                                            <!-- Direction arrows along path -->
-                                            <text x="720" y="665" fill="#2ed573" font-size="28" font-weight="bold">←</text>
-                                            <text x="555" y="620" fill="#2ed573" font-size="28" font-weight="bold">↑</text>
-
-                                            <!-- Labels -->
-                                            <text x="870" y="700" fill="#2ed573" font-size="22" font-weight="bold" class="route-label">START</text>
-                                            <text x="560" y="555" fill="#FFD700" font-size="28" font-weight="bold" class="route-label">J</text>
-                                        @endif
+                                            // End at exact parking spot
+                                            $pathData .= " L {$spotX} {$spotY}";
+                                        @endphp
+                                        <path d="{{ $pathData }}"
+                                              stroke="#2ed573" stroke-width="6" fill="none"
+                                              stroke-linecap="round" stroke-linejoin="round"
+                                              marker-end="url(#arrowhead)" />
                                     </g>
                                 </svg>
                                 @endif
@@ -306,5 +379,5 @@
 </div>
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=1.3') }}">
+<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=1.6') }}">
 @endpush
