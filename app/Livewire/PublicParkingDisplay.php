@@ -17,6 +17,8 @@ class PublicParkingDisplay extends Component
     public $showRoute = false;
     public $selectedSpot = null;
     public $selectedSection = null;
+    public $selectedSpotX = 0;
+    public $selectedSpotY = 0;
 
     public function mount()
     {
@@ -95,10 +97,12 @@ class PublicParkingDisplay extends Component
         $this->showRoute = !$this->showRoute;
     }
 
-    public function selectParkingSpot($slotName, $columnCode)
+    public function selectParkingSpot($slotName, $columnCode, $x = 0, $y = 0)
     {
         $this->selectedSpot = $slotName;
         $this->selectedSection = $columnCode;
+        $this->selectedSpotX = $x;
+        $this->selectedSpotY = $y;
         $this->showRoute = true;
     }
 
@@ -106,6 +110,8 @@ class PublicParkingDisplay extends Component
     {
         $this->selectedSpot = null;
         $this->selectedSection = null;
+        $this->selectedSpotX = 0;
+        $this->selectedSpotY = 0;
         $this->showRoute = false;
     }
 
