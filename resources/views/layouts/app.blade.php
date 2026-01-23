@@ -817,6 +817,11 @@ main, .container, .valet-header + * {
    <!-- Page Content -->
    {{ $slot }}
 
+   <!-- RFID Scan Monitor (for Security/SSD/Admin) -->
+   @auth
+       @livewire('rfid-scan-monitor')
+   @endauth
+
    <!-- Bootstrap JS -->
    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
 

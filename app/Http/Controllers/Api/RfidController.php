@@ -8,6 +8,7 @@ use App\Models\RfidTag;
 use App\Models\GuestAccess;
 use App\Models\ParkingEntry;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class RfidController extends Controller
 {
@@ -31,30 +32,52 @@ class RfidController extends Controller
                 ->first();
 
             if (!$rfidTag) {
-                return response()->json([
+                $scanData = [
+                    'uid' => $uid,
                     'valid' => false,
                     'message' => 'RFID not registered. Please go to office.',
-                    'duration' => 10 // Show invalid modal for 10 seconds
-                ]);
+                    'user_name' => 'N/A',
+                    'vehicle_plate' => 'N/A',
+                    'duration' => 10
+                ];
+
+                // Store in cache for real-time monitoring
+                Cache::put('rfid_scan_latest', $scanData, 15);
+
+                return response()->json($scanData);
             }
 
             // Check if expired
             if ($rfidTag->status === 'expired' ||
                 ($rfidTag->expiry_date && Carbon::parse($rfidTag->expiry_date)->isPast())) {
-                return response()->json([
+                $scanData = [
+                    'uid' => $uid,
                     'valid' => false,
                     'message' => 'RFID expired. Please go to office.',
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                     'duration' => 10
-                ]);
+                ];
+
+                Cache::put('rfid_scan_latest', $scanData, 15);
+
+                return response()->json($scanData);
             }
 
             // Check if suspended or lost
             if (in_array($rfidTag->status, ['suspended', 'lost'])) {
-                return response()->json([
+                $scanData = [
+                    'uid' => $uid,
                     'valid' => false,
                     'message' => 'RFID ' . $rfidTag->status . '. Please go to office.',
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                     'duration' => 10
-                ]);
+                ];
+
+                Cache::put('rfid_scan_latest', $scanData, 15);
+
+                return response()->json($scanData);
             }
 
             // Valid RFID - Log entry
@@ -68,16 +91,24 @@ class RfidController extends Controller
                 'entry_gate_mac' => $gateMac
             ]);
 
-            return response()->json([
+            $scanData = [
                 'valid' => true,
                 'message' => 'Access granted',
                 'duration' => 7, // Open servo for 7 seconds
+                'uid' => $uid,
+                'user_name' => $rfidTag->user->name ?? 'Unknown',
+                'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                 'user' => [
                     'name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                     'entry_time' => Carbon::now()->format('Y-m-d H:i:s')
                 ]
-            ]);
+            ];
+
+            // Store in cache for real-time monitoring
+            Cache::put('rfid_scan_latest', $scanData, 15);
+
+            return response()->json($scanData);
 
         } catch (\Exception $e) {
             return response()->json([
