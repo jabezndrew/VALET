@@ -730,6 +730,11 @@ main, .container, .valet-header + * {
                           wire:navigate>
                            Sensors
                        </a>
+                       <a class="nav-link {{ request()->routeIs('admin.rfid') ? 'active' : '' }}"
+                          href="{{ route('admin.rfid') }}"
+                          wire:navigate>
+                           RFID Tags
+                       </a>
                        @endif
 
                        <!-- Feedback Button - Now matches other nav items -->
