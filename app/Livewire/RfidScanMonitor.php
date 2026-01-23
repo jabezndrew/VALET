@@ -56,7 +56,7 @@ class RfidScanMonitor extends Component
                 ];
 
                 $this->countdown = $this->lastScan['duration'];
-                $this->dispatch('start-countdown');
+                $this->dispatch('start-countdown', $this->countdown);
             }
         }
     }

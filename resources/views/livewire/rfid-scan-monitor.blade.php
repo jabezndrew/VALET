@@ -13,7 +13,7 @@
 
         <!-- Scan Event Modal -->
         @if($lastScan && $isEnabled)
-            <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); z-index: 1050;">
+            <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); z-index: 1050;" wire:click.self="closeModal">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content border-0 shadow-lg">
                         <div class="modal-header bg-{{ $lastScan['valid'] ? 'success' : 'danger' }} text-white">
@@ -82,13 +82,12 @@
 
             @push('scripts')
             <script>
-                document.addEventListener('livewire:initialized', () => {
+                (function() {
                     let countdownInterval;
-                    let currentCount = {{ $countdown }};
 
-                    Livewire.on('start-countdown', () => {
+                    const startCountdown = (initialCount) => {
                         clearInterval(countdownInterval);
-                        currentCount = {{ $countdown }};
+                        let currentCount = initialCount;
 
                         const countdownElement = document.getElementById('countdown');
 
@@ -100,16 +99,26 @@
 
                             if (currentCount <= 0) {
                                 clearInterval(countdownInterval);
-                                @this.closeModal();
+                                Livewire.dispatch('closeModal');
                             }
                         }, 1000);
-                    });
+                    };
 
-                    // Cleanup on component destroy
-                    Livewire.hook('element.removed', (el) => {
+                    if (typeof Livewire !== 'undefined') {
+                        Livewire.on('start-countdown', (event) => {
+                            const duration = event && event[0] ? event[0] : {{ $countdown }};
+                            startCountdown(duration);
+                        });
+                    }
+
+                    // Start countdown immediately when modal appears
+                    startCountdown({{ $countdown }});
+
+                    // Cleanup on page unload
+                    window.addEventListener('beforeunload', () => {
                         clearInterval(countdownInterval);
                     });
-                });
+                })();
             </script>
             @endpush
         @endif
