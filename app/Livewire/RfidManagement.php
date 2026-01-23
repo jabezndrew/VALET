@@ -141,6 +141,6 @@ class RfidManagement extends Component
             'tags' => $tags,
             'users' => $users,
             'vehicles' => $vehicles
-        ]);
+        ])->layout('layouts.app');
     }
 }
