@@ -69,6 +69,14 @@ class Vehicle extends Model
     }
 
     /**
+     * Alias for owner relationship (for consistency with other models)
+     */
+    public function user(): BelongsTo
+    {
+        return $this->belongsTo(SysUser::class, 'owner_id');
+    }
+
+    /**
      * Scope for active vehicles
      */
     public function scopeActive($query)
