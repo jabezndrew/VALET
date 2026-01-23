@@ -18,6 +18,10 @@ Route::prefix('public')->group(function () {
     Route::get('/parking', [ParkingController::class, 'index']);
     Route::post('/parking', [ParkingController::class, 'store']);
 
+    // Mobile App Endpoints - Public access for parking map display
+    Route::get('/parking/map', [ParkingController::class, 'getMapData']);
+    Route::get('/parking/dashboard', [ParkingController::class, 'getDashboardStats']);
+
     // Sensor assignment endpoint (for Arduino to fetch its assignment)
     Route::post('/sensor/assignment', [SensorAssignmentController::class, 'getAssignment']);
 
