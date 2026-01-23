@@ -345,7 +345,7 @@
                         <div class="alert alert-{{ $verifyResult['color'] }} mt-3">
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-{{
-                                    $verifyResult['status'] === 'Active' ? 'check-circle' :
+                                    $verifyResult['status'] === 'ACTIVE' || $verifyResult['status'] === 'Active' ? 'check-circle' :
                                     ($verifyResult['status'] === 'NOT_FOUND' ? 'times-circle' : 'exclamation-triangle')
                                 }} me-2"></i>
                                 <div>
@@ -353,6 +353,19 @@
                                     <div>{{ $verifyResult['message'] }}</div>
                                 </div>
                             </div>
+
+                            @if(isset($verifyResult['rfidTag']))
+                                <hr class="my-2">
+                                <div class="mb-2">
+                                    <small>
+                                        <strong>RFID UID:</strong> <code>{{ $verifyResult['rfidTag']->uid }}</code><br>
+                                        <strong>Status:</strong> <span class="badge bg-{{ $verifyResult['rfidTag']->status === 'active' ? 'success' : 'danger' }}">{{ ucfirst($verifyResult['rfidTag']->status) }}</span><br>
+                                        @if($verifyResult['rfidTag']->expiry_date)
+                                            <strong>Expiry:</strong> {{ \Carbon\Carbon::parse($verifyResult['rfidTag']->expiry_date)->format('M d, Y') }}
+                                        @endif
+                                    </small>
+                                </div>
+                            @endif
 
                             @if(isset($verifyResult['vehicle']))
                                 <hr class="my-2">
@@ -371,6 +384,14 @@
                                             <strong>Role:</strong> {{ ucfirst($verifyResult['vehicle']->owner_role) }}
                                         </small>
                                     </div>
+                                </div>
+                            @elseif(isset($verifyResult['user']))
+                                <hr class="my-2">
+                                <div>
+                                    <small>
+                                        <strong>User:</strong> {{ $verifyResult['user']->name }}<br>
+                                        <strong>Email:</strong> {{ $verifyResult['user']->email }}
+                                    </small>
                                 </div>
                             @endif
                         </div>
