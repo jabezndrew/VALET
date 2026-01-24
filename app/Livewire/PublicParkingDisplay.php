@@ -33,10 +33,10 @@ class PublicParkingDisplay extends Component
                 continue;
             }
 
-            $total = $spaces->count();
             $spacesWithSensors = $spaces->filter(fn($s) => $s->sensorAssignment !== null);
+            $total = $spacesWithSensors->count();
             $occupied = $spacesWithSensors->filter(fn($s) => $s->is_occupied)->count();
-            $available = $spacesWithSensors->count() - $occupied;
+            $available = $total - $occupied;
 
             $this->allFloorStats[$floor] = [
                 'total' => $total,
