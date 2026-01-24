@@ -730,6 +730,11 @@ main, .container, .valet-header + * {
                           wire:navigate>
                            Sensors
                        </a>
+                       <a class="nav-link {{ request()->routeIs('admin.rfid') ? 'active' : '' }}"
+                          href="{{ route('admin.rfid') }}"
+                          wire:navigate>
+                           RFID Tags
+                       </a>
                        @endif
 
                        <!-- Feedback Button - Now matches other nav items -->
@@ -811,6 +816,11 @@ main, .container, .valet-header + * {
 
    <!-- Page Content -->
    {{ $slot }}
+
+   <!-- RFID Scan Monitor (for Security/SSD/Admin) -->
+   @auth
+       @livewire('rfid-scan-monitor')
+   @endauth
 
    <!-- Bootstrap JS -->
    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
