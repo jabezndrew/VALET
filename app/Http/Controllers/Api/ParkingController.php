@@ -258,10 +258,10 @@ class ParkingController extends Controller
                     continue;
                 }
 
-                $total = $spaces->count();
                 $spacesWithSensors = $spaces->filter(fn($s) => $s->sensorAssignment !== null);
+                $total = $spacesWithSensors->count();
                 $occupied = $spacesWithSensors->filter(fn($s) => $s->is_occupied)->count();
-                $available = $spacesWithSensors->count() - $occupied;
+                $available = $total - $occupied;
 
                 $allFloorStats[] = [
                     'floor_level' => $floor,
@@ -361,10 +361,10 @@ class ParkingController extends Controller
                     continue;
                 }
 
-                $total = $spaces->count();
                 $spacesWithSensors = $spaces->filter(fn($s) => $s->sensorAssignment !== null);
+                $total = $spacesWithSensors->count();
                 $occupied = $spacesWithSensors->filter(fn($s) => $s->is_occupied)->count();
-                $available = $spacesWithSensors->count() - $occupied;
+                $available = $total - $occupied;
 
                 $totalSpaces += $total;
                 $totalAvailable += $available;
