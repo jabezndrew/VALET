@@ -33,8 +33,11 @@ class SeedParkingSpaces extends Command
             }
         }
 
-        // Delete any parking spaces that are NOT in our valid list
-        $deleted = ParkingSpace::whereNotIn('space_code', $validSpaceCodes)->delete();
+        // Delete any parking spaces that are NOT in our valid list (including NULL space_codes)
+        $deleted = ParkingSpace::where(function($query) use ($validSpaceCodes) {
+            $query->whereNotIn('space_code', $validSpaceCodes)
+                  ->orWhereNull('space_code');
+        })->delete();
         if ($deleted > 0) {
             $this->info("Deleted {$deleted} orphaned/invalid parking spaces");
         }
