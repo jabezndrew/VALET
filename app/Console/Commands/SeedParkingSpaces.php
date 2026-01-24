@@ -14,6 +14,31 @@ class SeedParkingSpaces extends Command
     {
         $this->info('Adding parking slots for all floors...');
 
+        // First, get all valid space codes we'll be creating
+        $validSpaceCodes = [];
+        $slotPositionsTemp = [
+            'A1', 'B4', 'B3', 'B2', 'B1', 'C1', 'C2',
+            'D7', 'D6', 'D5', 'D4', 'D3', 'D2', 'D1',
+            'E3', 'E2', 'E1',
+            'F1', 'F2', 'F3', 'F4', 'F5', 'F6', 'F7',
+            'G1', 'G2', 'G3', 'G4', 'G5',
+            'H1', 'H2', 'H3',
+            'I5', 'I4', 'I3', 'I2', 'I1',
+            'J5', 'J4', 'J3', 'J2', 'J1',
+        ];
+
+        foreach ([1, 2, 3, 4] as $floorNum) {
+            foreach ($slotPositionsTemp as $slot) {
+                $validSpaceCodes[] = $floorNum . $slot;
+            }
+        }
+
+        // Delete any parking spaces that are NOT in our valid list
+        $deleted = ParkingSpace::whereNotIn('space_code', $validSpaceCodes)->delete();
+        if ($deleted > 0) {
+            $this->info("Deleted {$deleted} orphaned/invalid parking spaces");
+        }
+
         // Define all 42 parking slot positions (same layout for all floors)
         $slotPositions = [
             // Section A (1 slot)
