@@ -10,6 +10,7 @@ use App\Livewire\UserManager;
 use App\Livewire\PendingAccountManager;
 use App\Livewire\SensorManager;
 use App\Livewire\PublicParkingDisplay;
+use App\Livewire\RfidManagement;
 
 // Public route - no authentication required
 Route::get('/parking-display', PublicParkingDisplay::class)->name('parking.display.public');
@@ -94,6 +95,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
         Route::get('/pending-accounts', PendingAccountManager::class)->name('pending-accounts');
         Route::get('/sensors', SensorManager::class)->name('sensors');
+        Route::get('/rfid', RfidManagement::class)->name('rfid');
     });
     
 });

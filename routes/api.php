@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\SensorAssignmentController;
 use App\Http\Controllers\Api\SysUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FeedbackController;
+use App\Http\Controllers\Api\RfidController;
 
 Route::get('/health', fn() => response()->json(['status' => 'ok', 'service' => 'VALET API']));
 
@@ -27,6 +28,11 @@ Route::prefix('public')->group(function () {
 
     // Sensor registration endpoint (for Arduino to register all sensors on boot)
     Route::post('/sensor/register', [SensorAssignmentController::class, 'register']);
+
+    // RFID endpoints (for ESP32 gate controllers)
+    Route::post('/rfid/verify', [RfidController::class, 'verify']);
+    Route::post('/rfid/exit', [RfidController::class, 'exit']);
+    Route::post('/guest/verify', [RfidController::class, 'verifyGuest']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
