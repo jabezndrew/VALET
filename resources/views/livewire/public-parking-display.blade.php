@@ -242,7 +242,7 @@
                                     2. Sections as fallback (e.g., 'D')
                                 ============================================ --}}
                                 @php
-                                    // ENTRANCE position - edit this if ENTRANCE moves
+                                    // ENTRANCE position 
                                     $entranceX = 1050;
                                     $entranceY = 425;
 
