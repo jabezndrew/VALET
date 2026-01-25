@@ -58,7 +58,11 @@ class ParkingDashboard extends Component
     public function loadParkingData()
     {
         try {
-            $this->allSpaces = ParkingSpace::orderBy('sensor_id')->get();
+            // Only load parking spaces that have actual sensor assignments (real data)
+            $this->allSpaces = ParkingSpace::with('sensorAssignment')
+                ->whereHas('sensorAssignment')
+                ->orderBy('sensor_id')
+                ->get();
 
             $this->updateStatistics();
             $this->updateFloorStats();
@@ -127,9 +131,12 @@ class ParkingDashboard extends Component
 
         $this->validate();
 
-        $vehicle = $this->findVehicleByRfid($this->verifyRfid);
+        // Check RFID tag first
+        $rfidTag = \App\Models\RfidTag::where('uid', strtoupper($this->verifyRfid))
+            ->with(['user', 'vehicle.owner'])
+            ->first();
 
-        if (!$vehicle) {
+        if (!$rfidTag) {
             $this->verifyResult = [
                 'status' => 'NOT_FOUND',
                 'message' => 'Vehicle not found in system',
@@ -138,7 +145,44 @@ class ParkingDashboard extends Component
             return;
         }
 
-        $this->verifyResult = $this->getVehicleVerificationResult($vehicle);
+        // Check RFID tag status
+        if ($rfidTag->status !== 'active') {
+            $this->verifyResult = [
+                'status' => 'INVALID',
+                'message' => 'RFID tag is ' . $rfidTag->status . '. Please contact administrator.',
+                'color' => 'danger',
+                'rfidTag' => $rfidTag
+            ];
+            return;
+        }
+
+        // Check if expired
+        if ($rfidTag->expiry_date && \Carbon\Carbon::parse($rfidTag->expiry_date)->isPast()) {
+            $this->verifyResult = [
+                'status' => 'EXPIRED',
+                'message' => 'RFID tag expired on ' . \Carbon\Carbon::parse($rfidTag->expiry_date)->format('M j, Y'),
+                'color' => 'danger',
+                'rfidTag' => $rfidTag
+            ];
+            return;
+        }
+
+        // Get vehicle if exists
+        $vehicle = $rfidTag->vehicle;
+
+        if ($vehicle) {
+            $this->verifyResult = $this->getVehicleVerificationResult($vehicle);
+            $this->verifyResult['rfidTag'] = $rfidTag;
+        } else {
+            // RFID is valid but no vehicle assigned
+            $this->verifyResult = [
+                'status' => 'ACTIVE',
+                'message' => 'RFID tag is active but no vehicle assigned.',
+                'color' => 'warning',
+                'rfidTag' => $rfidTag,
+                'user' => $rfidTag->user
+            ];
+        }
     }
 
     // Auto-refresh methods
@@ -244,9 +288,11 @@ class ParkingDashboard extends Component
 
     private function calculateFloorStats($floorName)
     {
+        // Since we're already filtering for spaces with sensor assignments,
+        // we just need to filter by floor
         $floorSpaces = $this->allSpaces->where('floor_level', $floorName);
         $total = $floorSpaces->count();
-        
+
         if ($total === 0) {
             return [
                 'floor_level' => $floorName,
@@ -262,7 +308,7 @@ class ParkingDashboard extends Component
         $occupied = $floorSpaces->filter(function ($space) {
             return $space->is_occupied == 1 || $space->is_occupied === true;
         })->count();
-        
+
         $available = $total - $occupied;
         $occupancyRate = round(($occupied / $total) * 100, 1);
 
@@ -309,6 +355,16 @@ class ParkingDashboard extends Component
 
     private function findVehicleByRfid($rfid)
     {
+        // First try the new RFID tags table
+        $rfidTag = \App\Models\RfidTag::where('uid', strtoupper($rfid))
+            ->with(['user', 'vehicle.owner'])
+            ->first();
+
+        if ($rfidTag && $rfidTag->vehicle) {
+            return $rfidTag->vehicle;
+        }
+
+        // Fallback to old rfid_tag column in vehicles table
         return Vehicle::with('owner')->where('rfid_tag', $rfid)->first();
     }
 

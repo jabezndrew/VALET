@@ -54,9 +54,9 @@ class SensorAssignmentController extends Controller
     }
 
     /**
-     * Register all 5 sensors for an ESP32 on boot
+     * Register single sensor for an ESP32 on boot
      */
-    public function register(Request $request): JsonResponse
+     public function register(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
@@ -110,9 +110,10 @@ class SensorAssignmentController extends Controller
         }
     }
 
+
     /**
      * Get sensor configuration by MAC address (for Arduino to fetch assignment)
-     * Returns all 5 sensors for the ESP32
+     * Returns all 5 sensors for this ESP32
      */
     public function getAssignment(Request $request): JsonResponse
     {
@@ -121,27 +122,25 @@ class SensorAssignmentController extends Controller
                 'mac_address' => 'required|string|max:17'
             ]);
 
-            // Get all sensors for this ESP32 (sensor_index 1-5)
+            // Get all 5 sensors for this ESP32
             $sensors = SensorAssignment::where('mac_address', $validated['mac_address'])
                 ->with('parkingSpace')
                 ->orderBy('sensor_index')
                 ->get();
 
-            // If no sensors registered yet, return empty array (ESP32 will register on first data send)
+            // If no sensors registered yet, return not_registered status
             if ($sensors->isEmpty()) {
                 return response()->json([
                     'success' => true,
                     'status' => 'not_registered',
                     'message' => 'No sensors registered yet. Will register when you send data.',
-                    'mac_address' => $validated['mac_address'],
-                    'sensors' => []
+                    'mac_address' => $validated['mac_address']
                 ], 200);
             }
 
-            // Build response with all 5 sensors
-            $sensorAssignments = [];
-            foreach ($sensors as $sensor) {
-                $sensorAssignments[] = [
+            // Format sensor data
+            $sensorData = $sensors->map(function($sensor) {
+                return [
                     'sensor_index' => $sensor->sensor_index,
                     'status' => $sensor->status,
                     'space_code' => $sensor->space_code,
@@ -150,13 +149,13 @@ class SensorAssignmentController extends Controller
                     'identify_mode' => $sensor->identify_mode,
                     'parking_space' => $sensor->parkingSpace
                 ];
-            }
+            });
 
             return response()->json([
                 'success' => true,
                 'status' => 'registered',
                 'mac_address' => $validated['mac_address'],
-                'sensors' => $sensorAssignments
+                'sensors' => $sensorData
             ]);
 
         } catch (\Exception $e) {
