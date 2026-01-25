@@ -107,39 +107,15 @@
             @endforeach
         </div>
 
-        {{-- Filter Bar --}}
-        <div class="filter-bar">
-            <button
-                class="filter-btn {{ $statusFilter === 'all' ? 'active' : '' }}"
-                wire:click="$set('statusFilter', 'all')"
-            >
-                All Spots
-            </button>
-            <button
-                class="filter-btn available {{ $statusFilter === 'available' ? 'active' : '' }}"
-                wire:click="$set('statusFilter', 'available')"
-            >
-                <i class="fas fa-check-circle me-1"></i> Available
-            </button>
-            <button
-                class="filter-btn occupied {{ $statusFilter === 'occupied' ? 'active' : '' }}"
-                wire:click="$set('statusFilter', 'occupied')"
-            >
-                <i class="fas fa-car me-1"></i> Occupied
-            </button>
-            <button
-                class="filter-btn issues {{ $statusFilter === 'issues' ? 'active' : '' }}"
-                wire:click="$set('statusFilter', 'issues')"
-            >
-                <i class="fas fa-exclamation-triangle me-1"></i> Issues
-            </button>
-
-            @if($openIncidentsCount > 0)
-                <span class="ms-auto" style="background: #fd7e14; color: white; padding: 8px 16px; border-radius: 20px; font-weight: 600;">
-                    {{ $openIncidentsCount }} Open Issues
-                </span>
-            @endif
+        {{-- Open Issues Alert --}}
+        @if($openIncidentsCount > 0)
+        <div style="padding: 12px 20px; background: #fff3cd; border-bottom: 1px solid #ffc107;">
+            <span style="color: #856404; font-weight: 600;">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                {{ $openIncidentsCount }} Open Issue(s) reported
+            </span>
         </div>
+        @endif
 
         {{-- Map Container --}}
         <div class="map-container">
@@ -166,7 +142,7 @@
                     </div>
 
                     {{-- Parking Spots --}}
-                    @foreach($filteredSpaces as $space)
+                    @foreach($parkingSpaces as $space)
                         @php
                             $hasAssignedSensor = $space->sensorAssignment !== null;
                             $slotName = $space->slot_name ?? '';
