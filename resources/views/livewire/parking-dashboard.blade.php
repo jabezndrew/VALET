@@ -23,8 +23,8 @@
                 <div class="col-auto">
                     <div class="d-flex gap-2 align-items-center">
                         <!-- View Map Button - Styled with maroon gradient -->
-                        <a href="{{ route('parking.map') }}" class="btn btn-view-map btn-sm" wire:navigate>
-                            <i class="fas fa-map-marked-alt me-1"></i> View Map
+                        <a href="{{ route('parking-display') }}" class="btn btn-view-map btn-sm" wire:navigate>
+                            View Map
                         </a>
                         @if(auth()->user()->role !== 'user')
                         <button wire:click="openVerifyModal" class="btn btn-outline-success btn-sm">
@@ -157,7 +157,7 @@
 
                                 <!-- View Map Overlay - Slides up on hover -->
                                 <div class="floor-map-overlay">
-                                    <a href="{{ route('parking.map', ['floor' => $floorStat['floor_level']]) }}"
+                                    <a href="{{ route('parking-display', ['floor' => $floorStat['floor_level']]) }}"
                                        class="btn btn-view-floor-map btn-sm"
                                        wire:navigate
                                        onclick="event.stopPropagation();">
@@ -285,7 +285,7 @@
                                                             {{ \Carbon\Carbon::parse($spaceObj->updated_at)->diffForHumans() }}
                                                         </div>
                                                     </div>
-                                                    <a href="{{ route('parking.map', ['floor' => $selectedFloor]) }}"
+                                                    <a href="{{ route('parking-display', ['floor' => $selectedFloor]) }}"
                                                        class="popup-map-btn"
                                                        wire:navigate>
                                                         <i class="fas fa-map-marked-alt"></i> View on Map
@@ -306,7 +306,7 @@
                 </div>
                 <div class="modal-footer">
                     <!-- View on Map Button in Modal Footer -->
-                    <a href="{{ route('parking.map', ['floor' => $selectedFloor]) }}"
+                    <a href="{{ route('parking-display', ['floor' => $selectedFloor]) }}"
                        class="btn btn-view-map"
                        wire:navigate>
                         <i class="fas fa-map-marked-alt me-1"></i> View on Map
@@ -345,7 +345,7 @@
                         <div class="alert alert-{{ $verifyResult['color'] }} mt-3">
                             <div class="d-flex align-items-center">
                                 <i class="fas fa-{{
-                                    $verifyResult['status'] === 'Active' ? 'check-circle' :
+                                    $verifyResult['status'] === 'ACTIVE' || $verifyResult['status'] === 'Active' ? 'check-circle' :
                                     ($verifyResult['status'] === 'NOT_FOUND' ? 'times-circle' : 'exclamation-triangle')
                                 }} me-2"></i>
                                 <div>
@@ -353,6 +353,19 @@
                                     <div>{{ $verifyResult['message'] }}</div>
                                 </div>
                             </div>
+
+                            @if(isset($verifyResult['rfidTag']))
+                                <hr class="my-2">
+                                <div class="mb-2">
+                                    <small>
+                                        <strong>RFID UID:</strong> <code>{{ $verifyResult['rfidTag']->uid }}</code><br>
+                                        <strong>Status:</strong> <span class="badge bg-{{ $verifyResult['rfidTag']->status === 'active' ? 'success' : 'danger' }}">{{ ucfirst($verifyResult['rfidTag']->status) }}</span><br>
+                                        @if($verifyResult['rfidTag']->expiry_date)
+                                            <strong>Expiry:</strong> {{ \Carbon\Carbon::parse($verifyResult['rfidTag']->expiry_date)->format('M d, Y') }}
+                                        @endif
+                                    </small>
+                                </div>
+                            @endif
 
                             @if(isset($verifyResult['vehicle']))
                                 <hr class="my-2">
@@ -371,6 +384,14 @@
                                             <strong>Role:</strong> {{ ucfirst($verifyResult['vehicle']->owner_role) }}
                                         </small>
                                     </div>
+                                </div>
+                            @elseif(isset($verifyResult['user']))
+                                <hr class="my-2">
+                                <div>
+                                    <small>
+                                        <strong>User:</strong> {{ $verifyResult['user']->name }}<br>
+                                        <strong>Email:</strong> {{ $verifyResult['user']->email }}
+                                    </small>
                                 </div>
                             @endif
                         </div>

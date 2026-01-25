@@ -38,6 +38,16 @@ class ParkingSpace extends Model
         'is_occupied',
         'distance_cm',
         'floor_level',
+        'slot_name',
+        'x_position',
+        'y_position',
+        'rotation',
+        'is_active',
+        'manual_override',
+        'manual_status',
+        'manual_override_at',
+        'manual_override_expires',
+        'manual_override_by',
     ];
 
     /**
@@ -51,6 +61,9 @@ class ParkingSpace extends Model
         'slot_number' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
+        'manual_override' => 'boolean',
+        'manual_override_at' => 'datetime',
+        'manual_override_expires' => 'datetime',
     ];
 
     /**
@@ -155,5 +168,78 @@ class ParkingSpace extends Model
     public function markAsAvailable(): bool
     {
         return $this->update(['is_occupied' => false]);
+    }
+
+    /**
+     * Get the sensor assignment for this parking space
+     */
+    public function sensorAssignment()
+    {
+        return $this->hasOne(SensorAssignment::class, 'space_code', 'space_code');
+    }
+
+    /**
+     * Get incidents for this parking space
+     */
+    public function incidents()
+    {
+        return $this->hasMany(GuardIncident::class, 'space_code', 'space_code');
+    }
+
+    /**
+     * Set manual override status
+     */
+    public function setManualOverride(string $status, string $overrideBy = 'Guard', int $expiresInMinutes = 60): bool
+    {
+        return $this->update([
+            'manual_override' => true,
+            'manual_status' => $status,
+            'manual_override_at' => now(),
+            'manual_override_expires' => now()->addMinutes($expiresInMinutes),
+            'manual_override_by' => $overrideBy,
+        ]);
+    }
+
+    /**
+     * Clear manual override
+     */
+    public function clearManualOverride(): bool
+    {
+        return $this->update([
+            'manual_override' => false,
+            'manual_status' => null,
+            'manual_override_at' => null,
+            'manual_override_expires' => null,
+            'manual_override_by' => null,
+        ]);
+    }
+
+    /**
+     * Check if manual override is still active
+     */
+    public function isManualOverrideActive(): bool
+    {
+        if (!$this->manual_override) {
+            return false;
+        }
+
+        if ($this->manual_override_expires && $this->manual_override_expires->isPast()) {
+            $this->clearManualOverride();
+            return false;
+        }
+
+        return true;
+    }
+
+    /**
+     * Get effective status (considering manual override)
+     */
+    public function getEffectiveStatus(): string
+    {
+        if ($this->isManualOverrideActive()) {
+            return $this->manual_status;
+        }
+
+        return $this->is_occupied ? 'occupied' : 'available';
     }
 }
