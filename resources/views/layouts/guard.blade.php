@@ -133,8 +133,8 @@
         /* Floor Selector - Horizontal scroll */
         .floor-selector {
             display: flex;
-            gap: 12px;
-            padding: 15px 20px;
+            gap: 15px;
+            padding: 20px 25px;
             overflow-x: auto;
             background: white;
             border-bottom: 1px solid #e0e0e0;
@@ -148,10 +148,10 @@
         .floor-btn {
             flex-shrink: 0;
             background: white;
-            border: 2px solid #e0e0e0;
-            border-radius: 12px;
-            padding: 12px 20px;
-            min-width: 140px;
+            border: 3px solid #e0e0e0;
+            border-radius: 16px;
+            padding: 18px 30px;
+            min-width: 180px;
             cursor: pointer;
             transition: all 0.2s;
         }
@@ -160,28 +160,29 @@
             background: linear-gradient(135deg, #B22020 0%, #8B0000 100%);
             border-color: #B22020;
             color: white;
+            box-shadow: 0 4px 15px rgba(178, 32, 32, 0.3);
         }
 
         .floor-btn .floor-name {
             font-weight: 700;
-            font-size: 1rem;
+            font-size: 1.3rem;
         }
 
         .floor-btn .floor-stats {
             display: flex;
-            gap: 12px;
-            margin-top: 6px;
-            font-size: 0.85rem;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 1.1rem;
         }
 
         .floor-btn .stat-available {
             color: #28a745;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .floor-btn .stat-occupied {
             color: #dc3545;
-            font-weight: 600;
+            font-weight: 700;
         }
 
         .floor-btn.active .stat-available,
@@ -235,19 +236,22 @@
 
         /* Map Container */
         .map-container {
-            padding: 20px;
-            min-height: calc(100vh - 250px);
+            padding: 15px;
+            min-height: calc(100vh - 200px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
         /* Parking Map Styles - Reused from public display */
         .parking-map-wrapper {
             width: 100%;
-            height: 70vh;
-            min-height: 500px;
+            height: calc(100vh - 220px);
+            min-height: 400px;
             overflow: hidden;
             background: white;
             border-radius: 15px;
-            padding: 20px;
+            padding: 10px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -260,7 +264,7 @@
             width: 85rem;
             height: 80rem;
             background: white;
-            transform: scale(0.45) rotate(90deg);
+            transform: scale(0.38) rotate(90deg);
             transform-origin: center center;
         }
 
@@ -664,26 +668,78 @@
         }
 
         /* Responsive */
-        @media (min-width: 1200px) {
+        /* Extra large screens (1920px+) */
+        @media (min-width: 1920px) {
             .parking-map-container {
-                transform: scale(0.55) rotate(90deg);
+                transform: scale(0.50) rotate(90deg);
             }
         }
 
-        @media (max-width: 768px) {
+        /* Large screens (1400px - 1919px) */
+        @media (min-width: 1400px) and (max-width: 1919px) {
             .parking-map-container {
-                transform: scale(0.35) rotate(90deg);
+                transform: scale(0.45) rotate(90deg);
+            }
+        }
+
+        /* Desktop (1200px - 1399px) */
+        @media (min-width: 1200px) and (max-width: 1399px) {
+            .parking-map-container {
+                transform: scale(0.40) rotate(90deg);
+            }
+        }
+
+        /* Tablet landscape / small desktop (992px - 1199px) */
+        @media (min-width: 992px) and (max-width: 1199px) {
+            .parking-map-container {
+                transform: scale(0.36) rotate(90deg);
+            }
+        }
+
+        /* Tablet portrait (768px - 991px) */
+        @media (min-width: 768px) and (max-width: 991px) {
+            .parking-map-container {
+                transform: scale(0.32) rotate(90deg);
+            }
+
+            .floor-btn {
+                padding: 15px 20px;
+                min-width: 150px;
+            }
+
+            .floor-btn .floor-name {
+                font-size: 1.1rem;
+            }
+
+            .floor-btn .floor-stats {
+                font-size: 1rem;
+            }
+        }
+
+        /* Mobile landscape (576px - 767px) */
+        @media (min-width: 576px) and (max-width: 767px) {
+            .parking-map-container {
+                transform: scale(0.28) rotate(90deg);
             }
 
             .parking-map-wrapper {
-                height: 60vh;
-                min-height: 400px;
+                height: calc(100vh - 180px);
+            }
+
+            .floor-btn {
+                padding: 12px 16px;
+                min-width: 130px;
             }
         }
 
-        @media (max-width: 480px) {
+        /* Mobile portrait (up to 575px) */
+        @media (max-width: 575px) {
             .parking-map-container {
-                transform: scale(0.28) rotate(90deg);
+                transform: scale(0.24) rotate(90deg);
+            }
+
+            .parking-map-wrapper {
+                height: calc(100vh - 160px);
             }
 
             .guard-header {
@@ -693,20 +749,34 @@
             .guard-logo-text {
                 font-size: 1rem;
             }
+
+            .floor-btn {
+                padding: 10px 14px;
+                min-width: 110px;
+            }
+
+            .floor-btn .floor-name {
+                font-size: 1rem;
+            }
+
+            .floor-btn .floor-stats {
+                font-size: 0.9rem;
+                gap: 10px;
+            }
         }
 
         /* Landscape orientation for tablets */
-        @media (orientation: landscape) and (max-height: 600px) {
+        @media (orientation: landscape) and (max-height: 700px) {
             .parking-map-wrapper {
-                height: 55vh;
+                height: calc(100vh - 160px);
             }
 
             .floor-selector {
-                padding: 10px 15px;
+                padding: 12px 20px;
             }
 
-            .filter-bar {
-                padding: 8px 15px;
+            .floor-btn {
+                padding: 10px 18px;
             }
         }
     </style>
