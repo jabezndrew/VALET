@@ -382,16 +382,6 @@ body {
     pointer-events: none;
 }
 
-/* Route path - static, no animation */
-.route-path-group path {
-    /* No animation */
-}
-
-/* Waypoint markers - static */
-.route-waypoint {
-    /* No animation */
-}
-
 /* Route labels - static */
 .route-label {
     text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.5);
