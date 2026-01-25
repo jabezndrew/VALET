@@ -5,24 +5,16 @@
         <div class="row g-0">
             <div class="col-12 position-relative">
 
-                <!-- Route Control Buttons - Top Left -->
+                <!-- Route Control Buttons -->
                 <div style="position: absolute; top: 30px; left: 30px; z-index: 1000;">
                     @if($selectedSpot)
-                        <!-- Clear Route Button (Red) -->
-                        <button wire:click="clearRoute" class="route-toggle-btn active" style="padding: 12px 18px; font-size: 14px;">
+                        <!-- Clear Route Button -->
+                        <button wire:click="clearRoute" class="route-toggle-btn active" style="padding: 12px 20px; font-size: 14px;">
                             <svg class="icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
                                 <path d="M2.146 2.854a.5.5 0 1 1 .708-.708L8 7.293l5.146-5.147a.5.5 0 0 1 .708.708L8.707 8l5.147 5.146a.5.5 0 0 1-.708.708L8 8.707l-5.146 5.147a.5.5 0 0 1-.708-.708L7.293 8 2.146 2.854Z"/>
                             </svg>
-                            <span>Clear Route</span>
+                            <span style="width:80px">Clear Route</span>
                         </button>
-                    @else
-                        <!-- Info Button (Green) -->
-                        <div class="route-toggle-btn" style="cursor: default; padding: 12px 18px; font-size: 14px;">
-                            <svg class="icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
-                                <path d="M8 16A8 8 0 1 0 8 0a8 8 0 0 0 0 16zm.93-9.412-1 4.705c-.07.34.029.533.304.533.194 0 .487-.07.686-.246l-.088.416c-.287.346-.92.598-1.465.598-.703 0-1.002-.422-.808-1.319l.738-3.468c.064-.293.006-.399-.287-.47l-.451-.081.082-.381 2.29-.287zM8 5.5a1 1 0 1 1 0-2 1 1 0 0 1 0 2z"/>
-                            </svg>
-                            <span>Select a spot</span>
-                        </div>
                     @endif
                 </div>
 
@@ -142,7 +134,7 @@
 
                                         // Middle section - Column J, F area
                                         ['x' => 248, 'y' => 595, 'rotation' => 90, 'type' => 'normal'],
-                                        
+
 
                                         // Exit area
                                         ['x' => 1050, 'y' => 628, 'rotation' => 0, 'type' => 'exit'],
@@ -242,7 +234,7 @@
                                     2. Sections as fallback (e.g., 'D')
                                 ============================================ --}}
                                 @php
-                                    // ENTRANCE position 
+                                    // ENTRANCE position
                                     $entranceX = 1050;
                                     $entranceY = 425;
 
@@ -313,7 +305,7 @@
                                     // Format: 'Section' => [[x1,y1], [x2,y2], ...]
                                     $sectionWaypoints = [
                                         'A' => [[965, 425], [965, 200]],
-                                        'B' => [[965, 390], [965, 300]],   
+                                        'B' => [[965, 390], [965, 300]],
                                         'C' => [[900, 250]],
                                         'D' => [[628, 430]],
                                         'E' => [[600, 390], [600, 50]],
