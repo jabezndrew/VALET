@@ -259,9 +259,90 @@ class SensorManager extends Component
         $this->slotNumber = '';
     }
 
+    public function getAvailableFloors()
+    {
+        // Get all assigned space codes
+        $assignedSpaceCodes = SensorAssignment::whereNotNull('space_code')
+            ->where('status', 'active')
+            ->pluck('space_code')
+            ->toArray();
+
+        $availableFloors = [];
+
+        // Check each floor (1-4)
+        for ($floor = 1; $floor <= 4; $floor++) {
+            $hasAvailableSlot = false;
+
+            // Check if any column on this floor has available slots
+            foreach ($this->columnSlotConfig as $column => $maxSlots) {
+                for ($slot = 1; $slot <= $maxSlots; $slot++) {
+                    $spaceCode = "{$floor}{$column}{$slot}";
+                    if (!in_array($spaceCode, $assignedSpaceCodes)) {
+                        $hasAvailableSlot = true;
+                        break 2;
+                    }
+                }
+            }
+
+            if ($hasAvailableSlot) {
+                $availableFloors[] = $floor;
+            }
+        }
+
+        return $availableFloors;
+    }
+
     public function getAvailableColumns()
     {
-        return array_keys($this->columnSlotConfig);
+        if (!$this->floorNumber) {
+            return [];
+        }
+
+        // Get all assigned space codes
+        $assignedSpaceCodes = SensorAssignment::whereNotNull('space_code')
+            ->where('status', 'active')
+            ->pluck('space_code')
+            ->toArray();
+
+        $availableColumns = [];
+
+        foreach ($this->columnSlotConfig as $column => $maxSlots) {
+            // Check if this column has any available slots on the selected floor
+            for ($slot = 1; $slot <= $maxSlots; $slot++) {
+                $spaceCode = "{$this->floorNumber}{$column}{$slot}";
+                if (!in_array($spaceCode, $assignedSpaceCodes)) {
+                    $availableColumns[] = $column;
+                    break;
+                }
+            }
+        }
+
+        return $availableColumns;
+    }
+
+    public function getAvailableSlots()
+    {
+        if (!$this->floorNumber || !$this->columnCode) {
+            return [];
+        }
+
+        // Get all assigned space codes
+        $assignedSpaceCodes = SensorAssignment::whereNotNull('space_code')
+            ->where('status', 'active')
+            ->pluck('space_code')
+            ->toArray();
+
+        $maxSlots = $this->columnSlotConfig[$this->columnCode] ?? 0;
+        $availableSlots = [];
+
+        for ($slot = 1; $slot <= $maxSlots; $slot++) {
+            $spaceCode = "{$this->floorNumber}{$this->columnCode}{$slot}";
+            if (!in_array($spaceCode, $assignedSpaceCodes)) {
+                $availableSlots[] = $slot;
+            }
+        }
+
+        return $availableSlots;
     }
 
     public function getMaxSlotsForColumn()
@@ -270,6 +351,13 @@ class SensorManager extends Component
             return 0;
         }
         return $this->columnSlotConfig[$this->columnCode];
+    }
+
+    public function updatedFloorNumber()
+    {
+        // Reset column and slot when floor changes
+        $this->columnCode = '';
+        $this->slotNumber = '';
     }
 
     public function render()
