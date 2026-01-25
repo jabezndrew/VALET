@@ -1,0 +1,27 @@
+{
+    "name": "VALET Guard Assist",
+    "short_name": "VALET Guard",
+    "description": "Parking Guard Assistant for VALET Smart Parking System",
+    "start_url": "/guard",
+    "display": "standalone",
+    "background_color": "#ffffff",
+    "theme_color": "#B22020",
+    "orientation": "any",
+    "icons": [
+        {
+            "src": "/images/valet-logo.jpg",
+            "sizes": "192x192",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        },
+        {
+            "src": "/images/valet-logo.jpg",
+            "sizes": "512x512",
+            "type": "image/jpeg",
+            "purpose": "any maskable"
+        }
+    ],
+    "categories": ["utilities", "business"],
+    "lang": "en",
+    "dir": "ltr"
+}
