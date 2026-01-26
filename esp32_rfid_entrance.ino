@@ -220,8 +220,6 @@ void verifyRFID(String uid) {
 
   http.end();
 
-  // Clear buffer
-  while (Serial.available()) {
-    Serial.read();
-  }
+  // Reinitialize RFID reader to allow immediate rescan of same card
+  rfid.PCD_Init();
 }
