@@ -26,9 +26,10 @@ bool servoIsOpen = false;
 unsigned long lastRfidCheck = 0;
 unsigned long lastWiFiCheck = 0;
 unsigned long lastScanTime = 0;
+String lastScannedUid = "";
 const unsigned long RFID_CHECK_INTERVAL = 100; // Check RFID every 100ms
 const unsigned long WIFI_CHECK_INTERVAL = 30000; // Check WiFi every 30 seconds
-const unsigned long SCAN_COOLDOWN = 2000; // 2 second cooldown between scans
+const unsigned long SAME_CARD_COOLDOWN = 2000; // 2 second cooldown for SAME card only
 
 void setup() {
   delay(1000);
@@ -121,11 +122,6 @@ void loop() {
     rfid.PCD_Init();
   }
 
-  // Cooldown after last scan to prevent double-scanning
-  if (currentMillis - lastScanTime < SCAN_COOLDOWN) {
-    return;
-  }
-
   // Check for new card
   if (!rfid.PICC_IsNewCardPresent()) {
     return;
@@ -143,15 +139,22 @@ void loop() {
   }
   uid.toUpperCase();
 
-  Serial.print("RFID: ");
-  Serial.println(uid);
-
   // Halt card
   rfid.PICC_HaltA();
   rfid.PCD_StopCrypto1();
 
-  // Mark scan time
+  // Cooldown only for SAME card (prevent double-scan)
+  // Different cards can scan immediately
+  if (uid == lastScannedUid && (currentMillis - lastScanTime < SAME_CARD_COOLDOWN)) {
+    return;
+  }
+
+  Serial.print("RFID: ");
+  Serial.println(uid);
+
+  // Mark scan time and UID
   lastScanTime = currentMillis;
+  lastScannedUid = uid;
 
   // Verify with API
   verifyRFID(uid);
