@@ -199,6 +199,12 @@ void verifyRFID(String uid) {
     } else {
       Serial.print("DENIED: ");
       Serial.println(message);
+
+      // Close gate immediately on invalid scan
+      if (servoIsOpen) {
+        gateServo.write(0);
+        servoIsOpen = false;
+      }
     }
 
   } else {
