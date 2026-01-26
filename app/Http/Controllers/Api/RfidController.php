@@ -38,7 +38,8 @@ class RfidController extends Controller
                     'message' => 'RFID not registered. Please go to office.',
                     'user_name' => 'N/A',
                     'vehicle_plate' => 'N/A',
-                    'duration' => 10
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
                 // Store in cache for real-time monitoring
@@ -56,7 +57,8 @@ class RfidController extends Controller
                     'message' => 'RFID expired. Please go to office.',
                     'user_name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
-                    'duration' => 10
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
                 Cache::put('rfid_scan_latest', $scanData, 15);
@@ -72,7 +74,8 @@ class RfidController extends Controller
                     'message' => 'RFID ' . $rfidTag->status . '. Please go to office.',
                     'user_name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
-                    'duration' => 10
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
                 Cache::put('rfid_scan_latest', $scanData, 15);
@@ -98,6 +101,7 @@ class RfidController extends Controller
                 'uid' => $uid,
                 'user_name' => $rfidTag->user->name ?? 'Unknown',
                 'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                'scan_time' => now()->timestamp . '.' . now()->micro,
                 'user' => [
                     'name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
