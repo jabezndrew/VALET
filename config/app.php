@@ -123,4 +123,16 @@ return [
         'store' => env('APP_MAINTENANCE_STORE', 'database'),
     ],
 
+    /*
+    |--------------------------------------------------------------------------
+    | Guard PIN Code
+    |--------------------------------------------------------------------------
+    |
+    | This is the PIN code used by security guards to access guard features
+    | in the Guard Assist PWA. Set this in your ".env" file.
+    |
+    */
+
+    'guard_pin' => env('GUARD_PIN', '1234'),
+
 ];

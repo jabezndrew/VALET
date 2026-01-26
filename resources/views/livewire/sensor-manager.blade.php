@@ -207,12 +207,11 @@
                                 {{-- Floor --}}
                                 <div class="col-4">
                                     <label for="floorNumber" class="form-label text-muted small">Floor</label>
-                                    <select class="form-select" id="floorNumber" wire:model="floorNumber">
+                                    <select class="form-select" id="floorNumber" wire:model.live="floorNumber">
                                         <option value="">-</option>
-                                        <option value="1">1</option>
-                                        <option value="2">2</option>
-                                        <option value="3">3</option>
-                                        <option value="4">4</option>
+                                        @foreach($this->getAvailableFloors() as $floor)
+                                            <option value="{{ $floor }}">{{ $floor }}</option>
+                                        @endforeach
                                     </select>
                                     @error('floorNumber')
                                         <div class="text-danger small mt-1">{{ $message }}</div>
@@ -239,9 +238,9 @@
                                     <select class="form-select" id="slotNumber" wire:model="slotNumber" {{ !$columnCode ? 'disabled' : '' }}>
                                         <option value="">-</option>
                                         @if($columnCode)
-                                            @for($i = 1; $i <= $this->getMaxSlotsForColumn(); $i++)
-                                                <option value="{{ $i }}">{{ $i }}</option>
-                                            @endfor
+                                            @foreach($this->getAvailableSlots() as $slot)
+                                                <option value="{{ $slot }}">{{ $slot }}</option>
+                                            @endforeach
                                         @endif
                                     </select>
                                     @error('slotNumber')
