@@ -99,7 +99,7 @@
                         </div>
                     @else
                         <div class="parking-map-wrapper">
-                            <div class="parking-map-container">
+                            <div wire:key="map-{{ $selectedFloor }}" class="parking-map-container">
 
                                 <!-- Traffic Flow Arrows - Individual Directional Indicators -->
                                 @php
@@ -215,7 +215,8 @@
                                         $columnCode = $space->column_code ?? '';
                                     @endphp
 
-                                    <div class="parking-spot-box {{ $hasAssignedSensor ? ($isOccupied ? 'occupied' : 'available') : 'inactive' }} {{ $isSelected ? 'selected-spot' : '' }}"
+                                    <div wire:key="spot-{{ $space->id }}"
+                                         class="parking-spot-box {{ $hasAssignedSensor ? ($isOccupied ? 'occupied' : 'available') : 'inactive' }} {{ $isSelected ? 'selected-spot' : '' }}"
                                          wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}', {{ $x }}, {{ $y }})"
                                          style="
                                             left: {{ $x }}px;
