@@ -1,4 +1,4 @@
-<div wire:poll.3s="loadParkingData">
+<div @if(!$showActionModal) wire:poll.3s="loadParkingData" @endif>
     {{-- PIN Authentication Modal --}}
     @if(!$isAuthenticated)
     <div class="pin-overlay">
@@ -82,101 +82,217 @@
             </div>
         @endif
 
-        {{-- Floor Selector --}}
-        <div class="floor-selector">
-            @foreach($allFloorStats as $floor => $stats)
-                <button
-                    class="floor-btn {{ $selectedFloor === $floor ? 'active' : '' }}"
-                    wire:click="changeFloor('{{ $floor }}')"
-                >
-                    <div class="floor-name">{{ $floor }}</div>
-                    <div class="floor-stats">
-                        <span class="stat-available">
-                            <i class="fas fa-check-circle"></i> {{ $stats['available'] }}
-                        </span>
-                        <span class="stat-occupied">
-                            <i class="fas fa-car"></i> {{ $stats['occupied'] }}
-                        </span>
-                        @if($stats['incidents'] > 0)
-                            <span style="color: #fd7e14;">
-                                <i class="fas fa-exclamation-triangle"></i> {{ $stats['incidents'] }}
-                            </span>
+        <div class="container-fluid p-0" style="background: white; min-height: calc(100vh - 70px);">
+            <div class="row g-0">
+                <div class="col-12 position-relative">
+
+                    {{-- Open Issues Alert - Top Left --}}
+                    @if($openIncidentsCount > 0)
+                    <div style="position: absolute; top: 30px; left: 30px; z-index: 1000;">
+                        <div class="issues-alert">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            {{ $openIncidentsCount }} Open Issue(s) reported
+                        </div>
+                    </div>
+                    @endif
+
+                    {{-- Floor Selector - Top Right Cards --}}
+                    <div style="position: absolute; top: 30px; right: 30px; z-index: 1000; width: 320px;">
+                        <div style="background: rgba(255,255,255,0.95); border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
+                            <h6 style="font-size: 1.3rem; font-weight: 700; color: #3A3A3C; margin-bottom: 20px;">
+                                Select Floor
+                            </h6>
+
+                            <div style="display: flex; flex-direction: column; gap: 15px;">
+                                @foreach($allFloorStats as $floor => $stats)
+                                    <div
+                                        wire:key="floor-card-{{ $floor }}"
+                                        wire:click="changeFloor('{{ $floor }}')"
+                                        style="
+                                            background: {{ $selectedFloor === $floor
+                                                ? 'linear-gradient(135deg, #B22020 0%, #8B0000 100%)'
+                                                : 'white' }};
+                                            border: 3px solid {{ $selectedFloor === $floor ? '#B22020' : '#e0e0e0' }};
+                                            border-radius: 12px;
+                                            padding: 20px;
+                                            transition: all 0.3s ease;
+                                            box-shadow: {{ $selectedFloor === $floor
+                                                ? '0 6px 18px rgba(178, 32, 32, 0.4)'
+                                                : '0 3px 10px rgba(0,0,0,0.15)' }};
+                                            cursor: pointer;
+                                        "
+                                    >
+                                        <div class="d-flex justify-content-between align-items-center">
+                                            <div style="flex: 1;">
+                                                <div style="font-weight:700;font-size:1.3rem;color:{{ $selectedFloor === $floor ? 'white' : '#3A3A3C' }};">
+                                                    {{ $floor }}
+                                                </div>
+                                                <small style="color: {{ $selectedFloor === $floor ? 'rgba(255,255,255,0.85)' : '#999' }};">
+                                                    Total: {{ $stats['total'] ?? ($stats['available'] + $stats['occupied']) }}
+                                                </small>
+                                                @if($stats['incidents'] > 0)
+                                                    <div style="margin-top: 5px;">
+                                                        <span style="color: {{ $selectedFloor === $floor ? '#ffc107' : '#fd7e14' }}; font-size: 0.85rem;">
+                                                            <i class="fas fa-exclamation-triangle"></i> {{ $stats['incidents'] }} issues
+                                                        </span>
+                                                    </div>
+                                                @endif
+                                            </div>
+
+                                            <div class="d-flex gap-4">
+                                                <div class="text-center">
+                                                    <div style="font-size:2rem;font-weight:700;color:#28a745;">
+                                                        {{ $stats['available'] }}
+                                                    </div>
+                                                    <small style="color: {{ $selectedFloor === $floor ? 'rgba(255,255,255,0.85)' : '#2e2d2dff' }};">Available</small>
+                                                </div>
+                                                <div class="text-center">
+                                                    <div style="font-size:2rem;font-weight:700;color:#dc3545;">
+                                                        {{ $stats['occupied'] }}
+                                                    </div>
+                                                    <small style="color: {{ $selectedFloor === $floor ? 'rgba(255,255,255,0.85)' : '#2e2d2dff' }};">Occupied</small>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        </div>
+                    </div>
+
+                    {{-- Parking Map --}}
+                    <div class="map-section">
+                        @if($parkingSpaces->isEmpty())
+                            <div class="text-center py-5">
+                                <i class="fas fa-database text-muted mb-3" style="font-size: 3rem; opacity: 0.3;"></i>
+                                <p class="text-muted">No parking spaces configured for {{ $selectedFloor }}</p>
+                            </div>
+                        @else
+                            <div class="parking-map-wrapper">
+                                <div wire:key="map-{{ $selectedFloor }}" class="parking-map-container">
+
+                                    {{-- Traffic Flow Arrows --}}
+                                    @php
+                                        $flowArrows = [
+                                            ['x' => 1050, 'y' => 430, 'rotation' => 180, 'type' => 'entry'],
+                                            ['x' => 1000, 'y' => 350, 'rotation' => 270, 'type' => 'normal'],
+                                            ['x' => 1000, 'y' => 200, 'rotation' => 180, 'type' => 'normal'],
+                                            ['x' => 925, 'y' => 200, 'rotation' => 180, 'type' => 'normal'],
+                                            ['x' => 850, 'y' => 200, 'rotation' => 90, 'type' => 'normal'],
+                                            ['x' => 850, 'y' => 350, 'rotation' => 90, 'type' => 'normal'],
+                                            ['x' => 850, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                            ['x' => 700, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                            ['x' => 550, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                            ['x' => 400, 'y' => 480, 'rotation' => 180, 'type' => 'normal'],
+                                            ['x' => 250, 'y' => 480, 'rotation' => 90, 'type' => 'normal'],
+                                            ['x' => 248, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                            ['x' => 400, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                            ['x' => 550, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                            ['x' => 700, 'y' => 700, 'rotation' => 0, 'type' => 'normal'],
+                                            ['x' => 850, 'y' => 700, 'rotation' => 90, 'type' => 'normal'],
+                                            ['x' => 850, 'y' => 900, 'rotation' => 90, 'type' => 'normal'],
+                                            ['x' => 850, 'y' => 1100, 'rotation' => 90, 'type' => 'normal'],
+                                            ['x' => 850, 'y' => 1280, 'rotation' => 0, 'type' => 'normal'],
+                                            ['x' => 925, 'y' => 1280, 'rotation' => 0, 'type' => 'normal'],
+                                            ['x' => 1000, 'y' => 1280, 'rotation' => 270, 'type' => 'normal'],
+                                            ['x' => 1000, 'y' => 1100, 'rotation' => 270, 'type' => 'normal'],
+                                            ['x' => 1000, 'y' => 900, 'rotation' => 270, 'type' => 'normal'],
+                                            ['x' => 1000, 'y' => 700, 'rotation' => 270, 'type' => 'normal'],
+                                            ['x' => 248, 'y' => 595, 'rotation' => 90, 'type' => 'normal'],
+                                            ['x' => 1050, 'y' => 628, 'rotation' => 0, 'type' => 'exit'],
+                                        ];
+                                    @endphp
+
+                                    @foreach($flowArrows as $arrow)
+                                        <div class="flow-arrow-indicator {{ $arrow['type'] }}"
+                                             style="
+                                                position: absolute;
+                                                left: {{ $arrow['x'] - 20 }}px;
+                                                top: {{ $arrow['y'] - 20 }}px;
+                                                width: 40px;
+                                                height: 40px;
+                                                z-index: 95;
+                                                pointer-events: none;
+                                             ">
+                                            <svg width="40" height="40" viewBox="0 0 40 40" style="transform: rotate({{ $arrow['rotation'] }}deg);">
+                                                @if($arrow['type'] === 'entry')
+                                                    <circle cx="20" cy="20" r="18" fill="#2F623D"/>
+                                                    <path d="M12 20 L26 20 M26 20 L21 14 M26 20 L21 26" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                                @elseif($arrow['type'] === 'exit')
+                                                    <circle cx="20" cy="20" r="18" fill="#B22020"/>
+                                                    <path d="M12 20 L26 20 M26 20 L21 14 M26 20 L21 26" stroke="white" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                                @else
+                                                    <circle cx="20" cy="20" r="18" fill="#505050"/>
+                                                    <path d="M12 20 L26 20 M26 20 L21 14 M26 20 L21 26" stroke="white" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" fill="none"/>
+                                                @endif
+                                            </svg>
+                                        </div>
+                                    @endforeach
+
+                                    {{-- Facilities --}}
+                                    <div class="facility elevator" style="left: 675px; top: 315px; width: 127px; height: 60px;">
+                                        <span>ELEVATOR</span>
+                                    </div>
+                                    <div class="facility elevator" style="left: 690px; top: 787px; width: 127px; height: 60px;">
+                                        <span>ELEVATOR</span>
+                                    </div>
+                                    <div class="facility elevator rotated-left" style="left: 1005px; top: 742px; width: 127px; height: 60px;">
+                                        <span>ELEVATOR</span>
+                                    </div>
+                                    <div class="facility stairs rotated-left" style="left: 45px; top: 337px; width: 127px; height: 60px;">
+                                        <span>STAIRS</span>
+                                    </div>
+                                    <div class="facility entrance" style="right: 135px; top: 390px; width: 135px; height: 60px;">
+                                        <span>ENTRANCE</span>
+                                    </div>
+                                    <div class="facility exit-sign" style="right: 125px; top: 600px; width: 150px; height: 67px;">
+                                        <span>EXIT</span>
+                                    </div>
+
+                                    {{-- Parking Spots --}}
+                                    @foreach($parkingSpaces as $space)
+                                        @php
+                                            $hasAssignedSensor = $space->sensorAssignment !== null;
+                                            $slotName = $space->slot_name ?? '';
+                                            $x = $space->x_position ?? 0;
+                                            $y = $space->y_position ?? 0;
+                                            $rotation = $space->rotation ?? 0;
+                                            $effectiveStatus = $space->getEffectiveStatus();
+                                            $isManualOverride = $space->isManualOverrideActive();
+                                        @endphp
+
+                                        <div
+                                            class="parking-spot-box {{ $hasAssignedSensor ? $effectiveStatus : 'inactive' }} {{ $isManualOverride ? 'manual-override' : '' }}"
+                                            style="
+                                                left: {{ $x }}px;
+                                                top: {{ $y }}px;
+                                                width: 60px;
+                                                height: 85px;
+                                                font-size: 22px;
+                                                transform: rotate({{ $rotation }}deg);
+                                                pointer-events: auto;
+                                                cursor: {{ $hasAssignedSensor && $isAuthenticated ? 'pointer' : 'default' }};
+                                            "
+                                            @if($hasAssignedSensor && $isAuthenticated)
+                                                wire:click="openActionModal({{ $space->id }}, 'override')"
+                                            @endif
+                                            title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}{{ $isManualOverride ? ' (Manual Override)' : '' }}"
+                                        >
+                                            {{ $slotName }}
+                                        </div>
+                                    @endforeach
+
+                                </div>
+                            </div>
                         @endif
                     </div>
-                </button>
-            @endforeach
-        </div>
 
-        {{-- Open Issues Alert --}}
-        @if($openIncidentsCount > 0)
-        <div style="padding: 12px 20px; background: #fff3cd; border-bottom: 1px solid #ffc107;">
-            <span style="color: #856404; font-weight: 600;">
-                <i class="fas fa-exclamation-triangle me-2"></i>
-                {{ $openIncidentsCount }} Open Issue(s) reported
-            </span>
-        </div>
-        @endif
-
-        {{-- Map Container --}}
-        <div class="map-container">
-            <div class="parking-map-wrapper">
-                <div class="parking-map-container">
-                    {{-- Facilities --}}
-                    <div class="facility elevator" style="left: 675px; top: 315px; width: 127px; height: 60px;">
-                        <span>ELEVATOR</span>
-                    </div>
-                    <div class="facility elevator" style="left: 690px; top: 787px; width: 127px; height: 60px;">
-                        <span>ELEVATOR</span>
-                    </div>
-                    <div class="facility elevator rotated-left" style="left: 1005px; top: 742px; width: 127px; height: 60px;">
-                        <span>ELEVATOR</span>
-                    </div>
-                    <div class="facility stairs rotated-left" style="left: 45px; top: 337px; width: 127px; height: 60px;">
-                        <span>STAIRS</span>
-                    </div>
-                    <div class="facility entrance" style="right: 135px; top: 390px; width: 135px; height: 60px;">
-                        <span>ENTRANCE</span>
-                    </div>
-                    <div class="facility exit-sign" style="right: 125px; top: 600px; width: 150px; height: 67px;">
-                        <span>EXIT</span>
-                    </div>
-
-                    {{-- Parking Spots --}}
-                    @foreach($parkingSpaces as $space)
-                        @php
-                            $hasAssignedSensor = $space->sensorAssignment !== null;
-                            $slotName = $space->slot_name ?? '';
-                            $x = $space->x_position ?? 0;
-                            $y = $space->y_position ?? 0;
-                            $rotation = $space->rotation ?? 0;
-                            $effectiveStatus = $space->getEffectiveStatus();
-                            $isManualOverride = $space->isManualOverrideActive();
-                        @endphp
-
-                        <div
-                            class="parking-spot-box {{ $hasAssignedSensor ? $effectiveStatus : 'inactive' }} {{ $isManualOverride ? 'manual-override' : '' }}"
-                            style="
-                                left: {{ $x }}px;
-                                top: {{ $y }}px;
-                                width: 60px;
-                                height: 85px;
-                                font-size: 18px;
-                                transform: rotate({{ $rotation }}deg);
-                            "
-                            @if($hasAssignedSensor && $isAuthenticated)
-                                wire:click="openActionModal({{ $space->id }}, 'override')"
-                            @endif
-                            title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}{{ $isManualOverride ? ' (Manual Override)' : '' }}"
-                        >
-                            {{ $slotName }}
-                        </div>
-                    @endforeach
                 </div>
             </div>
         </div>
 
-        {{-- Last Update --}}
-        <div style="text-align: center; padding: 10px; color: #666; font-size: 0.85rem;">
+        {{-- Last Update Footer --}}
+        <div class="update-footer">
             Last updated: {{ $lastUpdate }}
             @if(!$isAuthenticated)
                 <span style="margin-left: 15px; color: #B22020;">
@@ -192,7 +308,6 @@
         <div class="action-modal">
             <div class="action-header">
                 <h3>
-                    <i class="fas fa-parking me-2"></i>
                     Spot Actions
                 </h3>
                 <button class="action-close" wire:click="closeActionModal">
@@ -219,17 +334,12 @@
                 <div class="action-tabs">
                     <button
                         class="action-tab {{ $actionType === 'override' ? 'active' : '' }}"
-                        wire:click="$set('actionType', 'override')"
-                    >
-                        <i class="fas fa-hand-paper me-1"></i>
+                        wire:click="$set('actionType', 'override')">
                         Override Status
                     </button>
                     <button
                         class="action-tab {{ $actionType === 'report' ? 'active' : '' }}"
-                        wire:click="$set('actionType', 'report')"
-                    >
-                        <i class="fas fa-exclamation-triangle me-1"></i>
-                        Report Issue
+                        wire:click="$set('actionType', 'report')">Report Issue
                     </button>
                 </div>
 

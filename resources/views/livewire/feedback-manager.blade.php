@@ -18,7 +18,7 @@
                     </div>
                 @elseif($this->canSubmitFeedback)
                     <button wire:click="openModal" class="btn btn-valet-charcoal">
-                        <i class="fas fa-comment me-1"></i> Submit Feedback
+                        Submit Feedback
                     </button>
                 @endif
             </div>
@@ -65,12 +65,12 @@
             <div class="card-header bg-light d-flex justify-content-between align-items-center">
                 <h5 class="mb-0">
                     @if($this->canManageFeedback)
-                        <i class="fas fa-comments me-2"></i>All Feedback & Support Requests
+                        All Feedback & Support Requests
                     @else
-                        <i class="fas fa-user-comment me-2"></i>Your Feedback History
+                        Your Feedback History
                     @endif
                 </h5>
-                
+
                 <!-- Filters (Admin Only) -->
                 @if($this->canManageFeedback)
                 <div class="d-flex gap-2">
@@ -86,19 +86,27 @@
                         <option value="bug">Bug Report</option>
                         <option value="feature">Feature Request</option>
                         <option value="parking">Parking Issue</option>
+                        <option value="guard_report">Guard Report</option>
                     </select>
                 </div>
                 @endif
             </div>
             <div class="card-body p-0">
                 @forelse($feedbacks as $feedback)
-                    <div class="border-bottom p-3">
+                    <div class="border-bottom p-3 {{ $feedback->type === 'guard_report' ? 'bg-warning bg-opacity-10 border-start border-warning border-4' : '' }}">
                         <!-- Header Row -->
                         <div class="d-flex justify-content-between align-items-start mb-2">
                             <div class="d-flex align-items-center gap-2">
-                                <span class="{{ $this->getTypeBadgeClass($feedback->type) }}">
-                                    {{ $this->getTypeDisplayName($feedback->type) }}
-                                </span>
+                                @if($feedback->type === 'guard_report')
+                                    <span class="badge bg-warning text-dark">
+                                        <i class="fas fa-shield-alt me-1"></i>
+                                        Guard Report
+                                    </span>
+                                @else
+                                    <span class="{{ $this->getTypeBadgeClass($feedback->type) }}">
+                                        {{ $this->getTypeDisplayName($feedback->type) }}
+                                    </span>
+                                @endif
                                 <span class="{{ $this->getStatusBadgeClass($feedback->status) }}">
                                     <i class="{{ $this->getStatusIcon($feedback->status) }} me-1"></i>
                                     {{ ucfirst($feedback->status) }}
@@ -112,8 +120,29 @@
 
                         <!-- Message -->
                         <div class="mb-2">
-                            <p class="mb-0 text-break">{{ $feedback->message }}</p>
+                            <p class="mb-0 text-break {{ $feedback->type === 'guard_report' ? 'fw-medium' : '' }}">{{ $feedback->message }}</p>
                         </div>
+
+                        <!-- Guard Report Details -->
+                        @if($feedback->type === 'guard_report' && $feedback->issues && is_array($feedback->issues))
+                            <div class="mb-2 d-flex flex-wrap gap-2">
+                                @if(isset($feedback->issues['category']))
+                                    <span class="badge bg-secondary">
+                                        <i class="fas fa-tag me-1"></i>{{ str_replace('_', ' ', ucwords($feedback->issues['category'], '_')) }}
+                                    </span>
+                                @endif
+                                @if(isset($feedback->issues['space_code']))
+                                    <span class="badge bg-dark">
+                                        <i class="fas fa-parking me-1"></i>{{ $feedback->issues['space_code'] }}
+                                    </span>
+                                @endif
+                                @if(isset($feedback->issues['floor_level']))
+                                    <span class="badge bg-info text-dark">
+                                        <i class="fas fa-building me-1"></i>{{ $feedback->issues['floor_level'] }}
+                                    </span>
+                                @endif
+                            </div>
+                        @endif
 
                         <!-- Rating (General feedback only) -->
                         @if($feedback->type === 'general' && $feedback->rating)
@@ -151,16 +180,21 @@
                             @if($this->canManageFeedback)
                                 <!-- User info for admins -->
                                 <small class="text-muted">
-                                    <i class="fas fa-user me-1"></i>
-                                    {{ $feedback->user_name }} 
-                                    <span class="badge ms-1 {{ match($feedback->user_role) {
-                                        'admin' => 'bg-danger',
-                                        'ssd' => 'bg-valet-charcoal text-white',
-                                        'security' => 'bg-warning',
-                                        default => 'bg-valet-gray'
-                                    } }}">
-                                        {{ ucfirst($feedback->user_role) }}
-                                    </span>
+                                    @if($feedback->type === 'guard_report')
+                                        <span class="fw-medium">Guard Station</span>
+                                        <span class="badge ms-1 bg-warning text-dark">Guard</span>
+                                    @else
+                                        <span>Reported by: {{ $feedback->user_name }}</span>
+
+                                        <span class="badge ms-1 {{ match($feedback->user_role) {
+                                            'admin' => 'bg-danger',
+                                            'ssd' => 'bg-valet-charcoal text-white',
+                                            'security' => 'bg-warning',
+                                            default => 'bg-valet-gray'
+                                        } }}">
+                                            {{ ucfirst($feedback->user_role ?? 'user') }}
+                                        </span>
+                                    @endif
                                 </small>
                             @else
                                 <!-- Submission info for users -->
@@ -174,22 +208,22 @@
                             @if($this->canManageFeedback && $this->canQuickUpdate($feedback))
                                 <div class="btn-group btn-group-sm">
                                     @if($feedback->status !== 'reviewed')
-                                    <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'reviewed')" 
+                                    <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'reviewed')"
                                             class="btn btn-outline-warning btn-sm"
                                             title="Mark as reviewed">
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     @endif
-                                    
+
                                     @if($feedback->status !== 'resolved')
-                                    <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'resolved')" 
+                                    <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'resolved')"
                                             class="btn btn-outline-success btn-sm"
                                             title="Mark as resolved">
                                         <i class="fas fa-check"></i>
                                     </button>
                                     @endif
-                                    
-                                    <button wire:click="openResponseModal({{ $feedback->id }})" 
+
+                                    <button wire:click="openResponseModal({{ $feedback->id }})"
                                             class="btn btn-outline-secondary btn-sm"
                                             title="Add response">
                                         <i class="fas fa-reply"></i>
@@ -202,7 +236,6 @@
                         @if($feedback->admin_response)
                             <div class="mt-3 p-3 bg-light rounded">
                                 <div class="d-flex align-items-center mb-2">
-                                    <i class="fas fa-user-shield text-primary me-2"></i>
                                     <strong class="text-primary">Admin Response</strong>
                                 </div>
                                 <p class="mb-2">{{ $feedback->admin_response }}</p>
@@ -226,7 +259,7 @@
                             <p class="text-muted">Click "Submit Feedback" to share your thoughts!</p>
                             @if($this->canSubmitFeedback)
                                 <button wire:click="openModal" class="btn btn-valet-charcoal mt-2">
-                                    <i class="fas fa-comment me-1"></i> Submit Your First Feedback
+                                    Submit Your First Feedback
                                 </button>
                             @endif
                         @endif
@@ -243,7 +276,7 @@
             <div class="modal-content">
                 <div class="modal-header">
                     <h5 class="modal-title">
-                        <i class="fas fa-comment me-2"></i>Submit Feedback
+                        Submit Feedback
                     </h5>
                     <button type="button" class="btn-close" wire:click="closeModal"></button>
                 </div>
@@ -253,17 +286,17 @@
                             <label class="form-label fw-bold">Feedback Type</label>
                             <select wire:model.live="type" class="form-select" required>
                                 <option value="">Select type...</option>
-                                <option value="general">💬 General Feedback</option>
-                                <option value="bug">🐛 Bug Report</option>
-                                <option value="feature">💡 Feature Request</option>
-                                <option value="parking">🅿️ Parking Issue</option>
+                                <option value="general">General Feedback</option>
+                                <option value="bug">Bug Report</option>
+                                <option value="feature">Feature Request</option>
+                                <option value="parking">Parking Issue</option>
                             </select>
                             @error('type') <div class="text-danger small">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Message</label>
-                            <textarea wire:model="message" class="form-control" rows="4" 
+                            <textarea wire:model="message" class="form-control" rows="4"
                                       placeholder="Tell us more details..." maxlength="2000" required></textarea>
                             <small class="text-muted">2000 characters</small>
                             @error('message') <div class="text-danger small">{{ $message }}</div> @enderror
@@ -287,7 +320,7 @@
 
                         <div class="mb-3">
                             <label class="form-label fw-bold">Contact Email <small class="text-muted">(Optional)</small></label>
-                            <input type="email" wire:model="email" class="form-control" 
+                            <input type="email" wire:model="email" class="form-control"
                                    placeholder="your.email@usjr.edu.ph" maxlength="255">
                             <small class="text-muted">We'll only use this to follow up if needed</small>
                             @error('email') <div class="text-danger small">{{ $message }}</div> @enderror
@@ -331,7 +364,7 @@
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
                         <button type="submit" class="btn btn-valet-charcoal" wire:loading.attr="disabled" wire:target="submitFeedback">
                             <span wire:loading.remove wire:target="submitFeedback">
-                                <i class="fas fa-paper-plane me-1"></i>Submit Feedback
+                               Submit Feedback
                             </span>
                             <span wire:loading wire:target="submitFeedback">
                                 <i class="fas fa-spinner fa-spin me-1"></i>Submitting...
@@ -351,24 +384,22 @@
         <div class="modal-dialog">
             <div class="modal-content">
                 <div class="modal-header">
-                    <h5 class="modal-title">
-                        <i class="fas fa-reply me-2"></i>Admin Response
-                    </h5>
+                    <h5 class="modal-title">Admin Response</h5>
                     <button type="button" class="btn-close" wire:click="closeResponseModal"></button>
                 </div>
                 <div class="modal-body">
                     <div class="mb-3">
                         <label class="form-label fw-bold">Status</label>
                         <select wire:model="newStatus" class="form-select" required>
-                            <option value="pending">🕐 Pending</option>
-                            <option value="reviewed">👁️ Reviewed</option>
-                            <option value="resolved">✅ Resolved</option>
+                            <option value="pending">Pending</option>
+                            <option value="reviewed">Reviewed</option>
+                            <option value="resolved">Resolved</option>
                         </select>
                         @error('newStatus') <div class="text-danger small">{{ $message }}</div> @enderror
                     </div>
                     <div class="mb-3">
                         <label class="form-label fw-bold">Response <small class="text-muted">(Optional)</small></label>
-                        <textarea wire:model="adminResponse" class="form-control" rows="4" 
+                        <textarea wire:model="adminResponse" class="form-control" rows="4"
                                   placeholder="Optional response to user..." maxlength="1000"></textarea>
                         <small class="text-muted">{{ strlen($adminResponse) }}/1000 characters</small>
                         @error('adminResponse') <div class="text-danger small">{{ $message }}</div> @enderror
@@ -396,7 +427,7 @@
             Livewire.on('show-alert', (event) => {
                 const alertContainer = document.getElementById('alert-container');
                 const alertId = 'alert-' + Date.now();
-                
+
                 const alertHtml = `
                     <div class="container mt-3">
                         <div id="${alertId}" class="alert alert-${event.type} alert-dismissible fade show" role="alert">
@@ -406,9 +437,9 @@
                         </div>
                     </div>
                 `;
-                
+
                 alertContainer.innerHTML = alertHtml;
-                
+
                 setTimeout(() => {
                     const alert = document.getElementById(alertId);
                     if (alert) alert.remove();

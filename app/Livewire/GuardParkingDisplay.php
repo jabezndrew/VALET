@@ -6,6 +6,7 @@ use Livewire\Component;
 use App\Models\ParkingSpace;
 use App\Models\GuardIncident;
 use App\Models\SensorAssignment;
+use App\Models\Feedback;
 
 class GuardParkingDisplay extends Component
 {
@@ -204,6 +205,7 @@ class GuardParkingDisplay extends Component
             'incidentNotes' => 'nullable|string|max:500',
         ]);
 
+        // Create GuardIncident record
         GuardIncident::create([
             'space_code' => $this->selectedSpace?->space_code,
             'floor_level' => $this->selectedFloor,
@@ -211,6 +213,39 @@ class GuardParkingDisplay extends Component
             'notes' => $this->incidentNotes,
             'status' => 'open',
             'reported_by' => 'Guard',
+        ]);
+
+        // Also create Feedback entry for admin visibility
+        $categoryLabels = [
+            'debris' => 'Debris / Obstruction',
+            'damaged' => 'Damaged Spot',
+            'blocked' => 'Blocked Area',
+            'light_issue' => 'Light Issue',
+            'sensor_issue' => 'Sensor Issue',
+            'other' => 'Other Issue',
+        ];
+
+        $categoryLabel = $categoryLabels[$this->incidentCategory] ?? $this->incidentCategory;
+        $spaceCode = $this->selectedSpace?->space_code ?? 'N/A';
+
+        Feedback::create([
+            'user_id' => null, // Guard report, no user login
+            'type' => 'guard_report',
+            'message' => "[Guard Report] {$categoryLabel} at Spot {$spaceCode} ({$this->selectedFloor})" .
+                        ($this->incidentNotes ? "\n\nNotes: {$this->incidentNotes}" : ''),
+            'rating' => null,
+            'email' => null,
+            'issues' => [
+                'category' => $this->incidentCategory,
+                'space_code' => $spaceCode,
+                'floor_level' => $this->selectedFloor,
+            ],
+            'device_info' => [
+                'platform' => 'Guard PWA',
+                'reported_by' => 'Guard',
+                'submitted_at' => now()->toISOString(),
+            ],
+            'status' => 'pending',
         ]);
 
         session()->flash('success', 'Incident reported successfully.');
