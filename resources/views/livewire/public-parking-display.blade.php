@@ -219,7 +219,6 @@
                                             transform: rotate({{ $rotation }}deg);
                                             pointer-events: auto;
                                             cursor: pointer;
-                                            transition: all 0.3s ease;
                                             {{ $isSelected ? 'box-shadow: 0 0 20px 5px #FFD700; border: 3px solid #FFD700 !important; z-index: 600;' : '' }}
                                          "
                                          title="Click to show route to {{ $slotName }}"
@@ -372,5 +371,5 @@
 </div>
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=1.6') }}">
+<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=1.7') }}">
 @endpush
