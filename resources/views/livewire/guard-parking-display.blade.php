@@ -34,7 +34,7 @@
 
             <p class="mt-3 text-muted" style="font-size: 0.85rem;">
                 You can still view the map without PIN.<br>
-                <a href="{{ route('parking-display') }}" style="color: #B22020;">View Public Map</a>
+                <a href="/parking-display" style="color: #B22020;">View Public Map</a>
             </p>
         </div>
     </div>
