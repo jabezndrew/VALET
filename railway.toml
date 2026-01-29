@@ -3,6 +3,6 @@ builder = "nixpacks"
 
 [deploy]
 buildCommand = "npm install && npm run build && composer install --optimize-autoloader --no-dev"
-startCommand = "php artisan migrate --force && php artisan config:clear && php artisan view:clear && php artisan cache:clear && php artisan db:seed --class=AdminUserSeeder --force && php artisan serve --host=0.0.0.0 --port=$PORT"
+startCommand = "php artisan migrate --force && php artisan parking:seed && php artisan config:clear && php artisan view:clear && php artisan cache:clear && php artisan db:seed --class=AdminUserSeeder --force && php artisan serve --host=0.0.0.0 --port=$PORT"
 restartPolicyType = "never"
 healthcheckPath = "/up"
