@@ -45,18 +45,16 @@
         <div class="guard-logo">
             <img src="/images/valet-logo.jpg" alt="VALET" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>P</text></svg>'">
             <div>
-                <div class="guard-logo-text">VALET Guard</div>
-                <div class="guard-logo-sub">Parking Assist</div>
+                <div class="guard-logo-text">VALET</div>
+                <div class="guard-logo-sub">Your Virtual Parking Buddy</div>
             </div>
         </div>
 
         <div class="guard-status">
-            <div class="live-indicator">
-                <div class="live-dot"></div>
-                <span>LIVE</span>
-            </div>
-
             @if($isAuthenticated)
+                <button class="auth-btn settings-btn" wire:click="openPinChangeModal" title="Change PIN">
+                    <i class="fas fa-key"></i>
+                </button>
                 <button class="auth-btn" wire:click="logout">
                     <i class="fas fa-sign-out-alt me-1"></i>
                     Logout
@@ -86,12 +84,13 @@
             <div class="row g-0">
                 <div class="col-12 position-relative">
 
-                    {{-- Open Issues Alert - Top Left --}}
+                    {{-- Open Issues Alert - Top Left (Clickable) --}}
                     @if($openIncidentsCount > 0)
                     <div style="position: absolute; top: 30px; left: 30px; z-index: 1000;">
-                        <div class="issues-alert">
+                        <div class="issues-alert" wire:click="openIncidentsModal" style="cursor: pointer;">
                             <i class="fas fa-exclamation-triangle me-2"></i>
                             {{ $openIncidentsCount }} Open Issue(s) reported
+                            <i class="fas fa-chevron-right ms-2" style="font-size: 0.85rem;"></i>
                         </div>
                     </div>
                     @endif
@@ -290,16 +289,6 @@
                 </div>
             </div>
         </div>
-
-        {{-- Last Update Footer --}}
-        <div class="update-footer">
-            Last updated: {{ $lastUpdate }}
-            @if(!$isAuthenticated)
-                <span style="margin-left: 15px; color: #B22020;">
-                    <i class="fas fa-lock me-1"></i> Tap "Unlock" to enable actions
-                </span>
-            @endif
-        </div>
     </div>
 
     {{-- Action Modal --}}
@@ -421,6 +410,169 @@
                         <i class="fas fa-paper-plane me-2"></i>
                         Submit Report
                     </button>
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- PIN Change Modal --}}
+    @if($showPinChangeModal)
+    <div class="action-overlay" wire:click.self="closePinChangeModal">
+        <div class="action-modal" style="max-width: 400px;">
+            <div class="action-header">
+                <h3>Change Guard PIN</h3>
+                <button class="action-close" wire:click="closePinChangeModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="action-body">
+                @if($pinChangeError)
+                    <div class="pin-change-alert error">
+                        <i class="fas fa-exclamation-circle me-2"></i>
+                        {{ $pinChangeError }}
+                    </div>
+                @endif
+
+                @if($pinChangeSuccess)
+                    <div class="pin-change-alert success">
+                        <i class="fas fa-check-circle me-2"></i>
+                        {{ $pinChangeSuccess }}
+                    </div>
+                @endif
+
+                <div class="form-group">
+                    <label class="form-label">Current PIN:</label>
+                    <input
+                        type="password"
+                        class="form-input"
+                        wire:model="currentPin"
+                        placeholder="Enter current PIN"
+                        maxlength="8"
+                        inputmode="numeric"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">New PIN:</label>
+                    <input
+                        type="password"
+                        class="form-input"
+                        wire:model="newPin"
+                        placeholder="Enter new PIN (4-8 digits)"
+                        maxlength="8"
+                        inputmode="numeric"
+                    >
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">Confirm New PIN:</label>
+                    <input
+                        type="password"
+                        class="form-input"
+                        wire:model="confirmPin"
+                        placeholder="Confirm new PIN"
+                        maxlength="8"
+                        inputmode="numeric"
+                    >
+                </div>
+
+                <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">
+                    <i class="fas fa-info-circle me-1"></i>
+                    PIN must be 4-8 digits. This will update the PIN for all guards.
+                </p>
+
+                <button class="action-submit" style="background: linear-gradient(135deg, #B22020 0%, #8B0000 100%);" wire:click="changePin">
+                   <span style="color: white">Save New PIN</span>
+                </button>
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Open Incidents Modal --}}
+    @if($showIncidentsModal)
+    <div class="action-overlay" wire:click.self="closeIncidentsModal">
+        <div class="action-modal" style="max-width: 550px;">
+            <div class="action-header" style="background: linear-gradient(135deg, #fd7e14 0%, #e06b00 100%); color: white; border-radius: 20px 20px 0 0;">
+                <h3>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Open Issues ({{ count($openIncidents) }})
+                </h3>
+                <button class="action-close" wire:click="closeIncidentsModal" style="color: white;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="action-body" style="max-height: 60vh; overflow-y: auto;">
+                @if(count($openIncidents) === 0)
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle" style="font-size: 3rem; color: #28a745; opacity: 0.5;"></i>
+                        <p class="mt-3 text-muted">No open issues at this time.</p>
+                    </div>
+                @else
+                    <div class="incidents-list">
+                        @php
+                            $categoryLabels = [
+                                'debris' => 'Debris / Obstruction',
+                                'damaged' => 'Damaged Spot',
+                                'blocked' => 'Blocked Area',
+                                'light_issue' => 'Light Issue',
+                                'sensor_issue' => 'Sensor Issue',
+                                'other' => 'Other Issue',
+                            ];
+                            $categoryIcons = [
+                                'debris' => 'fa-trash',
+                                'damaged' => 'fa-car-crash',
+                                'blocked' => 'fa-ban',
+                                'light_issue' => 'fa-lightbulb',
+                                'sensor_issue' => 'fa-wifi',
+                                'other' => 'fa-question-circle',
+                            ];
+                        @endphp
+
+                        @foreach($openIncidents as $incident)
+                            <div class="incident-card">
+                                <div class="incident-header">
+                                    <div class="incident-category">
+                                        <i class="fas {{ $categoryIcons[$incident['category']] ?? 'fa-exclamation-circle' }} me-2"></i>
+                                        {{ $categoryLabels[$incident['category']] ?? $incident['category'] }}
+                                    </div>
+                                    <div class="incident-time">
+                                        {{ \Carbon\Carbon::parse($incident['created_at'])->diffForHumans() }}
+                                    </div>
+                                </div>
+
+                                <div class="incident-details">
+                                    <div class="incident-location">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        <strong>{{ $incident['space_code'] ?? 'N/A' }}</strong>
+                                        <span class="text-muted ms-2">{{ $incident['floor_level'] }}</span>
+                                    </div>
+
+                                    @if($incident['notes'])
+                                        <div class="incident-notes">
+                                            <i class="fas fa-sticky-note me-1"></i>
+                                            {{ $incident['notes'] }}
+                                        </div>
+                                    @endif
+                                </div>
+
+                                @if($isAuthenticated)
+                                    <div class="incident-actions">
+                                        <button
+                                            class="btn-resolve"
+                                            wire:click="resolveIncident({{ $incident['id'] }})"
+                                        >
+                                            <i class="fas fa-check me-1"></i>
+                                            Mark Resolved
+                                        </button>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
                 @endif
             </div>
         </div>
