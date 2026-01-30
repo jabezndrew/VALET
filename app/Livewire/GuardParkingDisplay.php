@@ -20,6 +20,14 @@ class GuardParkingDisplay extends Component
     public $pinInput = '';
     public $pinError = '';
 
+    // PIN change modal
+    public $showPinChangeModal = false;
+    public $currentPin = '';
+    public $newPin = '';
+    public $confirmPin = '';
+    public $pinChangeError = '';
+    public $pinChangeSuccess = '';
+
     // Filter
     public $statusFilter = 'all'; // all, available, occupied, issues
 
@@ -37,6 +45,8 @@ class GuardParkingDisplay extends Component
 
     // Open incidents count
     public $openIncidentsCount = 0;
+    public $openIncidents = [];
+    public $showIncidentsModal = false;
 
     protected $listeners = ['refreshData' => '$refresh'];
 
@@ -69,6 +79,89 @@ class GuardParkingDisplay extends Component
     {
         $this->isAuthenticated = false;
         session()->forget('guard_authenticated');
+    }
+
+    public function openPinChangeModal()
+    {
+        if (!$this->isAuthenticated) {
+            return;
+        }
+
+        $this->showPinChangeModal = true;
+        $this->currentPin = '';
+        $this->newPin = '';
+        $this->confirmPin = '';
+        $this->pinChangeError = '';
+        $this->pinChangeSuccess = '';
+    }
+
+    public function closePinChangeModal()
+    {
+        $this->showPinChangeModal = false;
+        $this->currentPin = '';
+        $this->newPin = '';
+        $this->confirmPin = '';
+        $this->pinChangeError = '';
+        $this->pinChangeSuccess = '';
+    }
+
+    public function changePin()
+    {
+        if (!$this->isAuthenticated) {
+            return;
+        }
+
+        $this->pinChangeError = '';
+        $this->pinChangeSuccess = '';
+
+        // Validate current PIN
+        $correctPin = config('app.guard_pin', '1234');
+        if ($this->currentPin !== $correctPin) {
+            $this->pinChangeError = 'Current PIN is incorrect.';
+            return;
+        }
+
+        // Validate new PIN
+        if (strlen($this->newPin) < 4 || strlen($this->newPin) > 8) {
+            $this->pinChangeError = 'New PIN must be 4-8 digits.';
+            return;
+        }
+
+        if (!ctype_digit($this->newPin)) {
+            $this->pinChangeError = 'PIN must contain only numbers.';
+            return;
+        }
+
+        // Validate confirmation
+        if ($this->newPin !== $this->confirmPin) {
+            $this->pinChangeError = 'New PIN and confirmation do not match.';
+            return;
+        }
+
+        // Update .env file
+        $envPath = base_path('.env');
+        $envContent = file_get_contents($envPath);
+
+        if (strpos($envContent, 'GUARD_PIN=') !== false) {
+            // Update existing GUARD_PIN
+            $envContent = preg_replace('/GUARD_PIN=.*/', 'GUARD_PIN=' . $this->newPin, $envContent);
+        } else {
+            // Add GUARD_PIN if it doesn't exist
+            $envContent .= "\nGUARD_PIN=" . $this->newPin;
+        }
+
+        file_put_contents($envPath, $envContent);
+
+        // Clear config cache so new PIN takes effect
+        \Artisan::call('config:clear');
+
+        $this->pinChangeSuccess = 'PIN changed successfully!';
+        $this->currentPin = '';
+        $this->newPin = '';
+        $this->confirmPin = '';
+
+        // Close modal after short delay (handled in JS)
+        session()->flash('success', 'Guard PIN has been updated successfully.');
     }
 
     public function loadAllFloorStats()
@@ -120,6 +213,50 @@ class GuardParkingDisplay extends Component
     public function loadOpenIncidentsCount()
     {
         $this->openIncidentsCount = GuardIncident::where('status', 'open')->count();
+    }
+
+    public function openIncidentsModal()
+    {
+        $this->openIncidents = GuardIncident::where('status', 'open')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->toArray();
+        $this->showIncidentsModal = true;
+    }
+
+    public function closeIncidentsModal()
+    {
+        $this->showIncidentsModal = false;
+        $this->openIncidents = [];
+    }
+
+    public function resolveIncident($incidentId)
+    {
+        if (!$this->isAuthenticated) {
+            return;
+        }
+
+        $incident = GuardIncident::find($incidentId);
+        if ($incident) {
+            $incident->update([
+                'status' => 'resolved',
+                'resolved_at' => now(),
+            ]);
+
+            session()->flash('success', "Issue at {$incident->space_code} has been resolved.");
+
+            // Reload incidents
+            $this->loadOpenIncidentsCount();
+            $this->openIncidents = GuardIncident::where('status', 'open')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->toArray();
+
+            // Close modal if no more incidents
+            if (count($this->openIncidents) === 0) {
+                $this->showIncidentsModal = false;
+            }
+        }
     }
 
     public function changeFloor($floor)
