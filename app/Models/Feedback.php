@@ -75,6 +75,7 @@ class Feedback extends Model
     const TYPE_BUG = 'bug';
     const TYPE_FEATURE = 'feature';
     const TYPE_PARKING = 'parking';
+    const TYPE_GUARD_REPORT = 'guard_report';
 
     /**
      * Valid feedback statuses
@@ -194,8 +195,17 @@ class Feedback extends Model
             self::TYPE_BUG => 'Bug Report',
             self::TYPE_FEATURE => 'Feature Request',
             self::TYPE_PARKING => 'Parking Issue',
+            self::TYPE_GUARD_REPORT => 'Guard Report',
             default => ucfirst($this->type),
         };
+    }
+
+    /**
+     * Check if this is a guard report
+     */
+    public function isGuardReport(): bool
+    {
+        return $this->type === self::TYPE_GUARD_REPORT;
     }
 
     /**
