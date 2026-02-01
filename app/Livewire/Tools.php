@@ -8,9 +8,7 @@ class Tools extends Component
 {
     public function mount()
     {
-        if (auth()->user()->role !== 'admin'){
-            abort(403, 'Unauthorized');
-        }
+        // Tools page accessible by all authenticated users
     }
     public function render()
     {
