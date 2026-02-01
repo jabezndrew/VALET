@@ -375,10 +375,9 @@
                         <div class="mb-3">
                             <label class="form-label fw-bold">Plate Number</label>
                             <input wire:model="verifyPlate" type="text" class="form-control"
-                                   placeholder="Enter plate number (e.g. ABC-1234)..."
+                                   placeholder="Enter plate number"
                                    wire:keydown.enter="verifyVehicle">
                             @error('verifyPlate') <div class="text-danger small">{{ $message }}</div> @enderror
-                            <small class="text-muted">Check if vehicle is registered or can enter as guest</small>
                         </div>
                     @endif
 
