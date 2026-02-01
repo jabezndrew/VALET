@@ -394,6 +394,68 @@ main, .container, .valet-header + * {
    overflow: visible !important;
 }
 
+/* Icon Navigation */
+.icon-nav {
+   gap: 8px;
+   background: rgba(0,0,0,0.2);
+   padding: 8px 12px;
+   border-radius: 16px;
+}
+
+.icon-nav-link {
+   position: relative;
+   width: 44px;
+   height: 44px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   color: rgba(255,255,255,0.7);
+   border-radius: 12px;
+   transition: all 0.3s ease;
+   text-decoration: none;
+   cursor: pointer;
+   font-size: 1.2rem;
+}
+
+.icon-nav-link:hover {
+   color: white;
+   background: rgba(255,255,255,0.1);
+}
+
+.icon-nav-link.active {
+   color: white;
+   background: rgba(255,255,255,0.15);
+}
+
+.icon-nav-link.active::after {
+   content: '';
+   position: absolute;
+   bottom: 2px;
+   left: 50%;
+   transform: translateX(-50%);
+   width: 20px;
+   height: 3px;
+   background: white;
+   border-radius: 2px;
+}
+
+.icon-badge {
+   position: absolute;
+   top: 2px;
+   right: 2px;
+   background: #ffc107;
+   color: #333;
+   font-size: 0.65rem;
+   font-weight: bold;
+   min-width: 16px;
+   height: 16px;
+   border-radius: 8px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   padding: 0 4px;
+}
+
 .navbar-nav {
    gap: 15px;
 }
@@ -691,67 +753,45 @@ main, .container, .valet-header + * {
                <!-- Navigation -->
                @auth
                <div class="d-flex align-items-center">
-                   <nav class="navbar-nav d-flex flex-row me-3">
-                       <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                   <nav class="icon-nav d-flex flex-row me-3">
+                       <a class="icon-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
                           href="{{ route('dashboard') }}"
-                          wire:navigate>
-                           Dashboard
+                          wire:navigate
+                          title="Dashboard">
+                           <i class="fas fa-home"></i>
                        </a>
-
-                       @if(auth()->user()->canViewCars())
-                       <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}"
-                          href="{{ route('cars.index') }}"
-                          wire:navigate>
-                           Vehicles
-                       </a>
-                       @endif
 
                        @if(auth()->user()->canManageUsers())
-                       <a class="nav-link {{ request()->routeIs('admin.users') ? 'active' : '' }}"
+                       <a class="icon-nav-link {{ request()->routeIs('admin.users') ? 'active' : '' }}"
                           href="{{ route('admin.users') }}"
-                          wire:navigate>
-                           Users
+                          wire:navigate
+                          title="Users">
+                           <i class="fas fa-users"></i>
                            @if(auth()->user()->canApprovePendingAccounts())
                                @php
                                    $pendingCount = DB::table('pending_accounts')->where('status', 'pending')->count();
                                @endphp
                                @if($pendingCount > 0)
-                                   <span class="badge bg-warning text-dark ms-1">{{ $pendingCount }}</span>
+                                   <span class="icon-badge">{{ $pendingCount }}</span>
                                @endif
                            @endif
                        </a>
                        @endif
 
-                        <a class="nav-link {{ request()->routeIs('parking-display') ? 'active' : '' }}"
-                          href="{{ route('parking-display') }}"
-                          wire:navigate>
-                           Parking Map
-                        </a>
-                       @if(in_array(auth()->user()->role, ['admin', 'ssd', 'security']))
-                       <a class="nav-link {{ request()->routeIs('parking-log') ? 'active' : '' }}"
-                          href="{{ route('parking-log') }}"
-                          wire:navigate>
-                           Parking Log
-                       </a>
-                       @endif
-                       @if(auth()->user()->role === 'admin')
-                       <a class="nav-link {{ request()->routeIs('admin.sensors') ? 'active' : '' }}"
-                          href="{{ route('admin.sensors') }}"
-                          wire:navigate>
-                           Sensors
-                       </a>
-                       <a class="nav-link {{ request()->routeIs('admin.rfid') ? 'active' : '' }}"
-                          href="{{ route('admin.rfid') }}"
-                          wire:navigate>
-                           RFID Tags
+                       @if(auth()->user()->canViewCars())
+                       <a class="icon-nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}"
+                          href="{{ route('cars.index') }}"
+                          wire:navigate
+                          title="Vehicles">
+                           <i class="fas fa-car"></i>
                        </a>
                        @endif
 
-                       <!-- Feedback Button - Now matches other nav items -->
-                       <a class="nav-link {{ request()->routeIs('feedback.*') ? 'active' : '' }}"
+                       <a class="icon-nav-link {{ request()->routeIs('feedback.*') ? 'active' : '' }}"
                           href="{{ route('feedback.index') }}"
-                          wire:navigate>
-                           Feedback
+                          wire:navigate
+                          title="Feedback">
+                           <i class="fas fa-comments"></i>
                        </a>
                    </nav>
 
