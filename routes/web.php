@@ -90,6 +90,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:security')->group(function () {
         Route::get('/cars', VehicleManager::class)->name('cars.index');
         Route::get('/parking-log', ParkingLog::class)->name('parking-log');
+        Route::get('/guest-access', App\Livewire\GuestAccessManager::class)->name('guest-access');
     });
     
     Route::middleware('role:ssd')->group(function () {

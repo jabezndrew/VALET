@@ -467,6 +467,48 @@ class ParkingDashboard extends Component
         $this->occupancyRate = 0;
     }
 
+    public function grantGuestAccess()
+    {
+        if (!$this->canVerifyVehicles()) {
+            $this->dispatch('show-alert', type: 'error', message: 'Access denied.');
+            return;
+        }
+
+        if (!$this->verifyResult || $this->verifyResult['status'] !== 'GUEST_OK') {
+            $this->dispatch('show-alert', type: 'error', message: 'Invalid guest verification.');
+            return;
+        }
+
+        try {
+            $plateNumber = $this->verifyResult['plate'];
+
+            // Generate guest ID
+            $year = date('Y');
+            $lastGuest = \App\Models\GuestAccess::whereYear('created_at', $year)
+                ->orderBy('id', 'desc')
+                ->first();
+            $sequence = $lastGuest ? ((int) substr($lastGuest->guest_id, -4)) + 1 : 1;
+            $guestId = "GUEST-{$year}-" . str_pad($sequence, 4, '0', STR_PAD_LEFT);
+
+            // Create guest access pass (24 hours)
+            \App\Models\GuestAccess::create([
+                'guest_id' => $guestId,
+                'name' => 'Guest',
+                'vehicle_plate' => strtoupper($plateNumber),
+                'valid_from' => Carbon::now(),
+                'valid_until' => Carbon::now()->addHours(24),
+                'status' => 'active',
+                'created_by' => auth()->id(),
+            ]);
+
+            $this->dispatch('show-alert', type: 'success', message: "Guest access granted! Pass ID: {$guestId}");
+            $this->closeVerifyModal();
+
+        } catch (\Exception $e) {
+            $this->dispatch('show-alert', type: 'error', message: 'Failed to create guest pass: ' . $e->getMessage());
+        }
+    }
+
     // Debug method - can be called from browser console or added as a button
     public function debugData()
     {
