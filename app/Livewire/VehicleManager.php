@@ -26,6 +26,8 @@ class VehicleManager extends Component
     // Verify vehicle modal
     public $showVerifyModal = false;
     public $verifyRfid = '';
+    public $verifyPlate = '';
+    public $verifyMode = 'rfid'; // 'rfid' or 'guest'
     public $verifyResult = null;
     
     // Filters
@@ -60,15 +62,23 @@ class VehicleManager extends Component
             $this->dispatch('show-alert', type: 'error', message: 'Access denied.');
             return;
         }
-        
-        $this->reset(['verifyRfid', 'verifyResult']);
+
+        $this->reset(['verifyRfid', 'verifyPlate', 'verifyResult']);
+        $this->verifyMode = 'rfid';
         $this->showVerifyModal = true;
     }
 
     public function closeVerifyModal()
     {
         $this->showVerifyModal = false;
-        $this->reset(['verifyRfid', 'verifyResult']);
+        $this->reset(['verifyRfid', 'verifyPlate', 'verifyResult']);
+        $this->verifyMode = 'rfid';
+    }
+
+    public function setVerifyMode($mode)
+    {
+        $this->verifyMode = $mode;
+        $this->reset(['verifyRfid', 'verifyPlate', 'verifyResult']);
     }
 
     public function verifyVehicle()
@@ -78,6 +88,15 @@ class VehicleManager extends Component
             return;
         }
 
+        if ($this->verifyMode === 'rfid') {
+            $this->verifyByRfid();
+        } else {
+            $this->verifyByPlate();
+        }
+    }
+
+    private function verifyByRfid()
+    {
         $this->validate(['verifyRfid' => 'required|string']);
 
         $vehicle = Vehicle::with('owner')->where('rfid_tag', $this->verifyRfid)->first();
@@ -86,14 +105,14 @@ class VehicleManager extends Component
             $this->verifyResult = [
                 'status' => 'NOT_FOUND',
                 'message' => 'Vehicle not found in system',
-                'color' => 'danger'
+                'color' => 'danger',
+                'type' => 'rfid'
             ];
             return;
         }
 
         $isActive = $vehicle->isValid();
 
-        // Convert model to array for backward compatibility with view
         $vehicleData = $vehicle->toArray();
         $vehicleData['owner_name'] = $vehicle->owner->name;
         $vehicleData['owner_role'] = $vehicle->owner->role;
@@ -104,8 +123,45 @@ class VehicleManager extends Component
                 ? 'Vehicle is active and authorized for parking.'
                 : $this->getInactiveReason($vehicle),
             'vehicle' => (object) $vehicleData,
-            'color' => $isActive ? 'success' : 'danger'
+            'color' => $isActive ? 'success' : 'danger',
+            'type' => 'rfid'
         ];
+    }
+
+    private function verifyByPlate()
+    {
+        $this->validate(['verifyPlate' => 'required|string']);
+
+        $plateNumber = strtoupper(trim($this->verifyPlate));
+        $vehicle = Vehicle::with('owner')->where('plate_number', $plateNumber)->first();
+
+        if ($vehicle) {
+            // Vehicle found in system - it's a registered vehicle, not a guest
+            $isActive = $vehicle->isValid();
+
+            $vehicleData = $vehicle->toArray();
+            $vehicleData['owner_name'] = $vehicle->owner->name;
+            $vehicleData['owner_role'] = $vehicle->owner->role;
+
+            $this->verifyResult = [
+                'status' => 'REGISTERED',
+                'message' => $isActive
+                    ? 'This vehicle is registered in the system. Owner should use RFID.'
+                    : 'This vehicle is registered but ' . $this->getInactiveReason($vehicle),
+                'vehicle' => (object) $vehicleData,
+                'color' => 'warning',
+                'type' => 'guest'
+            ];
+        } else {
+            // Vehicle not in system - valid guest
+            $this->verifyResult = [
+                'status' => 'GUEST_OK',
+                'message' => 'Vehicle not registered. Guest access can be granted.',
+                'plate' => $plateNumber,
+                'color' => 'success',
+                'type' => 'guest'
+            ];
+        }
     }
 
     public function openModal($vehicleId = null)
