@@ -680,11 +680,12 @@ main, .container, .valet-header + * {
                         <img src="/images/valet-logo.jpg" alt="VALET" class="valet-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                         <i class="fas fa-car" style="display: none; font-size: 1.5rem; color: #B22020;"></i>
                      </div>
+                     </a>
                      <div class="ms-3">
                         <h3 class="text-white mb-0 fw-bold">VALET</h3>
                         <span class="text-white-50">Your Virtual Parking Buddy</span>
                      </div>
-                  </a>
+                  
                   </div>
 
                <!-- Navigation -->
