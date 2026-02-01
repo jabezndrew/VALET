@@ -12,20 +12,28 @@ return new class extends Migration
      */
     public function up(): void
     {
-        // First, drop the foreign key constraint on user_id
-        Schema::table('feedbacks', function (Blueprint $table) {
-            $table->dropForeign(['user_id']);
-        });
+        // Check if foreign key exists before dropping
+        $foreignKeys = DB::select("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'feedbacks' AND CONSTRAINT_TYPE = 'FOREIGN KEY' AND CONSTRAINT_NAME = 'feedbacks_user_id_foreign'");
+
+        if (count($foreignKeys) > 0) {
+            Schema::table('feedbacks', function (Blueprint $table) {
+                $table->dropForeign(['user_id']);
+            });
+        }
 
         // Make user_id nullable for guard reports
         Schema::table('feedbacks', function (Blueprint $table) {
             $table->unsignedBigInteger('user_id')->nullable()->change();
         });
 
-        // Re-add the foreign key with SET NULL on delete
-        Schema::table('feedbacks', function (Blueprint $table) {
-            $table->foreign('user_id')->references('id')->on('sys_users')->onDelete('set null');
-        });
+        // Check if foreign key already exists before adding
+        $foreignKeys = DB::select("SELECT CONSTRAINT_NAME FROM information_schema.TABLE_CONSTRAINTS WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'feedbacks' AND CONSTRAINT_TYPE = 'FOREIGN KEY' AND CONSTRAINT_NAME = 'feedbacks_user_id_foreign'");
+
+        if (count($foreignKeys) === 0) {
+            Schema::table('feedbacks', function (Blueprint $table) {
+                $table->foreign('user_id')->references('id')->on('sys_users')->onDelete('set null');
+            });
+        }
 
         // Update the type enum to include guard_report
         DB::statement("ALTER TABLE feedbacks MODIFY COLUMN type ENUM('general', 'bug', 'feature', 'parking', 'guard_report') NOT NULL");
