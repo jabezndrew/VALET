@@ -100,6 +100,7 @@ Route::middleware('auth')->group(function () {
         Route::get('/pending-accounts', PendingAccountManager::class)->name('pending-accounts');
         Route::get('/sensors', SensorManager::class)->name('sensors');
         Route::get('/rfid', RfidManagement::class)->name('rfid');
+        Route::get('/tools', App\Livewire\Tools::class)->name('tools');
     });
     
 });
