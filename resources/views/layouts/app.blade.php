@@ -767,7 +767,7 @@ main, .container, .valet-header + * {
                                <strong>{{ auth()->user()->getRoleDisplayName() }}</strong>
                            </div>
                            <div class="dropdown-divider"></div>
-                           <a href="#" class="dropdown-item">
+                           <a href="{{ route('admin.tools') }}" class="dropdown-item">
                               <i class="fas fa-tools me-2"></i>Tools
                            </a>
                            <div class="dropdown-divider"></div>
