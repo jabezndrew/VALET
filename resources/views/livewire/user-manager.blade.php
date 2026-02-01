@@ -128,6 +128,11 @@
                                             <i class="fas fa-{{ $user->is_active ? 'check-circle' : 'times-circle' }} me-1"></i>
                                             {{ $user->is_active ? 'Active' : 'Inactive' }}
                                         </span>
+                                        @if(in_array($user->id, $parkedUserIds))
+                                            <span class="badge bg-info ms-1" title="Currently parked on campus">
+                                                <i class="fas fa-car"></i> Parked
+                                            </span>
+                                        @endif
                                     </td>
                                     <td>
                                         <small class="text-muted">

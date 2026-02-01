@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\SysUser;
 use App\Models\PendingAccount;
+use App\Models\ParkingEntry;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rules\Password;
 
@@ -59,7 +60,8 @@ class UserManager extends Component
         return view('livewire.user-manager', [
             'users' => $this->getUsers(),
             'stats' => $this->getUserStats(),
-            'pendingCount' => $this->getPendingAccountsCount()
+            'pendingCount' => $this->getPendingAccountsCount(),
+            'parkedUserIds' => ParkingEntry::where('status', 'parked')->pluck('user_id')->toArray()
         ])->layout('layouts.app');
     }
 
