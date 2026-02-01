@@ -154,7 +154,7 @@
 
             <!-- Parking Display -->
             <div class="col-md-4 col-lg-3">
-                <a href="{{ route('parking.display.public') }}" class="text-decoration-none" target="_blank">
+                <a href="/parking-display" class="text-decoration-none" target="_blank">
                     <div class="card tool-card h-100">
                         <div class="card-body text-center py-4">
                             <div class="tool-icon bg-success bg-opacity-10 text-success mx-auto mb-3">
@@ -170,7 +170,7 @@
 
             <!-- Guard Display -->
             <div class="col-md-4 col-lg-3">
-                <a href="{{ route('guard.display') }}" class="text-decoration-none" target="_blank">
+                <a href="/guard" class="text-decoration-none" target="_blank">
                     <div class="card tool-card h-100">
                         <div class="card-body text-center py-4">
                             <div class="tool-icon bg-warning bg-opacity-10 text-warning mx-auto mb-3">
