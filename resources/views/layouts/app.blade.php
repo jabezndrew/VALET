@@ -675,15 +675,17 @@ main, .container, .valet-header + * {
        <div class="container">
            <div class="d-flex justify-content-between align-items-center">
                <div class="d-flex align-items-center">
-                   <div class="valet-logo-container">
-                       <img src="/images/valet-logo.jpg" alt="VALET" class="valet-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                       <i class="fas fa-car" style="display: none; font-size: 1.5rem; color: #B22020;"></i>
-                   </div>
-                   <div class="ms-3">
-                       <h3 class="text-white mb-0 fw-bold">VALET</h3>
-                       <span class="text-white-50">Your Virtual Parking Buddy</span>
-                   </div>
-               </div>
+                  <a href="{{ route('dashboard') }}" ckass="d-flex algin-items-center text-decoration-none">
+                     <div class="valet-logo-container">
+                        <img src="/images/valet-logo.jpg" alt="VALET" class="valet-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <i class="fas fa-car" style="display: none; font-size: 1.5rem; color: #B22020;"></i>
+                     </div>
+                     <div class="ms-3">
+                        <h3 class="text-white mb-0 fw-bold">VALET</h3>
+                        <span class="text-white-50">Your Virtual Parking Buddy</span>
+                     </div>
+                  </a>
+                  </div>
 
                <!-- Navigation -->
                @auth
@@ -763,6 +765,10 @@ main, .container, .valet-header + * {
                            <div class="dropdown-role-info">
                                <strong>{{ auth()->user()->getRoleDisplayName() }}</strong>
                            </div>
+                           <div class="dropdown-divider"></div>
+                           <a href="#" class="dropdown-item">
+                              <i class="fas fa-tools me-2"></i>Tools
+                           </a>
                            <div class="dropdown-divider"></div>
                            <button onclick="logout()" class="dropdown-item logout-btn">
                                Logout
