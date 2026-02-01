@@ -807,12 +807,12 @@ main, .container, .valet-header + * {
                                <strong>{{ auth()->user()->getRoleDisplayName() }}</strong>
                            </div>
                            <div class="dropdown-divider"></div>
-                           <a href=# class="dropdown-item">
-                              Profile
+                           <a href="{{ route('profile') }}" class="dropdown-item" wire:navigate>
+                              <i class="fas fa-user me-2"></i> Profile
                            </a>
                            <div class="dropdown-divider"></div>
-                           <a href="{{ route('admin.tools') }}" class="dropdown-item">
-                              Tools
+                           <a href="{{ route('tools') }}" class="dropdown-item" wire:navigate>
+                              <i class="fas fa-toolbox me-2"></i> Tools
                            </a>
                            <div class="dropdown-divider"></div>
                            <button onclick="logout()" class="dropdown-item logout-btn">
