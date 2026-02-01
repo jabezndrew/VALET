@@ -347,22 +347,65 @@
                     <button type="button" class="btn-close" wire:click="closeVerifyModal"></button>
                 </div>
                 <div class="modal-body">
-                    <div class="mb-3">
-                        <label class="form-label fw-bold">RFID Tag</label>
-                        <input wire:model="verifyRfid" type="text" class="form-control"
-                               placeholder="Enter RFID tag to verify..."
-                               wire:keydown.enter="verifyVehicle">
-                        @error('verifyRfid') <div class="text-danger small">{{ $message }}</div> @enderror
+                    <!-- Mode Toggle -->
+                    <div class="btn-group w-100 mb-3" role="group">
+                        <button type="button"
+                                class="btn {{ $verifyMode === 'rfid' ? 'btn-valet-charcoal' : 'btn-outline-secondary' }}"
+                                wire:click="setVerifyMode('rfid')">
+                            <i class="fas fa-id-card me-1"></i> RFID
+                        </button>
+                        <button type="button"
+                                class="btn {{ $verifyMode === 'guest' ? 'btn-valet-charcoal' : 'btn-outline-secondary' }}"
+                                wire:click="setVerifyMode('guest')">
+                            <i class="fas fa-user me-1"></i> Guest
+                        </button>
                     </div>
+
+                    @if($verifyMode === 'rfid')
+                        <!-- RFID Verification -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">RFID Tag</label>
+                            <input wire:model="verifyRfid" type="text" class="form-control"
+                                   placeholder="Enter RFID tag to verify..."
+                                   wire:keydown.enter="verifyVehicle">
+                            @error('verifyRfid') <div class="text-danger small">{{ $message }}</div> @enderror
+                        </div>
+                    @else
+                        <!-- Guest Verification by Plate -->
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Plate Number</label>
+                            <input wire:model="verifyPlate" type="text" class="form-control"
+                                   placeholder="Enter plate number (e.g. ABC-1234)..."
+                                   wire:keydown.enter="verifyVehicle">
+                            @error('verifyPlate') <div class="text-danger small">{{ $message }}</div> @enderror
+                            <small class="text-muted">Check if vehicle is registered or can enter as guest</small>
+                        </div>
+                    @endif
+
                     @if($verifyResult)
                         <div class="alert alert-{{ $verifyResult['color'] }} mt-3">
                             <div class="d-flex align-items-center">
-                                <i class="fas fa-{{
-                                    $verifyResult['status'] === 'Active' ? 'check-circle' :
-                                    ($verifyResult['status'] === 'NOT FOUND' ? 'times-circle' : 'exclamation-triangle')
-                                }} me-2"></i>
+                                @php
+                                    $icon = match($verifyResult['status']) {
+                                        'Active', 'GUEST_OK' => 'check-circle',
+                                        'NOT_FOUND' => 'times-circle',
+                                        'REGISTERED' => 'exclamation-triangle',
+                                        default => 'info-circle'
+                                    };
+                                @endphp
+                                <i class="fas fa-{{ $icon }} fa-2x me-3"></i>
                                 <div>
-                                    <strong>{{ $verifyResult['status'] }}</strong>
+                                    <strong>
+                                        @if($verifyResult['status'] === 'GUEST_OK')
+                                            Guest Allowed
+                                        @elseif($verifyResult['status'] === 'REGISTERED')
+                                            Already Registered
+                                        @elseif($verifyResult['status'] === 'NOT_FOUND')
+                                            Not Found
+                                        @else
+                                            {{ $verifyResult['status'] }}
+                                        @endif
+                                    </strong>
                                     <div>{{ $verifyResult['message'] }}</div>
                                 </div>
                             </div>
@@ -383,6 +426,18 @@
                                             {{ $verifyResult['vehicle']->owner_name }}<br>
                                             <strong>Role:</strong> {{ ucfirst($verifyResult['vehicle']->owner_role) }}
                                         </small>
+                                    </div>
+                                </div>
+                            @endif
+
+                            @if($verifyResult['status'] === 'GUEST_OK' && isset($verifyResult['plate']))
+                                <hr class="my-2">
+                                <div class="text-center">
+                                    <strong>Plate: {{ $verifyResult['plate'] }}</strong>
+                                    <div class="mt-2">
+                                        <span class="badge bg-success fs-6">
+                                            <i class="fas fa-door-open me-1"></i> Grant Guest Access
+                                        </span>
                                     </div>
                                 </div>
                             @endif
