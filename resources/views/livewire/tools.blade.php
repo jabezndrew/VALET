@@ -2,77 +2,72 @@
     <div class="container-fluid py-4">
         <!-- Header -->
         <div class="mb-4">
-            <h2 class="fw-bold mb-1">Admin Tools</h2>
-            <p class="text-muted mb-0">Quick access to all system management features</p>
+            <h2 class="fw-bold mb-1">Tools</h2>
+            <p class="text-muted mb-0">Quick access to features</p>
         </div>
 
         <!-- Tools Grid -->
         <div class="row g-4">
-            <!-- User Management -->
+            @php
+                $role = auth()->user()->role;
+                $isAdmin = $role === 'admin';
+                $isSsd = $role === 'ssd';
+                $isSecurity = $role === 'security';
+                $isUser = $role === 'user';
+            @endphp
+
+            <!-- Parking Map - Everyone -->
             <div class="col-md-4 col-lg-3">
-                <a href="{{ route('admin.users') }}" class="text-decoration-none" wire:navigate>
+                <a href="{{ route('parking-display') }}" class="text-decoration-none" wire:navigate>
                     <div class="card tool-card h-100">
                         <div class="card-body text-center py-4">
                             <div class="tool-icon bg-primary bg-opacity-10 text-primary mx-auto mb-3">
-                                <i class="fas fa-users fa-2x"></i>
+                                <i class="fas fa-map fa-2x"></i>
                             </div>
-                            <h5 class="card-title mb-2">User Management</h5>
-                            <p class="card-text text-muted small mb-2">Manage system users and access</p>
-                            <span class="badge bg-primary">Management</span>
+                            <h5 class="card-title mb-2">Parking Map</h5>
+                            <p class="card-text text-muted small mb-2">View parking availability</p>
+                            <span class="badge bg-primary">Parking</span>
                         </div>
                     </div>
                 </a>
             </div>
 
-            <!-- Pending Accounts -->
+            <!-- Feedback - Everyone -->
             <div class="col-md-4 col-lg-3">
-                <a href="{{ route('admin.pending-accounts') }}" class="text-decoration-none" wire:navigate>
+                <a href="{{ route('feedback.index') }}" class="text-decoration-none" wire:navigate>
                     <div class="card tool-card h-100">
                         <div class="card-body text-center py-4">
-                            <div class="tool-icon bg-warning bg-opacity-10 text-warning mx-auto mb-3">
-                                <i class="fas fa-user-clock fa-2x"></i>
+                            <div class="tool-icon bg-purple bg-opacity-10 mx-auto mb-3" style="color: #6f42c1;">
+                                <i class="fas fa-comments fa-2x"></i>
                             </div>
-                            <h5 class="card-title mb-2">Pending Accounts</h5>
-                            <p class="card-text text-muted small mb-2">Review and approve new accounts</p>
-                            <span class="badge bg-warning text-dark">Approval</span>
+                            <h5 class="card-title mb-2">Feedback</h5>
+                            <p class="card-text text-muted small mb-2">View & submit feedback</p>
+                            <span class="badge" style="background-color: #6f42c1;">Support</span>
                         </div>
                     </div>
                 </a>
             </div>
 
-            <!-- RFID Management -->
+            <!-- Vehicle Management - Security, SSD, Admin -->
+            @if($isSecurity || $isSsd || $isAdmin)
             <div class="col-md-4 col-lg-3">
-                <a href="{{ route('admin.rfid') }}" class="text-decoration-none" wire:navigate>
+                <a href="{{ route('cars.index') }}" class="text-decoration-none" wire:navigate>
                     <div class="card tool-card h-100">
                         <div class="card-body text-center py-4">
-                            <div class="tool-icon bg-success bg-opacity-10 text-success mx-auto mb-3">
-                                <i class="fas fa-id-card fa-2x"></i>
+                            <div class="tool-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3">
+                                <i class="fas fa-car fa-2x"></i>
                             </div>
-                            <h5 class="card-title mb-2">RFID Management</h5>
-                            <p class="card-text text-muted small mb-2">Manage RFID tags and assignments</p>
-                            <span class="badge bg-success">Hardware</span>
+                            <h5 class="card-title mb-2">Vehicles</h5>
+                            <p class="card-text text-muted small mb-2">Manage registered vehicles</p>
+                            <span class="badge bg-danger">Management</span>
                         </div>
                     </div>
                 </a>
             </div>
+            @endif
 
-            <!-- Sensor Management -->
-            <div class="col-md-4 col-lg-3">
-                <a href="{{ route('admin.sensors') }}" class="text-decoration-none" wire:navigate>
-                    <div class="card tool-card h-100">
-                        <div class="card-body text-center py-4">
-                            <div class="tool-icon bg-info bg-opacity-10 text-info mx-auto mb-3">
-                                <i class="fas fa-microchip fa-2x"></i>
-                            </div>
-                            <h5 class="card-title mb-2">Sensor Management</h5>
-                            <p class="card-text text-muted small mb-2">Configure parking sensors</p>
-                            <span class="badge bg-info">Hardware</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-
-            <!-- Parking Log -->
+            <!-- Parking Log - Security, SSD, Admin -->
+            @if($isSecurity || $isSsd || $isAdmin)
             <div class="col-md-4 col-lg-3">
                 <a href="{{ route('parking-log') }}" class="text-decoration-none" wire:navigate>
                     <div class="card tool-card h-100">
@@ -87,56 +82,82 @@
                     </div>
                 </a>
             </div>
+            @endif
 
-            <!-- Vehicle Management -->
+            <!-- User Management - SSD, Admin -->
+            @if($isSsd || $isAdmin)
             <div class="col-md-4 col-lg-3">
-                <a href="{{ route('cars.index') }}" class="text-decoration-none" wire:navigate>
+                <a href="{{ route('admin.users') }}" class="text-decoration-none" wire:navigate>
                     <div class="card tool-card h-100">
                         <div class="card-body text-center py-4">
-                            <div class="tool-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3">
-                                <i class="fas fa-car fa-2x"></i>
+                            <div class="tool-icon bg-primary bg-opacity-10 text-primary mx-auto mb-3">
+                                <i class="fas fa-users fa-2x"></i>
                             </div>
-                            <h5 class="card-title mb-2">Vehicle Management</h5>
-                            <p class="card-text text-muted small mb-2">Manage registered vehicles</p>
-                            <span class="badge bg-danger">Management</span>
+                            <h5 class="card-title mb-2">User Management</h5>
+                            <p class="card-text text-muted small mb-2">Manage system users</p>
+                            <span class="badge bg-primary">Management</span>
                         </div>
                     </div>
                 </a>
             </div>
+            @endif
 
-            <!-- Feedback -->
+            <!-- Pending Accounts - Admin only -->
+            @if($isAdmin)
             <div class="col-md-4 col-lg-3">
-                <a href="{{ route('feedback.index') }}" class="text-decoration-none" wire:navigate>
+                <a href="{{ route('admin.pending-accounts') }}" class="text-decoration-none" wire:navigate>
                     <div class="card tool-card h-100">
                         <div class="card-body text-center py-4">
-                            <div class="tool-icon bg-purple bg-opacity-10 mx-auto mb-3" style="color: #6f42c1;">
-                                <i class="fas fa-comments fa-2x"></i>
+                            <div class="tool-icon bg-warning bg-opacity-10 text-warning mx-auto mb-3">
+                                <i class="fas fa-user-clock fa-2x"></i>
                             </div>
-                            <h5 class="card-title mb-2">Feedback</h5>
-                            <p class="card-text text-muted small mb-2">View user feedback & reports</p>
-                            <span class="badge" style="background-color: #6f42c1;">Support</span>
+                            <h5 class="card-title mb-2">Pending Accounts</h5>
+                            <p class="card-text text-muted small mb-2">Review new accounts</p>
+                            <span class="badge bg-warning text-dark">Approval</span>
                         </div>
                     </div>
                 </a>
             </div>
+            @endif
 
-            <!-- Clear Cache -->
+            <!-- RFID Management - Admin only -->
+            @if($isAdmin)
             <div class="col-md-4 col-lg-3">
-                <a href="{{ route('public.clear-cache', ['secret' => 'valet2025secret']) }}" class="text-decoration-none">
+                <a href="{{ route('admin.rfid') }}" class="text-decoration-none" wire:navigate>
                     <div class="card tool-card h-100">
                         <div class="card-body text-center py-4">
-                            <div class="tool-icon bg-dark bg-opacity-10 text-dark mx-auto mb-3">
-                                <i class="fas fa-broom fa-2x"></i>
+                            <div class="tool-icon bg-success bg-opacity-10 text-success mx-auto mb-3">
+                                <i class="fas fa-id-card fa-2x"></i>
                             </div>
-                            <h5 class="card-title mb-2">Clear Cache</h5>
-                            <p class="card-text text-muted small mb-2">Clear all system caches</p>
-                            <span class="badge bg-dark">System</span>
+                            <h5 class="card-title mb-2">RFID Management</h5>
+                            <p class="card-text text-muted small mb-2">Manage RFID tags</p>
+                            <span class="badge bg-success">Hardware</span>
                         </div>
                     </div>
                 </a>
             </div>
+            @endif
 
-            <!-- Parking Display -->
+            <!-- Sensor Management - Admin only -->
+            @if($isAdmin)
+            <div class="col-md-4 col-lg-3">
+                <a href="{{ route('admin.sensors') }}" class="text-decoration-none" wire:navigate>
+                    <div class="card tool-card h-100">
+                        <div class="card-body text-center py-4">
+                            <div class="tool-icon bg-info bg-opacity-10 text-info mx-auto mb-3">
+                                <i class="fas fa-microchip fa-2x"></i>
+                            </div>
+                            <h5 class="card-title mb-2">Sensors</h5>
+                            <p class="card-text text-muted small mb-2">Configure parking sensors</p>
+                            <span class="badge bg-info">Hardware</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            @endif
+
+            <!-- Public Display - Security, SSD, Admin -->
+            @if($isSecurity || $isSsd || $isAdmin)
             <div class="col-md-4 col-lg-3">
                 <a href="/parking-display" class="text-decoration-none" target="_blank">
                     <div class="card tool-card h-100">
@@ -151,8 +172,10 @@
                     </div>
                 </a>
             </div>
+            @endif
 
-            <!-- Guard Display -->
+            <!-- Guard Display - Security, SSD, Admin -->
+            @if($isSecurity || $isSsd || $isAdmin)
             <div class="col-md-4 col-lg-3">
                 <a href="/guard" class="text-decoration-none" target="_blank">
                     <div class="card tool-card h-100">
@@ -161,12 +184,49 @@
                                 <i class="fas fa-shield-alt fa-2x"></i>
                             </div>
                             <h5 class="card-title mb-2">Guard Display</h5>
-                            <p class="card-text text-muted small mb-2">Open guard monitoring screen</p>
+                            <p class="card-text text-muted small mb-2">Guard monitoring screen</p>
                             <span class="badge bg-warning text-dark">Display</span>
                         </div>
                     </div>
                 </a>
             </div>
+            @endif
+
+            <!-- Clear Cache - Admin only -->
+            @if($isAdmin)
+            <div class="col-md-4 col-lg-3">
+                <a href="/clear-cache/valet2025secret" class="text-decoration-none">
+                    <div class="card tool-card h-100">
+                        <div class="card-body text-center py-4">
+                            <div class="tool-icon bg-dark bg-opacity-10 text-dark mx-auto mb-3">
+                                <i class="fas fa-broom fa-2x"></i>
+                            </div>
+                            <h5 class="card-title mb-2">Clear Cache</h5>
+                            <p class="card-text text-muted small mb-2">Clear all system caches</p>
+                            <span class="badge bg-dark">System</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            @endif
+
+            <!-- Seed Parking - Admin only -->
+            @if($isAdmin)
+            <div class="col-md-4 col-lg-3">
+                <a href="{{ route('admin.seed-parking') }}" class="text-decoration-none">
+                    <div class="card tool-card h-100">
+                        <div class="card-body text-center py-4">
+                            <div class="tool-icon bg-dark bg-opacity-10 text-dark mx-auto mb-3">
+                                <i class="fas fa-database fa-2x"></i>
+                            </div>
+                            <h5 class="card-title mb-2">Seed Parking</h5>
+                            <p class="card-text text-muted small mb-2">Reset parking space data</p>
+                            <span class="badge bg-dark">System</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            @endif
         </div>
     </div>
 
