@@ -444,9 +444,14 @@
                                 <div class="text-center">
                                     <strong>Plate: {{ $verifyResult['plate'] }}</strong>
                                     <div class="mt-2">
-                                        <span class="badge bg-success fs-6">
-                                            <i class="fas fa-door-open me-1"></i> Grant Guest Access
-                                        </span>
+                                        <button wire:click="grantGuestAccess" class="btn btn-success">
+                                            <span wire:loading.remove wire:target="grantGuestAccess">
+                                                <i class="fas fa-door-open me-1"></i> Grant 24hr Access
+                                            </span>
+                                            <span wire:loading wire:target="grantGuestAccess">
+                                                <i class="fas fa-spinner fa-spin me-1"></i> Creating...
+                                            </span>
+                                        </button>
                                     </div>
                                 </div>
                             @endif
