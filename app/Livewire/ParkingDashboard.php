@@ -31,6 +31,8 @@ class ParkingDashboard extends Component
     // Verify modal properties
     public $showVerifyModal = false;
     public $verifyRfid = '';
+    public $verifyPlate = '';
+    public $verifyMode = 'rfid'; // 'rfid' or 'guest'
     public $verifyResult = null;
 
     protected $listeners = [
@@ -38,7 +40,8 @@ class ParkingDashboard extends Component
     ];
 
     protected $rules = [
-        'verifyRfid' => 'required|string|max:50'
+        'verifyRfid' => 'required|string|max:50',
+        'verifyPlate' => 'required|string|max:20'
     ];
 
     public function mount()
@@ -112,14 +115,22 @@ class ParkingDashboard extends Component
             $this->dispatch('show-alert', type: 'error', message: 'Access denied.');
             return;
         }
-        
-        $this->reset(['verifyRfid', 'verifyResult']);
+
+        $this->reset(['verifyRfid', 'verifyPlate', 'verifyResult']);
+        $this->verifyMode = 'rfid';
         $this->showVerifyModal = true;
     }
 
     public function closeVerifyModal()
     {
-        $this->reset(['showVerifyModal', 'verifyRfid', 'verifyResult']);
+        $this->reset(['showVerifyModal', 'verifyRfid', 'verifyPlate', 'verifyResult']);
+        $this->verifyMode = 'rfid';
+    }
+
+    public function setVerifyMode($mode)
+    {
+        $this->verifyMode = $mode;
+        $this->reset(['verifyRfid', 'verifyPlate', 'verifyResult']);
     }
 
     public function verifyVehicle()
@@ -129,7 +140,16 @@ class ParkingDashboard extends Component
             return;
         }
 
-        $this->validate();
+        if ($this->verifyMode === 'rfid') {
+            $this->verifyByRfid();
+        } else {
+            $this->verifyByPlate();
+        }
+    }
+
+    private function verifyByRfid()
+    {
+        $this->validate(['verifyRfid' => 'required|string']);
 
         // Check RFID tag first
         $rfidTag = \App\Models\RfidTag::where('uid', strtoupper($this->verifyRfid))
@@ -139,8 +159,9 @@ class ParkingDashboard extends Component
         if (!$rfidTag) {
             $this->verifyResult = [
                 'status' => 'NOT_FOUND',
-                'message' => 'Vehicle not found in system',
-                'color' => 'danger'
+                'message' => 'RFID tag not found in system',
+                'color' => 'danger',
+                'type' => 'rfid'
             ];
             return;
         }
@@ -151,7 +172,8 @@ class ParkingDashboard extends Component
                 'status' => 'INVALID',
                 'message' => 'RFID tag is ' . $rfidTag->status . '. Please contact administrator.',
                 'color' => 'danger',
-                'rfidTag' => $rfidTag
+                'rfidTag' => $rfidTag,
+                'type' => 'rfid'
             ];
             return;
         }
@@ -162,7 +184,8 @@ class ParkingDashboard extends Component
                 'status' => 'EXPIRED',
                 'message' => 'RFID tag expired on ' . \Carbon\Carbon::parse($rfidTag->expiry_date)->format('M j, Y'),
                 'color' => 'danger',
-                'rfidTag' => $rfidTag
+                'rfidTag' => $rfidTag,
+                'type' => 'rfid'
             ];
             return;
         }
@@ -173,6 +196,7 @@ class ParkingDashboard extends Component
         if ($vehicle) {
             $this->verifyResult = $this->getVehicleVerificationResult($vehicle);
             $this->verifyResult['rfidTag'] = $rfidTag;
+            $this->verifyResult['type'] = 'rfid';
         } else {
             // RFID is valid but no vehicle assigned
             $this->verifyResult = [
@@ -180,7 +204,44 @@ class ParkingDashboard extends Component
                 'message' => 'RFID tag is active but no vehicle assigned.',
                 'color' => 'warning',
                 'rfidTag' => $rfidTag,
-                'user' => $rfidTag->user
+                'user' => $rfidTag->user,
+                'type' => 'rfid'
+            ];
+        }
+    }
+
+    private function verifyByPlate()
+    {
+        $this->validate(['verifyPlate' => 'required|string']);
+
+        $plateNumber = strtoupper(trim($this->verifyPlate));
+        $vehicle = Vehicle::with('owner')->where('plate_number', $plateNumber)->first();
+
+        if ($vehicle) {
+            // Vehicle found in system - it's a registered vehicle, not a guest
+            $isActive = $vehicle->isValid();
+
+            $vehicleData = $vehicle->toArray();
+            $vehicleData['owner_name'] = $vehicle->owner->name;
+            $vehicleData['owner_role'] = $vehicle->owner->role;
+
+            $this->verifyResult = [
+                'status' => 'REGISTERED',
+                'message' => $isActive
+                    ? 'This vehicle is registered in the system. Owner should use RFID.'
+                    : 'This vehicle is registered but inactive/expired.',
+                'vehicle' => (object) $vehicleData,
+                'color' => 'warning',
+                'type' => 'guest'
+            ];
+        } else {
+            // Vehicle not in system - valid guest
+            $this->verifyResult = [
+                'status' => 'GUEST_OK',
+                'message' => 'Vehicle not registered. Guest access can be granted.',
+                'plate' => $plateNumber,
+                'color' => 'success',
+                'type' => 'guest'
             ];
         }
     }
