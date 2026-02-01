@@ -724,6 +724,13 @@ main, .container, .valet-header + * {
                           wire:navigate>
                            Parking Map
                         </a>
+                       @if(in_array(auth()->user()->role, ['admin', 'ssd', 'security']))
+                       <a class="nav-link {{ request()->routeIs('parking-log') ? 'active' : '' }}"
+                          href="{{ route('parking-log') }}"
+                          wire:navigate>
+                           Parking Log
+                       </a>
+                       @endif
                        @if(auth()->user()->role === 'admin')
                        <a class="nav-link {{ request()->routeIs('admin.sensors') ? 'active' : '' }}"
                           href="{{ route('admin.sensors') }}"
