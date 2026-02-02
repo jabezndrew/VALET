@@ -22,6 +22,7 @@ class SysUser extends Authenticatable
         'is_active',
         'employee_id',
         'department',
+        'expo_push_token',
     ];
 
     protected $hidden = [

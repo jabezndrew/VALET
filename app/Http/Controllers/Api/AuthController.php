@@ -127,6 +127,42 @@ class AuthController extends Controller
     }
 
     /**
+     * Store/Update user's Expo push token for notifications
+     */
+    public function updatePushToken(Request $request): JsonResponse
+    {
+        $request->validate([
+            'expo_push_token' => 'required|string'
+        ]);
+
+        $user = $request->user();
+        $user->update([
+            'expo_push_token' => $request->expo_push_token
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Push token updated successfully'
+        ]);
+    }
+
+    /**
+     * Remove user's push token (on logout or disable notifications)
+     */
+    public function removePushToken(Request $request): JsonResponse
+    {
+        $user = $request->user();
+        $user->update([
+            'expo_push_token' => null
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Push token removed successfully'
+        ]);
+    }
+
+    /**
      * Get abilities based on user role
      */
     private function getAbilitiesForRole(string $role): array
