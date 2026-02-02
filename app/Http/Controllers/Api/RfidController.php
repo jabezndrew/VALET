@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use App\Models\RfidTag;
 use App\Models\GuestAccess;
 use App\Models\ParkingEntry;
+use App\Services\ExpoPushNotificationService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
@@ -45,6 +46,12 @@ class RfidController extends Controller
                 // Store in cache for real-time monitoring
                 Cache::put('rfid_scan_latest', $scanData, 15);
 
+                // Send push notification to security
+                ExpoPushNotificationService::sendRfidAlert('invalid', [
+                    'uid' => $uid,
+                    'gate_mac' => $gateMac
+                ]);
+
                 return response()->json($scanData);
             }
 
@@ -63,6 +70,14 @@ class RfidController extends Controller
 
                 Cache::put('rfid_scan_latest', $scanData, 15);
 
+                // Send push notification to security
+                ExpoPushNotificationService::sendRfidAlert('expired', [
+                    'uid' => $uid,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'gate_mac' => $gateMac
+                ]);
+
                 return response()->json($scanData);
             }
 
@@ -79,6 +94,14 @@ class RfidController extends Controller
                 ];
 
                 Cache::put('rfid_scan_latest', $scanData, 15);
+
+                // Send push notification to security
+                ExpoPushNotificationService::sendRfidAlert($rfidTag->status, [
+                    'uid' => $uid,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'gate_mac' => $gateMac
+                ]);
 
                 return response()->json($scanData);
             }
