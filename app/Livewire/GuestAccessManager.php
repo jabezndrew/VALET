@@ -241,7 +241,7 @@ class GuestAccessManager extends Component
 
     private function canManageGuests()
     {
-        return in_array(auth()->user()->role, ['admin', 'ssd', 'security']);
+        return in_array(auth()->user()->role, ['admin', 'ssd']);
     }
 
     public function getStatusBadge($guest)
