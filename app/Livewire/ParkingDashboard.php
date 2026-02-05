@@ -218,7 +218,7 @@ class ParkingDashboard extends Component
         $vehicle = Vehicle::with('owner')->where('plate_number', $plateNumber)->first();
 
         if ($vehicle) {
-            // Vehicle found in system - it's a registered vehicle, not a guest
+            // Vehicle found in system - it's a registered vehicle
             $isActive = $vehicle->isValid();
 
             $vehicleData = $vehicle->toArray();
@@ -228,19 +228,19 @@ class ParkingDashboard extends Component
             $this->verifyResult = [
                 'status' => 'REGISTERED',
                 'message' => $isActive
-                    ? 'This vehicle is registered in the system. Owner should use RFID.'
-                    : 'This vehicle is registered but inactive/expired.',
+                    ? 'Vehicle is registered and active. Owner should use RFID.'
+                    : 'Vehicle is registered but inactive/expired.',
                 'vehicle' => (object) $vehicleData,
-                'color' => 'warning',
+                'color' => $isActive ? 'success' : 'warning',
                 'type' => 'guest'
             ];
         } else {
-            // Vehicle not in system - valid guest
+            // Vehicle not in system - not registered (show as warning/red)
             $this->verifyResult = [
-                'status' => 'GUEST_OK',
-                'message' => 'Vehicle not registered. Guest access can be granted.',
+                'status' => 'NOT_REGISTERED',
+                'message' => 'Vehicle not registered in the system.',
                 'plate' => $plateNumber,
-                'color' => 'success',
+                'color' => 'danger',
                 'type' => 'guest'
             ];
         }

@@ -90,11 +90,11 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:security')->group(function () {
         Route::get('/cars', VehicleManager::class)->name('cars.index');
         Route::get('/parking-log', ParkingLog::class)->name('parking-log');
-        Route::get('/guest-access', App\Livewire\GuestAccessManager::class)->name('guest-access');
     });
-    
+
     Route::middleware('role:ssd')->group(function () {
         Route::get('/admin/users', UserManager::class)->name('admin.users');
+        Route::get('/guest-access', App\Livewire\GuestAccessManager::class)->name('guest-access');
     });
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {

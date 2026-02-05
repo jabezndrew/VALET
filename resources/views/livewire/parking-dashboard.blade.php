@@ -375,19 +375,19 @@
                             <div class="d-flex align-items-center">
                                 @php
                                     $icon = match($verifyResult['status']) {
-                                        'ACTIVE', 'Active', 'GUEST_OK' => 'check-circle',
-                                        'NOT_FOUND' => 'times-circle',
-                                        'REGISTERED' => 'exclamation-triangle',
+                                        'ACTIVE', 'Active' => 'check-circle',
+                                        'NOT_FOUND', 'NOT_REGISTERED' => 'times-circle',
+                                        'REGISTERED' => 'check-circle',
                                         default => 'info-circle'
                                     };
                                 @endphp
                                 <i class="fas fa-{{ $icon }} fa-2x me-3"></i>
                                 <div>
                                     <strong>
-                                        @if($verifyResult['status'] === 'GUEST_OK')
-                                            Guest Allowed
+                                        @if($verifyResult['status'] === 'NOT_REGISTERED')
+                                            Not Registered
                                         @elseif($verifyResult['status'] === 'REGISTERED')
-                                            Already Registered
+                                            Registered
                                         @elseif($verifyResult['status'] === 'NOT_FOUND')
                                             Not Found
                                         @else
@@ -439,20 +439,10 @@
                                 </div>
                             @endif
 
-                            @if($verifyResult['status'] === 'GUEST_OK' && isset($verifyResult['plate']))
+                            @if($verifyResult['status'] === 'NOT_REGISTERED' && isset($verifyResult['plate']))
                                 <hr class="my-2">
                                 <div class="text-center">
                                     <strong>Plate: {{ $verifyResult['plate'] }}</strong>
-                                    <div class="mt-2">
-                                        <button wire:click="grantGuestAccess" class="btn btn-success">
-                                            <span wire:loading.remove wire:target="grantGuestAccess">
-                                                <i class="fas fa-door-open me-1"></i> Grant 24hr Access
-                                            </span>
-                                            <span wire:loading wire:target="grantGuestAccess">
-                                                <i class="fas fa-spinner fa-spin me-1"></i> Creating...
-                                            </span>
-                                        </button>
-                                    </div>
                                 </div>
                             @endif
                         </div>
