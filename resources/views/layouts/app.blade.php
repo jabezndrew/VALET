@@ -795,8 +795,11 @@ main, .container, .valet-header + * {
                        </a>
                    </nav>
 
+                   <!-- Overnight Parking Notification Bell -->
+                   @livewire('overnight-parking-alert')
+
                    <!-- User Dropdown - ONLY this has button styling -->
-                   <div class="user-dropdown-wrapper">
+                   <div class="user-dropdown-wrapper ms-2">
                        <button class="user-dropdown" onclick="toggleUserDropdown()">
                            {{ auth()->user()->name }}
                            <i class="fas fa-chevron-down ms-2"></i>

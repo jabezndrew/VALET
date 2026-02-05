@@ -11,6 +11,30 @@ use Illuminate\Validation\Rules\Password;
 
 class UserManager extends Component
 {
+    // Department options for USJ-R
+    public const DEPARTMENTS = [
+        // College Programs
+        'School of Allied Medical Sciences',
+        'School of Arts and Sciences',
+        'School of Business and Management',
+        'School of Computer Studies',
+        'School of Education',
+        'School of Engineering and Architecture',
+        'School of Law',
+        'Expanded Tertiary Education Equivalency and Accreditation Program',
+        'CPA Review',
+        'Law Review',
+        'RITTC',
+        // Basic Education
+        'Elementary Department',
+        'High School Department',
+        'Senior High School Department',
+        // Administrative
+        'Administration',
+        'Security Services Department',
+        'Other',
+    ];
+
     // Form properties
     public $name = '';
     public $email = '';
@@ -61,7 +85,8 @@ class UserManager extends Component
             'users' => $this->getUsers(),
             'stats' => $this->getUserStats(),
             'pendingCount' => $this->getPendingAccountsCount(),
-            'parkedUserIds' => ParkingEntry::where('status', 'parked')->pluck('user_id')->toArray()
+            'parkedUserIds' => ParkingEntry::where('status', 'parked')->pluck('user_id')->toArray(),
+            'departments' => self::DEPARTMENTS,
         ])->layout('layouts.app');
     }
 
