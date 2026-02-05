@@ -264,8 +264,26 @@
                             <div class="col-md-8">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Department <small class="text-muted">(Optional)</small></label>
-                                    <input wire:model="department" type="text" class="form-control" 
-                                           placeholder="e.g. IT Department, Computer Studies, Security">
+                                    <select wire:model="department" class="form-select">
+                                        <option value="">-- Select Department --</option>
+                                        <optgroup label="College Programs">
+                                            @foreach($departments as $dept)
+                                                @if(!in_array($dept, ['Elementary Department', 'High School Department', 'Senior High School Department', 'Administration', 'Security Services Department', 'Other']))
+                                                    <option value="{{ $dept }}">{{ $dept }}</option>
+                                                @endif
+                                            @endforeach
+                                        </optgroup>
+                                        <optgroup label="Basic Education">
+                                            <option value="Elementary Department">Elementary Department</option>
+                                            <option value="High School Department">High School Department</option>
+                                            <option value="Senior High School Department">Senior High School Department</option>
+                                        </optgroup>
+                                        <optgroup label="Administrative">
+                                            <option value="Administration">Administration</option>
+                                            <option value="Security Services Department">Security Services Department</option>
+                                            <option value="Other">Other</option>
+                                        </optgroup>
+                                    </select>
                                     @error('department') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -273,7 +291,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Status</label>
                                     <div class="form-check form-switch mt-2">
-                                        <input wire:model="is_active" class="form-check-input" 
+                                        <input wire:model="is_active" class="form-check-input"
                                                type="checkbox" id="is_active">
                                         <label class="form-check-label" for="is_active">
                                             <span class="badge {{ $is_active ? 'bg-success' : 'bg-danger' }}">
