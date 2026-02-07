@@ -1,5 +1,5 @@
 <div>
-    <div class="container-fluid py-4">
+    <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Parking Log</h2>
             <button class="btn btn-success" wire:click="export">
