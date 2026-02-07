@@ -15,18 +15,9 @@ class GuardParkingDisplay extends Component
     public $allFloorStats = [];
     public $lastUpdate;
 
-    // PIN authentication
-    public $isAuthenticated = false;
+    // PIN authentication (per-action, not session-based)
     public $pinInput = '';
     public $pinError = '';
-
-    // PIN change modal
-    public $showPinChangeModal = false;
-    public $currentPin = '';
-    public $newPin = '';
-    public $confirmPin = '';
-    public $pinChangeError = '';
-    public $pinChangeSuccess = '';
 
     // Filter
     public $statusFilter = 'all'; // all, available, occupied, issues
@@ -52,117 +43,11 @@ class GuardParkingDisplay extends Component
 
     public function mount()
     {
-        // Check if already authenticated via session
-        $this->isAuthenticated = session('guard_authenticated', false);
-
         $this->loadAllFloorStats();
         $this->loadParkingData();
         $this->loadOpenIncidentsCount();
     }
 
-    public function verifyPin()
-    {
-        $correctPin = config('app.guard_pin', '1234');
-
-        if ($this->pinInput === $correctPin) {
-            $this->isAuthenticated = true;
-            session(['guard_authenticated' => true]);
-            $this->pinError = '';
-            $this->pinInput = '';
-        } else {
-            $this->pinError = 'Invalid PIN. Please try again.';
-            $this->pinInput = '';
-        }
-    }
-
-    public function logout()
-    {
-        $this->isAuthenticated = false;
-        session()->forget('guard_authenticated');
-    }
-
-    public function openPinChangeModal()
-    {
-        if (!$this->isAuthenticated) {
-            return;
-        }
-
-        $this->showPinChangeModal = true;
-        $this->currentPin = '';
-        $this->newPin = '';
-        $this->confirmPin = '';
-        $this->pinChangeError = '';
-        $this->pinChangeSuccess = '';
-    }
-
-    public function closePinChangeModal()
-    {
-        $this->showPinChangeModal = false;
-        $this->currentPin = '';
-        $this->newPin = '';
-        $this->confirmPin = '';
-        $this->pinChangeError = '';
-        $this->pinChangeSuccess = '';
-    }
-
-    public function changePin()
-    {
-        if (!$this->isAuthenticated) {
-            return;
-        }
-
-        $this->pinChangeError = '';
-        $this->pinChangeSuccess = '';
-
-        // Validate current PIN
-        $correctPin = config('app.guard_pin', '1234');
-        if ($this->currentPin !== $correctPin) {
-            $this->pinChangeError = 'Current PIN is incorrect.';
-            return;
-        }
-
-        // Validate new PIN
-        if (strlen($this->newPin) < 4 || strlen($this->newPin) > 8) {
-            $this->pinChangeError = 'New PIN must be 4-8 digits.';
-            return;
-        }
-
-        if (!ctype_digit($this->newPin)) {
-            $this->pinChangeError = 'PIN must contain only numbers.';
-            return;
-        }
-
-        // Validate confirmation
-        if ($this->newPin !== $this->confirmPin) {
-            $this->pinChangeError = 'New PIN and confirmation do not match.';
-            return;
-        }
-
-        // Update .env file
-        $envPath = base_path('.env');
-        $envContent = file_get_contents($envPath);
-
-        if (strpos($envContent, 'GUARD_PIN=') !== false) {
-            // Update existing GUARD_PIN
-            $envContent = preg_replace('/GUARD_PIN=.*/', 'GUARD_PIN=' . $this->newPin, $envContent);
-        } else {
-            // Add GUARD_PIN if it doesn't exist
-            $envContent .= "\nGUARD_PIN=" . $this->newPin;
-        }
-
-        file_put_contents($envPath, $envContent);
-
-        // Clear config cache so new PIN takes effect
-        \Artisan::call('config:clear');
-
-        $this->pinChangeSuccess = 'PIN changed successfully!';
-        $this->currentPin = '';
-        $this->newPin = '';
-        $this->confirmPin = '';
-
-        // Close modal after short delay (handled in JS)
-        session()->flash('success', 'Guard PIN has been updated successfully.');
-    }
 
     public function loadAllFloorStats()
     {
@@ -232,7 +117,11 @@ class GuardParkingDisplay extends Component
 
     public function resolveIncident($incidentId)
     {
-        if (!$this->isAuthenticated) {
+        // Verify PIN for each action
+        $correctPin = config('app.guard_pin', '1234');
+        if ($this->pinInput !== $correctPin) {
+            $this->pinError = 'Invalid PIN. Please try again.';
+            $this->pinInput = '';
             return;
         }
 
@@ -244,6 +133,9 @@ class GuardParkingDisplay extends Component
             ]);
 
             session()->flash('success', "Issue at {$incident->space_code} has been resolved.");
+
+            $this->pinInput = '';
+            $this->pinError = '';
 
             // Reload incidents
             $this->loadOpenIncidentsCount();
@@ -278,10 +170,6 @@ class GuardParkingDisplay extends Component
     // Action Modal Methods
     public function openActionModal($spaceId, $type)
     {
-        if (!$this->isAuthenticated) {
-            return;
-        }
-
         $this->selectedSpace = ParkingSpace::find($spaceId);
         $this->actionType = $type;
         $this->showActionModal = true;
@@ -290,6 +178,8 @@ class GuardParkingDisplay extends Component
         $this->overrideStatus = $this->selectedSpace->getEffectiveStatus();
         $this->incidentCategory = 'debris';
         $this->incidentNotes = '';
+        $this->pinError = '';
+        $this->pinInput = '';
     }
 
     public function closeActionModal()
@@ -301,7 +191,15 @@ class GuardParkingDisplay extends Component
 
     public function submitOverride()
     {
-        if (!$this->selectedSpace || !$this->isAuthenticated) {
+        if (!$this->selectedSpace) {
+            return;
+        }
+
+        // Verify PIN for each action
+        $correctPin = config('app.guard_pin', '1234');
+        if ($this->pinInput !== $correctPin) {
+            $this->pinError = 'Invalid PIN. Please try again.';
+            $this->pinInput = '';
             return;
         }
 
@@ -313,13 +211,19 @@ class GuardParkingDisplay extends Component
 
         session()->flash('success', "Spot {$this->selectedSpace->space_code} marked as {$this->overrideStatus}. Override expires in 1 hour.");
 
+        $this->pinInput = '';
+        $this->pinError = '';
         $this->closeActionModal();
         $this->loadParkingData();
     }
 
     public function clearOverride($spaceId)
     {
-        if (!$this->isAuthenticated) {
+        // Verify PIN for each action
+        $correctPin = config('app.guard_pin', '1234');
+        if ($this->pinInput !== $correctPin) {
+            $this->pinError = 'Invalid PIN. Please try again.';
+            $this->pinInput = '';
             return;
         }
 
@@ -327,13 +231,20 @@ class GuardParkingDisplay extends Component
         if ($space) {
             $space->clearManualOverride();
             session()->flash('success', "Manual override cleared for {$space->space_code}.");
+            $this->pinInput = '';
+            $this->pinError = '';
+            $this->closeActionModal();
             $this->loadParkingData();
         }
     }
 
     public function submitIncident()
     {
-        if (!$this->isAuthenticated) {
+        // Verify PIN for each action
+        $correctPin = config('app.guard_pin', '1234');
+        if ($this->pinInput !== $correctPin) {
+            $this->pinError = 'Invalid PIN. Please try again.';
+            $this->pinInput = '';
             return;
         }
 
@@ -387,6 +298,8 @@ class GuardParkingDisplay extends Component
 
         session()->flash('success', 'Incident reported successfully.');
 
+        $this->pinInput = '';
+        $this->pinError = '';
         $this->closeActionModal();
         $this->loadOpenIncidentsCount();
     }
