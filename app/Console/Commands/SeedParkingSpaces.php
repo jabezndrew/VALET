@@ -181,7 +181,7 @@ class SeedParkingSpaces extends Command
                 $slotNumber++;
             }
 
-            $this->info("  ✓ {$floor['name']} completed");
+            $this->info("  [OK] {$floor['name']} completed");
         }
 
         $this->newLine();

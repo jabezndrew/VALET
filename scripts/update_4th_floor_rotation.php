@@ -24,10 +24,10 @@ foreach ($updates as $update) {
 
     if ($space) {
         $space->update(['rotation' => $update['rotation']]);
-        echo "✓ Updated {$update['space_code']} to {$update['rotation']}°\n";
+        echo "[OK] Updated {$update['space_code']} to {$update['rotation']} degrees\n";
         $updated++;
     } else {
-        echo "✗ Slot {$update['space_code']} not found\n";
+        echo "[ERROR] Slot {$update['space_code']} not found\n";
     }
 }
 
