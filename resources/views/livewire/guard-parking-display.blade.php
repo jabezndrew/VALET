@@ -1,44 +1,4 @@
 <div @if(!$showActionModal) wire:poll.3s="loadParkingData" @endif>
-    {{-- PIN Authentication Modal --}}
-    @if(!$isAuthenticated)
-    <div class="pin-overlay">
-        <div class="pin-modal">
-            <div class="pin-title">
-                <i class="fas fa-shield-alt me-2"></i>
-                Guard Access
-            </div>
-            <p class="pin-subtitle">Enter your PIN to access guard features</p>
-
-            @if($pinError)
-                <div class="pin-error">
-                    <i class="fas fa-exclamation-circle me-1"></i>
-                    {{ $pinError }}
-                </div>
-            @endif
-
-            <input
-                type="password"
-                class="pin-input"
-                wire:model="pinInput"
-                wire:keydown.enter="verifyPin"
-                placeholder="****"
-                maxlength="6"
-                inputmode="numeric"
-                autofocus
-            >
-
-            <button class="pin-submit" wire:click="verifyPin">
-                <i class="fas fa-unlock me-2"></i>
-                Unlock
-            </button>
-
-            <p class="mt-3 text-muted" style="font-size: 0.85rem;">
-                You can still view the map without PIN.<br>
-                <a href="/parking-display" style="color: #B22020;">View Public Map</a>
-            </p>
-        </div>
-    </div>
-    @endif
 
     {{-- Header --}}
     <div class="guard-header">
@@ -51,20 +11,7 @@
         </div>
 
         <div class="guard-status">
-            @if($isAuthenticated)
-                <button class="auth-btn settings-btn" wire:click="openPinChangeModal" title="Change PIN">
-                    <i class="fas fa-key"></i>
-                </button>
-                <button class="auth-btn" wire:click="logout">
-                    <i class="fas fa-sign-out-alt me-1"></i>
-                    Logout
-                </button>
-            @else
-                <button class="auth-btn" onclick="document.querySelector('.pin-input').focus()">
-                    <i class="fas fa-lock me-1"></i>
-                    Unlock
-                </button>
-            @endif
+            {{-- Guard view - no session login needed --}}
         </div>
     </div>
 
@@ -270,9 +217,9 @@
                                                 font-size: 22px;
                                                 transform: rotate({{ $rotation }}deg);
                                                 pointer-events: auto;
-                                                cursor: {{ $hasAssignedSensor && $isAuthenticated ? 'pointer' : 'default' }};
+                                                cursor: {{ $hasAssignedSensor ? 'pointer' : 'default' }};
                                             "
-                                            @if($hasAssignedSensor && $isAuthenticated)
+                                            @if($hasAssignedSensor)
                                                 wire:click="openActionModal({{ $space->id }}, 'override')"
                                             @endif
                                             title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}{{ $isManualOverride ? ' (Manual Override)' : '' }}"
@@ -361,22 +308,42 @@
                         </div>
                     </div>
 
-                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">
                         <i class="fas fa-info-circle me-1"></i>
                         Override will automatically expire in 1 hour or when sensor detects a change.
                     </p>
 
-                    @if($selectedSpace->isManualOverrideActive())
+                    {{-- PIN Input for Override --}}
+                    <div class="form-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                        <label class="form-label">
+                            Enter PIN to confirm:
+                        </label>
+                        @if($pinError)
+                            <div style="background: #f8d7da; color: #721c24; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem;">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {{ $pinError }}
+                            </div>
+                        @endif
+                        <input
+                            type="password"
+                            class="form-input"
+                            wire:model="pinInput"
+                            placeholder="****"
+                            maxlength="8"
+                            inputmode="numeric"
+                            style="text-align: center; font-size: 1.1rem; letter-spacing: 3px;"
+                        >
+                    </div>
+                     @if($selectedSpace->isManualOverrideActive())
                         <button
                             class="action-submit"
-                            style="background: #6c757d; margin-bottom: 10px;"
+                            style="background: #6c757d; margin-bottom: 10px; background: COLORS.primary;"
                             wire:click="clearOverride({{ $selectedSpace->id }})"
                         >
                             <i class="fas fa-undo me-2"></i>
                             Clear Override
                         </button>
                     @endif
-
                     <button class="action-submit override" wire:click="submitOverride">
                         <i class="fas fa-check me-2"></i>
                         Apply Override
@@ -406,86 +373,34 @@
                         ></textarea>
                     </div>
 
+                    {{-- PIN Input for Report --}}
+                    <div class="form-group" style="margin-top: 15px; padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                        <label class="form-label">
+                            <i class="fas fa-shield-alt me-1" style="color: #B22020;"></i>
+                            Enter PIN to confirm:
+                        </label>
+                        @if($pinError)
+                            <div style="background: #f8d7da; color: #721c24; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem;">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {{ $pinError }}
+                            </div>
+                        @endif
+                        <input
+                            type="password"
+                            class="form-input"
+                            wire:model="pinInput"
+                            placeholder="****"
+                            maxlength="8"
+                            inputmode="numeric"
+                            style="text-align: center; font-size: 1.1rem; letter-spacing: 3px;"
+                        >
+                    </div>
+
                     <button class="action-submit report" wire:click="submitIncident">
                         <i class="fas fa-paper-plane me-2"></i>
                         Submit Report
                     </button>
                 @endif
-            </div>
-        </div>
-    </div>
-    @endif
-
-    {{-- PIN Change Modal --}}
-    @if($showPinChangeModal)
-    <div class="action-overlay" wire:click.self="closePinChangeModal">
-        <div class="action-modal" style="max-width: 400px;">
-            <div class="action-header">
-                <h3>Change Guard PIN</h3>
-                <button class="action-close" wire:click="closePinChangeModal">
-                    <i class="fas fa-times"></i>
-                </button>
-            </div>
-
-            <div class="action-body">
-                @if($pinChangeError)
-                    <div class="pin-change-alert error">
-                        <i class="fas fa-exclamation-circle me-2"></i>
-                        {{ $pinChangeError }}
-                    </div>
-                @endif
-
-                @if($pinChangeSuccess)
-                    <div class="pin-change-alert success">
-                        <i class="fas fa-check-circle me-2"></i>
-                        {{ $pinChangeSuccess }}
-                    </div>
-                @endif
-
-                <div class="form-group">
-                    <label class="form-label">Current PIN:</label>
-                    <input
-                        type="password"
-                        class="form-input"
-                        wire:model="currentPin"
-                        placeholder="Enter current PIN"
-                        maxlength="8"
-                        inputmode="numeric"
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">New PIN:</label>
-                    <input
-                        type="password"
-                        class="form-input"
-                        wire:model="newPin"
-                        placeholder="Enter new PIN (4-8 digits)"
-                        maxlength="8"
-                        inputmode="numeric"
-                    >
-                </div>
-
-                <div class="form-group">
-                    <label class="form-label">Confirm New PIN:</label>
-                    <input
-                        type="password"
-                        class="form-input"
-                        wire:model="confirmPin"
-                        placeholder="Confirm new PIN"
-                        maxlength="8"
-                        inputmode="numeric"
-                    >
-                </div>
-
-                <p style="font-size: 0.85rem; color: #666; margin-bottom: 20px;">
-                    <i class="fas fa-info-circle me-1"></i>
-                    PIN must be 4-8 digits. This will update the PIN for all guards.
-                </p>
-
-                <button class="action-submit" style="background: linear-gradient(135deg, #B22020 0%, #8B0000 100%);" wire:click="changePin">
-                   <span style="color: white">Save New PIN</span>
-                </button>
             </div>
         </div>
     </div>
@@ -559,15 +474,28 @@
                                     @endif
                                 </div>
 
-                                @if($isAuthenticated)
-                                    <div class="incident-actions">
-                                        <button
-                                            class="btn-resolve"
-                                            wire:click="resolveIncident({{ $incident['id'] }})"
-                                        >
-                                            <i class="fas fa-check me-1"></i>
-                                            Mark Resolved
-                                        </button>
+                                <div class="incident-actions" style="display: flex; align-items: center; gap: 10px; flex-wrap: wrap;">
+                                    <input
+                                        type="password"
+                                        class="form-input"
+                                        wire:model="pinInput"
+                                        placeholder="PIN"
+                                        maxlength="8"
+                                        inputmode="numeric"
+                                        style="width: 80px; text-align: center; font-size: 0.9rem; padding: 6px 10px;"
+                                    >
+                                    <button
+                                        class="btn-resolve"
+                                        wire:click="resolveIncident({{ $incident['id'] }})"
+                                    >
+                                        <i class="fas fa-check me-1"></i>
+                                        Mark Resolved
+                                    </button>
+                                </div>
+                                @if($pinError)
+                                    <div style="color: #dc3545; font-size: 0.8rem; margin-top: 5px;">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        {{ $pinError }}
                                     </div>
                                 @endif
                             </div>

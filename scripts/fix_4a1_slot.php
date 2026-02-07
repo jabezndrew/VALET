@@ -25,10 +25,10 @@ if ($slot) {
         'is_active' => true,
     ]);
 
-    echo "✓ Updated 4A1 slot successfully!\n";
+    echo "[OK] Updated 4A1 slot successfully!\n";
     echo "  - Position: (1035, 174)\n";
     echo "  - Label: 4A1\n";
     echo "  - Sensor ID: 407\n";
 } else {
-    echo "✗ Slot 4A1 not found!\n";
+    echo "[ERROR] Slot 4A1 not found!\n";
 }

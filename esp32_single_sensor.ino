@@ -199,9 +199,9 @@ void registerDevice() {
 
                 if (success) {
                     isRegistered = true;
-                    Serial.println("✓ Device registered successfully!");
+                    Serial.println("[OK] Device registered successfully!");
                 } else {
-                    Serial.println("✗ Registration failed. Will retry...");
+                    Serial.println("[ERROR] Registration failed. Will retry...");
                 }
             }
         } else {
@@ -267,7 +267,7 @@ void checkAssignment() {
 
                             // Detect if sensor was just assigned
                             if (!isAssigned && newIsAssigned) {
-                                Serial.println("✓✓✓ SENSOR JUST ASSIGNED! Starting green blink animation...");
+                                Serial.println("[OK] SENSOR JUST ASSIGNED! Starting green blink animation...");
                                 isBlinkingGreen = true;
                                 assignmentBlinkStart = millis();
                             }
@@ -285,7 +285,7 @@ void checkAssignment() {
                             }
 
                             if (identifyMode) {
-                                Serial.println("  ⚡ IDENTIFY MODE: ACTIVE (Yellow LED blinking)");
+                                Serial.println("  [!] IDENTIFY MODE: ACTIVE (Yellow LED blinking)");
                             }
                             break;
                         }
@@ -429,10 +429,10 @@ void sendToDatabase(bool isOccupied, int distance) {
                 // If status changed, refresh assignment
                 if (status) {
                     if (strcmp(status, "assigned") == 0 && !isAssigned) {
-                        Serial.println("✓ Sensor was assigned! Refreshing...");
+                        Serial.println("[OK] Sensor was assigned! Refreshing...");
                         checkAssignment();
                     } else if (strcmp(status, "unassigned") == 0 && isAssigned) {
-                        Serial.println("⚠ Sensor was unassigned! Refreshing...");
+                        Serial.println("[WARNING] Sensor was unassigned! Refreshing...");
                         checkAssignment();
                     }
                 }

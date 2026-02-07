@@ -646,7 +646,7 @@ html, body {
 }
 
 .action-submit.override {
-    background: linear-gradient(135deg, #3A3A3C 0%, #2d2d2f 100%);
+     background: #8B0000;
     color: white;
 }
 

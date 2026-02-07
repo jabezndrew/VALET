@@ -108,7 +108,7 @@ foreach ($slots as $slot) {
                 'slot_name' => $slotName,
             ]);
             $updated++;
-            echo "✓ Updated: {$slotName} at ({$x}, {$y})\n";
+            echo "[OK] Updated: {$slotName} at ({$x}, {$y})\n";
         } else {
             // Create new slot
             ParkingSpace::create([
@@ -125,11 +125,11 @@ foreach ($slots as $slot) {
                 'is_active' => true,
             ]);
             $created++;
-            echo "✓ Created: {$slotName} at ({$x}, {$y})\n";
+            echo "[OK] Created: {$slotName} at ({$x}, {$y})\n";
         }
     } catch (\Exception $e) {
         $errors++;
-        echo "✗ Error with {$slotName}: " . $e->getMessage() . "\n";
+        echo "[ERROR] Error with {$slotName}: " . $e->getMessage() . "\n";
     }
 }
 

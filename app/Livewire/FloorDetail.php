@@ -64,9 +64,9 @@ class FloorDetail extends Component
     public function getStatusText($space)
     {
         if ($space['is_occupied']) {
-            return '🚗 Vehicle Present';
+            return 'Vehicle Present';
         }
-        return '✅ Space Available';
+        return 'Space Available';
     }
 
     public function goBack()
