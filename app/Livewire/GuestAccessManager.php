@@ -13,6 +13,7 @@ class GuestAccessManager extends Component
     public $vehicle_plate = '';
     public $phone = '';
     public $purpose = '';
+    public $customPurpose = '';
     public $valid_hours = 24;
     public $notes = '';
 
@@ -28,7 +29,8 @@ class GuestAccessManager extends Component
         'name' => 'required|string|max:100',
         'vehicle_plate' => 'required|string|max:20',
         'phone' => 'nullable|string|max:20',
-        'purpose' => 'nullable|string|max:255',
+        'purpose' => 'required|string|max:255',
+        'customPurpose' => 'nullable|required_if:purpose,other|string|max:255',
         'valid_hours' => 'required|integer|min:1|max:168',
         'notes' => 'nullable|string|max:500',
     ];
@@ -83,7 +85,8 @@ class GuestAccessManager extends Component
 
         try {
             $validFrom = Carbon::now();
-            $validUntil = Carbon::now()->addHours($this->valid_hours);
+            $validUntil = Carbon::now()->addHours((int) $this->valid_hours);
+            $finalPurpose = $this->purpose === 'other' ? $this->customPurpose : $this->purpose;
 
             if ($this->editingId) {
                 $guest = GuestAccess::find($this->editingId);
@@ -91,7 +94,7 @@ class GuestAccessManager extends Component
                     'name' => $this->name,
                     'vehicle_plate' => strtoupper($this->vehicle_plate),
                     'phone' => $this->phone,
-                    'purpose' => $this->purpose,
+                    'purpose' => $finalPurpose,
                     'valid_until' => $validUntil,
                     'notes' => $this->notes,
                 ]);
@@ -105,7 +108,7 @@ class GuestAccessManager extends Component
                     'name' => $this->name,
                     'vehicle_plate' => strtoupper($this->vehicle_plate),
                     'phone' => $this->phone,
-                    'purpose' => $this->purpose,
+                    'purpose' => $finalPurpose,
                     'valid_from' => $validFrom,
                     'valid_until' => $validUntil,
                     'status' => 'active',
@@ -135,7 +138,7 @@ class GuestAccessManager extends Component
     {
         $guest = GuestAccess::find($guestId);
         if ($guest) {
-            $newExpiry = Carbon::parse($guest->valid_until)->addHours($hours);
+            $newExpiry = Carbon::parse($guest->valid_until)->addHours((int) $hours);
             $guest->update([
                 'valid_until' => $newExpiry,
                 'status' => 'active'
@@ -234,7 +237,7 @@ class GuestAccessManager extends Component
 
     private function resetForm()
     {
-        $this->reset(['editingId', 'name', 'vehicle_plate', 'phone', 'purpose', 'notes']);
+        $this->reset(['editingId', 'name', 'vehicle_plate', 'phone', 'purpose', 'customPurpose', 'notes']);
         $this->valid_hours = 24;
         $this->resetErrorBag();
     }

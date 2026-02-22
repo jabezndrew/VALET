@@ -62,7 +62,7 @@
             <div class="card-body">
                 <div class="row">
                     <div class="col-md-6">
-                        <input wire:model.live="search" type="text" class="form-control" 
+                        <input wire:model.live="search" type="text" class="form-control"
                                placeholder="Search by name, email, or ID...">
                     </div>
                     <div class="col-md-3">
@@ -141,18 +141,18 @@
                                     </td>
                                     <td>
                                         <div class="btn-group btn-group-sm">
-                                            <button wire:click="openModal({{ $user->id }})" 
+                                            <button wire:click="openModal({{ $user->id }})"
                                                     class="btn btn-outline-secondary"
                                                     title="Edit user">
                                                 <i class="fas fa-edit"></i>
                                             </button>
-                                            <button wire:click="toggleStatus({{ $user->id }})" 
+                                            <button wire:click="toggleStatus({{ $user->id }})"
                                                     class="btn btn-outline-{{ $user->is_active ? 'warning' : 'success' }}"
                                                     title="{{ $user->is_active ? 'Deactivate' : 'Activate' }} user">
                                                 <i class="fas fa-{{ $user->is_active ? 'pause' : 'play' }}"></i>
                                             </button>
                                             @if($user->id !== auth()->id())
-                                            <button wire:click="delete({{ $user->id }})" 
+                                            <button wire:click="delete({{ $user->id }})"
                                                     wire:confirm="Are you sure you want to delete this user? This action cannot be undone."
                                                     class="btn btn-outline-danger"
                                                     title="Delete user">
@@ -201,7 +201,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Full Name</label>
-                                    <input wire:model="name" type="text" class="form-control" 
+                                    <input wire:model="name" type="text" class="form-control"
                                            placeholder="e.g. John Doe" required>
                                     @error('name') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -209,7 +209,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Email Address</label>
-                                    <input wire:model="email" type="email" class="form-control" 
+                                    <input wire:model="email" type="email" class="form-control"
                                            placeholder="e.g. john.doe@valet.com" required>
                                     @error('email') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -222,7 +222,7 @@
                                     <label class="form-label fw-bold">
                                         Password {{ $editingId ? '(Leave blank to keep current)' : '' }}
                                     </label>
-                                    <input wire:model="password" type="password" class="form-control" 
+                                    <input wire:model="password" type="password" class="form-control"
                                            placeholder="Password" {{ !$editingId ? 'required' : '' }}>
                                     @error('password') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -230,7 +230,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Confirm Password</label>
-                                    <input wire:model="password_confirmation" type="password" class="form-control" 
+                                    <input wire:model="password_confirmation" type="password" class="form-control"
                                            placeholder="Confirm Password">
                                     @error('password_confirmation') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -242,6 +242,7 @@
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Role</label>
                                     <select wire:model="role" class="form-select" required>
+                                        <option value="" disabled selected hidden>-- Select Role --</option>
                                         <option value="user">User</option>
                                         <option value="security">Security Personnel</option>
                                         <option value="ssd">SSD Personnel</option>
@@ -253,7 +254,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Employee ID <small class="text-muted">(Optional)</small></label>
-                                    <input wire:model="employee_id" type="text" class="form-control" 
+                                    <input wire:model="employee_id" type="text" class="form-control"
                                            placeholder="e.g. EMP001, STU2024001">
                                     @error('employee_id') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
@@ -326,7 +327,7 @@
             Livewire.on('show-alert', (event) => {
                 const alertContainer = document.getElementById('alert-container');
                 const alertId = 'alert-' + Date.now();
-                
+
                 const alertHtml = `
                     <div class="container mt-3">
                         <div id="${alertId}" class="alert alert-${event.type} alert-dismissible fade show" role="alert">
@@ -336,9 +337,9 @@
                         </div>
                     </div>
                 `;
-                
+
                 alertContainer.innerHTML = alertHtml;
-                
+
                 setTimeout(() => {
                     const alert = document.getElementById(alertId);
                     if (alert) alert.remove();
