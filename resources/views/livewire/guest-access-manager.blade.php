@@ -179,7 +179,7 @@
 
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Vehicle Plate <span class="text-danger">*</span></label>
-                                <input type="text" wire:model="vehicle_plate" class="form-control text-uppercase" placeholder="ABC 1234">
+                                <input type="text" wire:model="vehicle_plate" class="form-control" placeholder="ABC 1234" x-on:input="$el.value = $el.value.toUpperCase()" style="text-transform: uppercase;">
                                 @error('vehicle_plate') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
 
@@ -191,9 +191,28 @@
 
                             <div class="col-12">
                                 <label class="form-label fw-bold">Purpose of Visit</label>
-                                <input type="text" wire:model="purpose" class="form-control" placeholder="e.g., Meeting, Delivery, Visitor">
+                                <select wire:model.live="purpose" class="form-select">
+                                    <option value="" disabled selected hidden>-- Select Purpose --</option>
+                                    <option value="Student Drop-off / Pick-up">Student Drop-off / Pick-up</option>
+                                    <option value="Parent-Teacher Meeting">Parent-Teacher Meeting</option>
+                                    <option value="School Event / Program">School Event / Program</option>
+                                    <option value="Meeting with Faculty / Staff">Meeting with Faculty / Staff</option>
+                                    <option value="Job Interview">Job Interview</option>
+                                    <option value="Delivery / Service">Delivery / Service</option>
+                                    <option value="Campus Tour / Inquiry">Campus Tour / Inquiry</option>
+                                    <option value="Maintenance / Repair">Maintenance / Repair</option>
+                                    <option value="other">Other</option>
+                                </select>
                                 @error('purpose') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
+
+                            @if($purpose === 'other')
+                            <div class="col-12">
+                                <label class="form-label fw-bold">Specify Purpose</label>
+                                <input type="text" wire:model="customPurpose" class="form-control" placeholder="Enter purpose of visit">
+                                @error('customPurpose') <div class="text-danger small">{{ $message }}</div> @enderror
+                            </div>
+                            @endif
 
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Valid Duration <span class="text-danger">*</span></label>
