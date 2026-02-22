@@ -793,6 +793,13 @@ main, .container, .valet-header + * {
                           title="Feedback">
                            <i class="fas fa-comments"></i>
                        </a>
+
+                       <a class="icon-nav-link {{ request()->is('parking-display') ? 'active' : '' }}"
+                          href="/parking-display"
+                          wire:navigate
+                          title="Parking Map">
+                           <i class="fas fa-map-marked-alt"></i>
+                       </a>
                    </nav>
 
                    <!-- Overnight Parking Notification Bell -->

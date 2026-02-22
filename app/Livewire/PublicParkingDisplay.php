@@ -5,6 +5,8 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\ParkingSpace;
 use App\Models\SensorAssignment;
+use App\Models\GuardIncident;
+use App\Models\Feedback;
 
 class PublicParkingDisplay extends Component
 {
@@ -20,10 +22,27 @@ class PublicParkingDisplay extends Component
     public $selectedSpotX = 0;
     public $selectedSpotY = 0;
 
+    // Guard action properties (only used by security roles)
+    public $pinInput = '';
+    public $pinError = '';
+    public $showActionModal = false;
+    public $selectedSpace = null;
+    public $actionType = '';
+    public $overrideStatus = 'occupied';
+    public $incidentCategory = 'debris';
+    public $incidentNotes = '';
+    public $openIncidentsCount = 0;
+    public $openIncidents = [];
+    public $showIncidentsModal = false;
+
     public function mount()
     {
         $this->loadAllFloorStats();
         $this->loadParkingData();
+
+        if (auth()->check() && auth()->user()->isSecurity()) {
+            $this->loadOpenIncidentsCount();
+        }
     }
 
     public function loadAllFloorStats()
@@ -116,6 +135,219 @@ class PublicParkingDisplay extends Component
         $this->selectedSpotX = 0;
         $this->selectedSpotY = 0;
         $this->showRoute = false;
+    }
+
+    // Guard action methods (security roles only)
+
+    public function isGuardUser()
+    {
+        return auth()->check() && auth()->user()->isSecurity();
+    }
+
+    public function loadOpenIncidentsCount()
+    {
+        $this->openIncidentsCount = GuardIncident::where('status', 'open')->count();
+    }
+
+    public function openActionModal($spaceId, $type)
+    {
+        if (!$this->isGuardUser()) {
+            return;
+        }
+
+        // Clear any active route
+        $this->clearRoute();
+
+        $this->selectedSpace = ParkingSpace::find($spaceId);
+        $this->actionType = $type;
+        $this->showActionModal = true;
+
+        $this->overrideStatus = $this->selectedSpace->getEffectiveStatus();
+        $this->incidentCategory = 'debris';
+        $this->incidentNotes = '';
+        $this->pinError = '';
+        $this->pinInput = '';
+    }
+
+    public function closeActionModal()
+    {
+        $this->showActionModal = false;
+        $this->selectedSpace = null;
+        $this->actionType = '';
+    }
+
+    public function submitOverride()
+    {
+        if (!$this->selectedSpace || !$this->isGuardUser()) {
+            return;
+        }
+
+        $correctPin = config('app.guard_pin', '1234');
+        if ($this->pinInput !== $correctPin) {
+            $this->pinError = 'Invalid PIN. Please try again.';
+            $this->pinInput = '';
+            return;
+        }
+
+        $this->selectedSpace->setManualOverride(
+            $this->overrideStatus,
+            'Guard',
+            60
+        );
+
+        session()->flash('success', "Spot {$this->selectedSpace->space_code} marked as {$this->overrideStatus}. Override expires in 1 hour.");
+
+        $this->pinInput = '';
+        $this->pinError = '';
+        $this->closeActionModal();
+        $this->loadParkingData();
+    }
+
+    public function clearOverride($spaceId)
+    {
+        if (!$this->isGuardUser()) {
+            return;
+        }
+
+        $correctPin = config('app.guard_pin', '1234');
+        if ($this->pinInput !== $correctPin) {
+            $this->pinError = 'Invalid PIN. Please try again.';
+            $this->pinInput = '';
+            return;
+        }
+
+        $space = ParkingSpace::find($spaceId);
+        if ($space) {
+            $space->clearManualOverride();
+            session()->flash('success', "Manual override cleared for {$space->space_code}.");
+            $this->pinInput = '';
+            $this->pinError = '';
+            $this->closeActionModal();
+            $this->loadParkingData();
+        }
+    }
+
+    public function submitIncident()
+    {
+        if (!$this->isGuardUser()) {
+            return;
+        }
+
+        $correctPin = config('app.guard_pin', '1234');
+        if ($this->pinInput !== $correctPin) {
+            $this->pinError = 'Invalid PIN. Please try again.';
+            $this->pinInput = '';
+            return;
+        }
+
+        $this->validate([
+            'incidentCategory' => 'required|in:debris,damaged,blocked,light_issue,sensor_issue,other',
+            'incidentNotes' => 'nullable|string|max:500',
+        ]);
+
+        GuardIncident::create([
+            'space_code' => $this->selectedSpace?->space_code,
+            'floor_level' => $this->selectedFloor,
+            'category' => $this->incidentCategory,
+            'notes' => $this->incidentNotes,
+            'status' => 'open',
+            'reported_by' => auth()->user()->name ?? 'Guard',
+        ]);
+
+        $categoryLabels = [
+            'debris' => 'Debris / Obstruction',
+            'damaged' => 'Damaged Spot',
+            'blocked' => 'Blocked Area',
+            'light_issue' => 'Light Issue',
+            'sensor_issue' => 'Sensor Issue',
+            'other' => 'Other Issue',
+        ];
+
+        $categoryLabel = $categoryLabels[$this->incidentCategory] ?? $this->incidentCategory;
+        $spaceCode = $this->selectedSpace?->space_code ?? 'N/A';
+
+        Feedback::create([
+            'user_id' => auth()->id(),
+            'type' => 'guard_report',
+            'message' => "[Guard Report] {$categoryLabel} at Spot {$spaceCode} ({$this->selectedFloor})" .
+                        ($this->incidentNotes ? "\n\nNotes: {$this->incidentNotes}" : ''),
+            'rating' => null,
+            'email' => null,
+            'issues' => [
+                'category' => $this->incidentCategory,
+                'space_code' => $spaceCode,
+                'floor_level' => $this->selectedFloor,
+            ],
+            'device_info' => [
+                'platform' => 'Web',
+                'reported_by' => auth()->user()->name ?? 'Guard',
+                'submitted_at' => now()->toISOString(),
+            ],
+            'status' => 'pending',
+        ]);
+
+        session()->flash('success', 'Incident reported successfully.');
+
+        $this->pinInput = '';
+        $this->pinError = '';
+        $this->closeActionModal();
+        $this->loadOpenIncidentsCount();
+    }
+
+    public function openIncidentsModal()
+    {
+        if (!$this->isGuardUser()) {
+            return;
+        }
+
+        $this->openIncidents = GuardIncident::where('status', 'open')
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->toArray();
+        $this->showIncidentsModal = true;
+    }
+
+    public function closeIncidentsModal()
+    {
+        $this->showIncidentsModal = false;
+        $this->openIncidents = [];
+    }
+
+    public function resolveIncident($incidentId)
+    {
+        if (!$this->isGuardUser()) {
+            return;
+        }
+
+        $correctPin = config('app.guard_pin', '1234');
+        if ($this->pinInput !== $correctPin) {
+            $this->pinError = 'Invalid PIN. Please try again.';
+            $this->pinInput = '';
+            return;
+        }
+
+        $incident = GuardIncident::find($incidentId);
+        if ($incident) {
+            $incident->update([
+                'status' => 'resolved',
+                'resolved_at' => now(),
+            ]);
+
+            session()->flash('success', "Issue at {$incident->space_code} has been resolved.");
+
+            $this->pinInput = '';
+            $this->pinError = '';
+
+            $this->loadOpenIncidentsCount();
+            $this->openIncidents = GuardIncident::where('status', 'open')
+                ->orderBy('created_at', 'desc')
+                ->get()
+                ->toArray();
+
+            if (count($this->openIncidents) === 0) {
+                $this->showIncidentsModal = false;
+            }
+        }
     }
 
     public function render()
