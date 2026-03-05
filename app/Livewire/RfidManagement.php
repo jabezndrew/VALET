@@ -63,6 +63,15 @@ class RfidManagement extends Component
 
     public function save()
     {
+        // Auto-sync expiry date from vehicle's registration expiry
+        $expiryDate = $this->expiry_date ?: null;
+        if ($this->vehicle_id) {
+            $vehicle = Vehicle::find($this->vehicle_id);
+            if ($vehicle && $vehicle->expires_at) {
+                $expiryDate = $vehicle->expires_at->format('Y-m-d');
+            }
+        }
+
         if ($this->editMode) {
             $this->validate(array_merge($this->rules, [
                 'uid' => 'required|string|unique:rfid_tags,uid,' . $this->selectedTag->id
@@ -73,7 +82,7 @@ class RfidManagement extends Component
                 'user_id' => $this->user_id,
                 'vehicle_id' => $this->vehicle_id,
                 'status' => $this->status,
-                'expiry_date' => $this->expiry_date ?: null,
+                'expiry_date' => $expiryDate,
                 'notes' => $this->notes
             ]);
 
@@ -86,7 +95,7 @@ class RfidManagement extends Component
                 'user_id' => $this->user_id,
                 'vehicle_id' => $this->vehicle_id,
                 'status' => $this->status,
-                'expiry_date' => $this->expiry_date ?: null,
+                'expiry_date' => $expiryDate,
                 'notes' => $this->notes
             ]);
 
