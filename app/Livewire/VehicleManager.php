@@ -417,6 +417,7 @@ class VehicleManager extends Component
             $vehicleArray['owner_name'] = $vehicle->owner->name ?? null;
             $vehicleArray['owner_role'] = $vehicle->owner->role ?? null;
             $vehicleArray['rfid_uid'] = $vehicle->rfidTag->uid ?? null;
+            $vehicleArray['expires_at'] = $vehicle->expires_at ? $vehicle->expires_at->format('Y-m-d') : null;
             return (object) $vehicleArray;
         });
     }
