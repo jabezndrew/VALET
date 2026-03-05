@@ -11,12 +11,10 @@ use App\Livewire\PendingAccountManager;
 use App\Livewire\SensorManager;
 use App\Livewire\PublicParkingDisplay;
 use App\Livewire\RfidManagement;
-use App\Livewire\GuardParkingDisplay;
 use App\Livewire\ParkingLog;
 
 // Public routes - no authentication required
 Route::get('/parking-display', PublicParkingDisplay::class)->name('parking.display.public');
-Route::get('/guard', GuardParkingDisplay::class)->name('guard.display');
 
 Route::get('/', fn() => auth()->check() ? redirect('/dashboard') : redirect('/login'));
 
@@ -60,9 +58,15 @@ Route::get('/clear-parking-logs/{secret}', function ($secret) {
         abort(403, 'Unauthorized');
     }
 
+    \DB::table('parking_entries')->truncate();
     \DB::table('rfid_scan_logs')->truncate();
+    \Illuminate\Support\Facades\Cache::forget('rfid_scan_latest');
 
-    return response('<pre>rfid_scan_logs cleared</pre><br><strong>Parking logs cleared!</strong><br><a href="/tools">Back to Tools</a>');
+    $output = "parking_entries cleared\n";
+    $output .= "rfid_scan_logs cleared\n";
+    $output .= "rfid_scan_latest cache cleared\n";
+
+    return response('<pre>' . $output . '</pre><br><strong>All parking logs cleared!</strong><br><a href="/tools">Back to Tools</a>');
 })->name('public.clear-parking-logs');
 
 Route::middleware('guest')->group(function () {
