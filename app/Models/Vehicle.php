@@ -50,7 +50,7 @@ class Vehicle extends Model
      */
     protected $casts = [
         'is_active' => 'boolean',
-        'expires_at' => 'datetime',
+        'expires_at' => 'date',
         'owner_id' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
