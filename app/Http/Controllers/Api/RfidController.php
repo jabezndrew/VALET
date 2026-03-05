@@ -138,6 +138,37 @@ class RfidController extends Controller
                 return response()->json($scanData);
             }
 
+            // Check if vehicle is already inside
+            $activeEntry = ParkingEntry::where('rfid_tag_id', $rfidTag->id)
+                ->where('status', 'parked')
+                ->exists();
+
+            if ($activeEntry) {
+                $scanData = [
+                    'uid' => $uid,
+                    'valid' => false,
+                    'message' => 'Vehicle is already inside.',
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
+                ];
+
+                Cache::put('rfid_scan_latest', $scanData, 15);
+
+                RfidScanLog::create([
+                    'uid' => $uid,
+                    'status' => 'invalid',
+                    'message' => 'Vehicle already inside',
+                    'scan_type' => 'entry',
+                    'gate_mac' => $gateMac,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                ]);
+
+                return response()->json($scanData);
+            }
+
             // Valid RFID - Log entry
             ParkingEntry::create([
                 'entry_type' => 'rfid',
