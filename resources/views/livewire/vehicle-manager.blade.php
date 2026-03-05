@@ -144,7 +144,13 @@
                                             {{ ucfirst($vehicle->owner_role) }}
                                         </span>
                                     </td>
-                                    <td class="font-monospace">{{ $vehicle->rfid_tag }}</td>
+                                    <td class="font-monospace">
+                        @if($vehicle->rfid_uid)
+                            <code>{{ $vehicle->rfid_uid }}</code>
+                        @else
+                            <span class="text-muted">—</span>
+                        @endif
+                    </td>
                                     <td>
                                         @if($vehicle->expires_at)
                                             <div>
@@ -241,14 +247,6 @@
                                     <input wire:model="plate_number" type="text" class="form-control"
                                            placeholder="e.g. ABC-1234" maxlength="20" required>
                                     @error('plate_number') <div class="text-danger small">{{ $message }}</div> @enderror
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <label class="form-label fw-bold">RFID Tag</label>
-                                    <input wire:model="rfid_tag" type="text" class="form-control"
-                                           placeholder="e.g. 0123456789ABCDEF" maxlength="50" required>
-                                    @error('rfid_tag') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
                         </div>

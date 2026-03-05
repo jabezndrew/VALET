@@ -123,8 +123,15 @@
 
                         <div class="mb-3">
                             <label class="form-label">Expiry Date</label>
-                            <input type="date" class="form-control @error('expiry_date') is-invalid @enderror" wire:model="expiry_date">
-                            @error('expiry_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            @if($vehicle_id)
+                                <div class="form-control-plaintext text-muted small">
+                                    <i class="fas fa-info-circle me-1"></i>
+                                    Auto-synced from vehicle registration expiry.
+                                </div>
+                            @else
+                                <input type="date" class="form-control @error('expiry_date') is-invalid @enderror" wire:model="expiry_date">
+                                @error('expiry_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                            @endif
                         </div>
 
                         <div class="mb-3">
