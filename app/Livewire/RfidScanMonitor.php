@@ -13,6 +13,8 @@ class RfidScanMonitor extends Component
     public $countdown = 0;
     public $lastScanId = null; // Track last processed scan to avoid duplicates
 
+    protected $listeners = ['closeModal' => 'closeModal'];
+
     public function mount()
     {
         // Load saved preference from session
