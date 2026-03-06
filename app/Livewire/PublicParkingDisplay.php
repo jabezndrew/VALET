@@ -40,7 +40,7 @@ class PublicParkingDisplay extends Component
         $this->loadAllFloorStats();
         $this->loadParkingData();
 
-        if (auth()->check() && auth()->user()->isSecurity()) {
+        if (auth()->check() && auth()->user()->role === 'security') {
             $this->loadOpenIncidentsCount();
         }
     }
@@ -105,7 +105,7 @@ class PublicParkingDisplay extends Component
 
     public function hasFloorData($floor)
     {
-        return ParkingSpace::where('floor_level', $floor)->exists();
+        return ParkingSpace::where('floor_level', $floor)->whereHas('sensorAssignment')->exists();
     }
 
     public function getSensorDisplayName($sensorId)
@@ -141,7 +141,7 @@ class PublicParkingDisplay extends Component
 
     public function isGuardUser()
     {
-        return auth()->check() && auth()->user()->isSecurity();
+        return auth()->check() && auth()->user()->role === 'security';
     }
 
     public function loadOpenIncidentsCount()
