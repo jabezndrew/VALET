@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\SysUser;
 use App\Models\Vehicle;
+use App\Models\RfidTag;
 use Carbon\Carbon;
 
 class VehicleManager extends Component
@@ -15,7 +16,6 @@ class VehicleManager extends Component
     public $vehicle_model = '';
     public $vehicle_color = '';
     public $vehicle_type = 'car';
-    public $rfid_tag = '';
     public $owner_id = '';
     public $expires_at = '';
     
@@ -42,7 +42,6 @@ class VehicleManager extends Component
         'vehicle_model' => 'required|string|max:50',
         'vehicle_color' => 'required|string|max:30',
         'vehicle_type' => 'required|in:car,suv,truck,van',
-        'rfid_tag' => 'required|string|max:50',
         'owner_id' => 'required|exists:sys_users,id',
         'expires_at' => 'nullable|date|after_or_equal:today',
     ];
@@ -99,9 +98,9 @@ class VehicleManager extends Component
     {
         $this->validate(['verifyRfid' => 'required|string']);
 
-        $vehicle = Vehicle::with('owner')->where('rfid_tag', $this->verifyRfid)->first();
+        $rfidTag = RfidTag::with(['user', 'vehicle.owner'])->where('uid', strtoupper(trim($this->verifyRfid)))->first();
 
-        if (!$vehicle) {
+        if (!$rfidTag || !$rfidTag->vehicle) {
             $this->verifyResult = [
                 'status' => 'NOT_FOUND',
                 'message' => 'Vehicle not found in system',
@@ -111,7 +110,8 @@ class VehicleManager extends Component
             return;
         }
 
-        $isActive = $vehicle->isValid();
+        $vehicle = $rfidTag->vehicle;
+        $isActive = $vehicle->isValid() && $rfidTag->status === 'active';
 
         $vehicleData = $vehicle->toArray();
         $vehicleData['owner_name'] = $vehicle->owner->name;
@@ -176,7 +176,6 @@ class VehicleManager extends Component
                     'vehicle_model' => $vehicle->vehicle_model,
                     'vehicle_color' => $vehicle->vehicle_color,
                     'vehicle_type' => $vehicle->vehicle_type,
-                    'rfid_tag' => $vehicle->rfid_tag,
                     'owner_id' => $vehicle->owner_id,
                     'expires_at' => $vehicle->expires_at ? Carbon::parse($vehicle->expires_at)->format('Y-m-d') : '',
                 ]);
@@ -204,18 +203,12 @@ class VehicleManager extends Component
                 return;
             }
 
-            if ($this->isDuplicate('rfid_tag', $this->rfid_tag)) {
-                $this->dispatch('show-alert', type: 'error', message: 'This RFID tag is already in use.');
-                return;
-            }
-
             $data = [
                 'plate_number' => strtoupper($this->plate_number),
                 'vehicle_make' => $this->vehicle_make,
                 'vehicle_model' => $this->vehicle_model,
                 'vehicle_color' => $this->vehicle_color,
                 'vehicle_type' => $this->vehicle_type,
-                'rfid_tag' => $this->rfid_tag,
                 'owner_id' => $this->owner_id,
                 'expires_at' => $this->expires_at ?: null,
             ];
@@ -223,6 +216,10 @@ class VehicleManager extends Component
             if ($this->editingId) {
                 $vehicle = Vehicle::find($this->editingId);
                 $vehicle->update($data);
+                // Sync linked RFID tag's expiry date when vehicle expiry changes
+                if ($vehicle->rfidTag && $this->expires_at) {
+                    $vehicle->rfidTag->update(['expiry_date' => $this->expires_at ?: null]);
+                }
                 $message = 'Vehicle updated successfully.';
             } else {
                 $data['is_active'] = true;
@@ -370,7 +367,7 @@ class VehicleManager extends Component
     {
         $this->reset([
             'editingId', 'plate_number', 'vehicle_make', 'vehicle_model',
-            'vehicle_color', 'rfid_tag', 'owner_id'
+            'vehicle_color', 'owner_id'
         ]);
         $this->vehicle_type = 'car';
         $this->expires_at = now()->format('Y-m-d');
@@ -379,7 +376,7 @@ class VehicleManager extends Component
 
     private function getVehicles()
     {
-        $query = Vehicle::with('owner');
+        $query = Vehicle::with(['owner', 'rfidTag']);
 
         // Apply filters
         if ($this->search) {
@@ -416,10 +413,11 @@ class VehicleManager extends Component
         }
 
         return $query->orderBy('created_at', 'desc')->get()->map(function ($vehicle) {
-            // Add flattened owner data for backward compatibility with views
             $vehicleArray = $vehicle->toArray();
             $vehicleArray['owner_name'] = $vehicle->owner->name ?? null;
             $vehicleArray['owner_role'] = $vehicle->owner->role ?? null;
+            $vehicleArray['rfid_uid'] = $vehicle->rfidTag->uid ?? null;
+            $vehicleArray['expires_at'] = $vehicle->expires_at ? $vehicle->expires_at->format('Y-m-d') : null;
             return (object) $vehicleArray;
         });
     }
