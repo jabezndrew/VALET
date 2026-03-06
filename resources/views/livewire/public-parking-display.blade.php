@@ -17,7 +17,7 @@
 
                 <!-- Route Control Buttons / Open Issues Alert -->
                 <div style="position: absolute; top: 30px; left: 30px; z-index: 1000;">
-                    @if($selectedSpot && !(auth()->check() && auth()->user()->isSecurity()))
+                    @if($selectedSpot && !(auth()->check() && auth()->user()->role === 'security'))
                         <!-- Clear Route Button -->
                         <button wire:click="clearRoute" class="route-toggle-btn active" style="padding: 12px 20px; font-size: 14px;">
                             <svg class="icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -28,7 +28,7 @@
                     @endif
 
                     @auth
-                        @if(auth()->user()->isSecurity() && $openIncidentsCount > 0 && !$selectedSpot)
+                        @if(auth()->user()->role === 'security' && $openIncidentsCount > 0 && !$selectedSpot)
                             <div class="guard-issues-alert" wire:click="openIncidentsModal" style="cursor: pointer;">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
                                 {{ $openIncidentsCount }} Open Issue(s) reported
@@ -216,7 +216,7 @@
 
                                 <!-- Parking Spots -->
                                 @php
-                                    $isSecurityUser = auth()->check() && auth()->user()->isSecurity();
+                                    $isSecurityUser = auth()->check() && auth()->user()->role === 'security';
                                 @endphp
 
                                 @foreach($parkingSpaces as $space)
@@ -237,10 +237,11 @@
                                          @if($isSecurityUser && $hasAssignedSensor)
                                              wire:click="openActionModal({{ $space->id }}, 'override')"
                                              title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}{{ $isManualOverride ? ' (Manual Override)' : '' }}"
-                                         @else
+                                         @elseif(!$isSecurityUser && $hasAssignedSensor)
                                              wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}', {{ $x }}, {{ $y }})"
                                              title="Click to show route to {{ $slotName }}"
                                          @endif
+
                                          style="
                                             left: {{ $x }}px;
                                             top: {{ $y }}px;
@@ -347,7 +348,7 @@
                                     ];
                                 @endphp
 
-                                @if($showRoute && $selectedSpot && $selectedSpotX > 0 && !(auth()->check() && auth()->user()->isSecurity()))
+                                @if($showRoute && $selectedSpot && !(auth()->check() && auth()->user()->role === 'security'))
                                 <svg class="route-overlay" viewBox="0 0 1200 1400" style="position: absolute; top: 0; left: 0; width: 1200px; height: 1400px; pointer-events: none; z-index: 500;">
                                     <defs>
                                         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
@@ -401,7 +402,7 @@
 
     {{-- Guard Action Modal --}}
     @auth
-    @if(auth()->user()->isSecurity() && $showActionModal && $selectedSpace)
+    @if(auth()->user()->role === 'security' && $showActionModal && $selectedSpace)
     <div class="guard-action-overlay" wire:click.self="closeActionModal">
         <div class="guard-action-modal">
             <div class="guard-action-header">
@@ -541,7 +542,7 @@
     @endif
 
     {{-- Open Incidents Modal --}}
-    @if(auth()->user()->isSecurity() && $showIncidentsModal)
+    @if(auth()->user()->role === 'security' && $showIncidentsModal)
     <div class="guard-action-overlay" wire:click.self="closeIncidentsModal">
         <div class="guard-action-modal" style="max-width: 550px;">
             <div class="guard-action-header" style="background: linear-gradient(135deg, #fd7e14 0%, #e06b00 100%); color: white; border-radius: 20px 20px 0 0;">
