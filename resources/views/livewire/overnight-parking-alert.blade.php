@@ -1,12 +1,12 @@
 <div class="overnight-alert-wrapper" wire:poll.60s="loadOvernightVehicles">
     @if(auth()->check() && in_array(auth()->user()->role, ['admin', 'ssd', 'security']))
         <!-- Notification Bell -->
-        <button class="notification-bell {{ $overnightCount > 0 ? 'has-alerts' : '' }}"
+        <button class="notification-bell {{ $hasUnseenAlerts ? 'has-alerts' : '' }}"
                 wire:click="openModal"
                 title="Alerts">
             <i class="fas fa-bell"></i>
-            @if($overnightCount > 0)
-                <span class="notification-badge">{{ $overnightCount > 99 ? '99+' : $overnightCount }}</span>
+            @if($hasUnseenAlerts)
+                <span class="notification-badge">!</span>
             @endif
         </button>
 
