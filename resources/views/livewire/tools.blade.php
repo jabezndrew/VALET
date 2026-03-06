@@ -192,6 +192,7 @@
             </div>
             @endif
 
+<<<<<<< HEAD
             <!-- Guard Display - Security, SSD, Admin -->
             @if($isSecurity || $isSsd || $isAdmin)
             <div class="col-md-4 col-lg-3">
@@ -210,6 +211,8 @@
             </div>
             @endif
 
+=======
+>>>>>>> 3a07f21c50a97e197594c00e4221fdb27f8b424d
             <!-- Clear Cache - Admin only -->
             @if($isAdmin)
             <div class="col-md-4 col-lg-3">
@@ -222,6 +225,24 @@
                             <h5 class="card-title mb-2">Clear Cache</h5>
                             <p class="card-text text-muted small mb-2">Clear all system caches</p>
                             <span class="badge bg-dark">System</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            @endif
+
+            <!-- Clear Parking Logs - Admin only -->
+            @if($isAdmin)
+            <div class="col-md-4 col-lg-3">
+                <a href="/clear-parking-logs/secret" class="text-decoration-none">
+                    <div class="card tool-card h-100">
+                        <div class="card-body text-center py-4">
+                            <div class="tool-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3">
+                                <i class="fas fa-trash fa-2x"></i>
+                            </div>
+                            <h5 class="card-title mb-2">Clear Parking Logs</h5>
+                            <p class="card-text text-muted small mb-2">Delete all RFID scan logs</p>
+                            <span class="badge bg-danger">System</span>
                         </div>
                     </div>
                 </a>
