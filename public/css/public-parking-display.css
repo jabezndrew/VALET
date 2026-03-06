@@ -47,7 +47,7 @@ body {
     width: 85rem !important;
     height: 80rem !important;
     background: white !important;
-    transform: scale(0.50) rotate(90deg) !important;
+    transform: scale(0.50) rotate(270deg) !important;
     transform-origin: center center !important;
     justify-content: right;
 
@@ -275,7 +275,7 @@ body {
 /* Extra large screens (1920px and up) */
 @media (min-width: 1920px) {
     .parking-map-container {
-        transform: scale(0.65) rotate(90deg) !important;
+        transform: scale(0.65) rotate(3600deg) !important;
     }
     .parking-map-wrapper {
         min-height: 700px !important;
@@ -285,7 +285,7 @@ body {
 /* Large screens (1600px - 1919px) */
 @media (min-width: 1600px) and (max-width: 1919px) {
     .parking-map-container {
-        transform: scale(0.58) rotate(90deg) !important;
+        transform: scale(0.58) rotate(360deg) !important;
     }
     .parking-map-wrapper {
         min-height: 650px !important;
@@ -295,7 +295,7 @@ body {
 /* Desktop (1400px - 1599px) */
 @media (min-width: 1400px) and (max-width: 1599px) {
     .parking-map-container {
-        transform: scale(0.50) rotate(90deg) !important;
+        transform: scale(0.50) rotate(360deg) !important;
     }
     .parking-map-wrapper {
         min-height: 600px !important;

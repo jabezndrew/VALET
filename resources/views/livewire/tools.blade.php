@@ -192,7 +192,6 @@
             </div>
             @endif
 
-<<<<<<< HEAD
             <!-- Guard Display - Security, SSD, Admin -->
             @if($isSecurity || $isSsd || $isAdmin)
             <div class="col-md-4 col-lg-3">
@@ -211,8 +210,6 @@
             </div>
             @endif
 
-=======
->>>>>>> 3a07f21c50a97e197594c00e4221fdb27f8b424d
             <!-- Clear Cache - Admin only -->
             @if($isAdmin)
             <div class="col-md-4 col-lg-3">
