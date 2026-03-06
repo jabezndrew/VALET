@@ -70,12 +70,6 @@
                                 </div>
                             @endif
                         </div>
-                        <div class="modal-footer bg-light">
-                            <small class="text-muted">
-                                <i class="fas fa-clock me-1"></i>
-                                Auto-closing in <span id="countdown">{{ $countdown }}</span>s
-                            </small>
-                        </div>
                     </div>
                 </div>
             </div>
