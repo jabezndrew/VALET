@@ -1,3 +1,4 @@
+@php /** @var \Illuminate\Support\ViewErrorBag $errors */ @endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>

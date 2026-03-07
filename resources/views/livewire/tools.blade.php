@@ -1,5 +1,12 @@
-<div >
+<div>
     <div class="container-fluid mt-4">
+
+        @if(session('success'))
+            <div class="alert alert-success alert-dismissible fade show mb-4" role="alert">
+                <i class="fas fa-check-circle me-2"></i>{{ session('success') }}
+                <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+            </div>
+        @endif
         <!-- Header -->
         <div class="mb-4">
             <h2 class="fw-bold mb-1">Tools</h2>
@@ -195,18 +202,16 @@
             <!-- Clear Parking Logs - Admin only -->
             @if($isAdmin)
             <div class="col-md-4 col-lg-3">
-                <a href="/clear-parking-logs/secret" class="text-decoration-none">
-                    <div class="card tool-card h-100">
-                        <div class="card-body text-center py-4">
-                            <div class="tool-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3">
-                                <i class="fas fa-trash fa-2x"></i>
-                            </div>
-                            <h5 class="card-title mb-2">Clear Parking Logs</h5>
-                            <p class="card-text text-muted small mb-2">Delete all RFID scan logs</p>
-                            <span class="badge bg-danger">System</span>
+                <div class="card tool-card h-100" wire:click="openClearLogsModal" style="cursor:pointer;">
+                    <div class="card-body text-center py-4">
+                        <div class="tool-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3">
+                            <i class="fas fa-trash fa-2x"></i>
                         </div>
+                        <h5 class="card-title mb-2">Clear Parking Logs</h5>
+                        <p class="card-text text-muted small mb-2">Delete all parking entries &amp; scan logs</p>
+                        <span class="badge bg-danger">Danger</span>
                     </div>
-                </a>
+                </div>
             </div>
             @endif
 
@@ -229,6 +234,44 @@
             @endif
         </div>
     </div>
+
+    @if($showClearLogsModal)
+    <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.5); z-index: 1055;">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content border-danger">
+                <div class="modal-header bg-danger text-white">
+                    <h5 class="modal-title"><i class="fas fa-exclamation-triangle me-2"></i>Clear Parking Logs</h5>
+                    <button type="button" class="btn-close btn-close-white" wire:click="closeClearLogsModal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="alert alert-danger mb-3">
+                        <strong>Warning:</strong> This will permanently delete <strong>all parking entries</strong> and <strong>all RFID scan logs</strong>. This action cannot be undone.
+                    </div>
+                    <p class="text-muted mb-3">Enter the admin password to confirm:</p>
+                    <div>
+                        <input
+                            type="password"
+                            class="form-control @if($clearLogsError) is-invalid @endif"
+                            wire:model="clearLogsPassword"
+                            placeholder="Enter password"
+                            wire:keydown.enter="clearParkingLogs"
+                            autofocus
+                        >
+                        @if($clearLogsError)
+                            <div class="invalid-feedback">{{ $clearLogsError }}</div>
+                        @endif
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="closeClearLogsModal">Cancel</button>
+                    <button type="button" class="btn btn-danger" wire:click="clearParkingLogs">
+                        <i class="fas fa-trash me-1"></i>Yes, Delete Everything
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+    @endif
 
     <style>
         .tool-card {
