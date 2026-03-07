@@ -12,11 +12,21 @@ return new class extends Migration
     public function up(): void
     {
         Schema::table('parking_spaces', function (Blueprint $table) {
-            $table->boolean('manual_override')->default(false);
-            $table->enum('manual_status', ['occupied', 'available', 'blocked'])->nullable();
-            $table->timestamp('manual_override_at')->nullable();
-            $table->timestamp('manual_override_expires')->nullable();
-            $table->string('manual_override_by')->nullable();
+            if (!Schema::hasColumn('parking_spaces', 'manual_override')) {
+                $table->boolean('manual_override')->default(false);
+            }
+            if (!Schema::hasColumn('parking_spaces', 'manual_status')) {
+                $table->enum('manual_status', ['occupied', 'available', 'blocked'])->nullable();
+            }
+            if (!Schema::hasColumn('parking_spaces', 'manual_override_at')) {
+                $table->timestamp('manual_override_at')->nullable();
+            }
+            if (!Schema::hasColumn('parking_spaces', 'manual_override_expires')) {
+                $table->timestamp('manual_override_expires')->nullable();
+            }
+            if (!Schema::hasColumn('parking_spaces', 'manual_override_by')) {
+                $table->string('manual_override_by')->nullable();
+            }
         });
     }
 

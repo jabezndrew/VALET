@@ -1,5 +1,5 @@
 <div>
-    <div class="container-fluid py-4">
+    <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>RFID Tag Management</h2>
             <button class="btn btn-primary" wire:click="openCreateModal">Register New RFID Tag</button>
@@ -119,12 +119,6 @@
                                 <option value="lost">Lost</option>
                             </select>
                             @error('status') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Expiry Date</label>
-                            <input type="date" class="form-control @error('expiry_date') is-invalid @enderror" wire:model="expiry_date">
-                            @error('expiry_date') <div class="invalid-feedback">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="mb-3">

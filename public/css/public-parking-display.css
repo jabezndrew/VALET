@@ -47,10 +47,10 @@ body {
     width: 85rem !important;
     height: 80rem !important;
     background: white !important;
-    transform: scale(0.50) rotate(90deg) !important;
+    transform: scale(0.50) rotate(270deg) !important;
     transform-origin: center center !important;
     justify-content: right;
-
+    margin-top: -100px !important;
 }
 
 /* Facilities */
@@ -107,27 +107,27 @@ body {
     position: absolute;
     width: 60px;
     height: 85px;
-    border: 3px solid;
+    border: 3px solid transparent;
     border-radius: 6px;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    transition: all 0.3s ease;
+    box-sizing: border-box;
+    /* Only transition visual properties, NOT position */
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
     background: #242627;
 }
 
-.parking-spot-box {
-    border-radius: 8px;
-}
-
 .parking-spot-box.occupied {
-    border: 4px solid #dc3545;
-    background: rgba(220, 53, 69, 0.1);
+    border: 3px solid #B22020;
+    background: #dc3545;
+    color: white;
     box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
     cursor: not-allowed !important;
-    opacity: 0.7;
+    opacity: 0.9;
+    font-weight: 700 !important;
 }
 
 .parking-spot-box.occupied:hover {
@@ -135,13 +135,14 @@ body {
 }
 
 .parking-spot-box.available {
-    border: 4px solid #28a745;
+    border: 3px solid #28a745;
     background: linear-gradient(135deg, #2ed573 0%, #28a745 100%);
     color: white;
     font-size: 22px;
     font-weight: 700;
     box-shadow: 0 4px 12px rgba(46, 213, 115, 0.4);
-    transition: all 0.3s ease;
+    /* Only transition visual properties, NOT position */
+    transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
 }
 
 .parking-spot-box.available:hover {
@@ -166,7 +167,6 @@ body {
 
 .parking-slot.available:hover {
     background-color: rgba(46, 213, 115, 0.5);
-    transform: scale(1.1);
     box-shadow: 0 0 15px rgba(46, 213, 115, 0.6);
 }
 
@@ -177,7 +177,6 @@ body {
 
 .parking-slot.occupied:hover {
     background-color: rgba(255, 71, 87, 0.5);
-    transform: scale(1.1);
     box-shadow: 0 0 15px rgba(255, 71, 87, 0.6);
 }
 
@@ -210,7 +209,8 @@ body {
     border-radius: 6px;
     z-index: 15;
     pointer-events: none;
-    transition: all 0.3s ease;
+    /* Only transition visual properties, NOT position */
+    transition: box-shadow 0.3s ease, opacity 0.3s ease;
     min-width: 60px;
     display: flex;
     align-items: center;
@@ -272,7 +272,7 @@ body {
 /* Extra large screens (1920px and up) */
 @media (min-width: 1920px) {
     .parking-map-container {
-        transform: scale(0.65) rotate(90deg) !important;
+        transform: scale(0.60) rotate(360deg) !important;
     }
     .parking-map-wrapper {
         min-height: 700px !important;
@@ -282,7 +282,7 @@ body {
 /* Large screens (1600px - 1919px) */
 @media (min-width: 1600px) and (max-width: 1919px) {
     .parking-map-container {
-        transform: scale(0.58) rotate(90deg) !important;
+        transform: scale(0.55) rotate(360deg) !important;
     }
     .parking-map-wrapper {
         min-height: 650px !important;
@@ -292,7 +292,7 @@ body {
 /* Desktop (1400px - 1599px) */
 @media (min-width: 1400px) and (max-width: 1599px) {
     .parking-map-container {
-        transform: scale(0.50) rotate(90deg) !important;
+        transform: scale(0.50) rotate(360deg) !important;
     }
     .parking-map-wrapper {
         min-height: 600px !important;
@@ -443,6 +443,10 @@ body {
 .parking-spot-box:hover {
     z-index: 550 !important;
     transform-origin: center center;
+    position: absolute !important;
+    width: 60px !important;
+    height: 85px !important;
+    box-sizing: border-box !important;
 }
 
 /* Selected parking spot highlight */
@@ -471,4 +475,287 @@ body {
 /* Dim flow arrows when route is displayed */
 .parking-map-container:has(.route-overlay) .flow-arrow-indicator {
     opacity: 0.3;
+}
+
+/* ========================================
+   Guard Features (security role only)
+   ======================================== */
+
+/* Manual Override Badge */
+.parking-spot-box.manual-override {
+}
+
+.parking-spot-box.manual-override::after {
+    content: 'M';
+    position: absolute;
+    top: -8px;
+    right: -8px;
+    width: 20px;
+    height: 20px;
+    background: #fd7e14;
+    color: white;
+    border-radius: 50%;
+    font-size: 12px;
+    font-weight: 700;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* Blocked status */
+.parking-spot-box.blocked {
+    border: 3px solid #fd7e14;
+    background: rgba(253, 126, 20, 0.15);
+    color: #fd7e14;
+    box-shadow: 0 4px 12px rgba(253, 126, 20, 0.3);
+}
+
+/* Issues Alert */
+.guard-issues-alert {
+    background: linear-gradient(135deg, #fd7e14 0%, #e06b00 100%);
+    color: white;
+    padding: 15px 25px;
+    border-radius: 12px;
+    font-weight: 600;
+    box-shadow: 0 4px 15px rgba(253, 126, 20, 0.4);
+}
+
+/* Toast Messages */
+.guard-toast {
+    background: #333;
+    color: white;
+    padding: 15px 20px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    animation: guardFadeIn 0.3s ease;
+}
+
+.guard-toast.success { background: #28a745; }
+
+@keyframes guardFadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* Action Modal Overlay */
+.guard-action-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0,0,0,0.6);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 2000;
+}
+
+.guard-action-modal {
+    background: white;
+    border-radius: 20px;
+    width: 90%;
+    max-width: 500px;
+    max-height: 80vh;
+    overflow-y: auto;
+    animation: guardModalIn 0.3s ease;
+}
+
+@keyframes guardModalIn {
+    from { opacity: 0; transform: scale(0.9); }
+    to { opacity: 1; transform: scale(1); }
+}
+
+.guard-action-header {
+    padding: 20px;
+    border-bottom: 1px solid #e0e0e0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.guard-action-header h3 {
+    font-size: 1.2rem;
+    font-weight: 700;
+    margin: 0;
+}
+
+.guard-action-close {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    color: #666;
+    cursor: pointer;
+}
+
+.guard-action-body {
+    padding: 20px;
+}
+
+.guard-space-info {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    margin-bottom: 20px;
+}
+
+.guard-space-code {
+    font-size: 1.5rem;
+    font-weight: 700;
+    color: #B22020;
+}
+
+.guard-space-status {
+    display: inline-block;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.85rem;
+    font-weight: 600;
+    margin-left: 10px;
+}
+
+.guard-space-status.available { background: #28a745; color: white; }
+.guard-space-status.occupied { background: #dc3545; color: white; }
+.guard-space-status.blocked { background: #fd7e14; color: white; }
+
+/* Action Tabs */
+.guard-action-tabs {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 20px;
+}
+
+.guard-action-tab {
+    flex: 1;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    background: white;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.guard-action-tab.active {
+    background: #3A3A3C;
+    border-color: #3A3A3C;
+    color: white;
+}
+
+/* Form Elements */
+.guard-form-group {
+    margin-bottom: 20px;
+}
+
+.guard-form-label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 8px;
+    color: #333;
+}
+
+.guard-form-input {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+
+.guard-form-input:focus {
+    outline: none;
+    border-color: #B22020;
+}
+
+.guard-form-select,
+.guard-form-textarea {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    font-size: 1rem;
+}
+
+.guard-form-textarea {
+    min-height: 100px;
+    resize: vertical;
+}
+
+/* Status Options */
+.guard-status-options {
+    display: flex;
+    gap: 10px;
+}
+
+.guard-status-option {
+    flex: 1;
+    padding: 15px;
+    border: 2px solid #e0e0e0;
+    border-radius: 10px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.guard-status-option.selected { border-width: 3px; }
+.guard-status-option.selected.available { border-color: #28a745; background: rgba(40, 167, 69, 0.1); }
+.guard-status-option.selected.occupied { border-color: #dc3545; background: rgba(220, 53, 69, 0.1); }
+.guard-status-option.selected.blocked { border-color: #fd7e14; background: rgba(253, 126, 20, 0.1); }
+
+/* Submit Buttons */
+.guard-action-submit {
+    width: 100%;
+    padding: 15px;
+    border: none;
+    border-radius: 12px;
+    font-size: 1.1rem;
+    font-weight: 700;
+    cursor: pointer;
+    transition: transform 0.2s;
+    color: white;
+}
+
+.guard-action-submit.override {
+    background: #8B0000;
+}
+
+.guard-action-submit.report {
+    background: linear-gradient(135deg, #fd7e14 0%, #e06b00 100%);
+}
+
+.guard-action-submit:active {
+    transform: scale(0.98);
+}
+
+/* Incidents List */
+.guard-incidents-list {
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.guard-incident-card {
+    background: #f8f9fa;
+    border-radius: 12px;
+    padding: 15px;
+    border-left: 4px solid #fd7e14;
+}
+
+.guard-btn-resolve {
+    background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%);
+    color: white;
+    border: none;
+    padding: 8px 16px;
+    border-radius: 8px;
+    font-weight: 600;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.guard-btn-resolve:hover {
+    transform: scale(1.02);
+    box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
 }

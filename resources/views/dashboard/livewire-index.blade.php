@@ -1,6 +1,6 @@
 @extends('layouts.app')
 
-@section('title', 'VALET Smart Parking Dashboard')
+@section('title', 'VALET Dashboard')
 
 @section('content')
 <div class="container-fluid">

@@ -22,7 +22,6 @@ class RfidManagement extends Component
     public $user_id = '';
     public $vehicle_id = '';
     public $status = 'active';
-    public $expiry_date = '';
     public $notes = '';
 
     // Filters
@@ -34,7 +33,6 @@ class RfidManagement extends Component
         'user_id' => 'required|exists:sys_users,id',
         'vehicle_id' => 'nullable|exists:vehicles,id',
         'status' => 'required|in:active,expired,suspended,lost',
-        'expiry_date' => 'nullable|date',
         'notes' => 'nullable|string|max:500'
     ];
 
@@ -54,7 +52,6 @@ class RfidManagement extends Component
         $this->user_id = $tag->user_id;
         $this->vehicle_id = $tag->vehicle_id;
         $this->status = $tag->status;
-        $this->expiry_date = $tag->expiry_date ? $tag->expiry_date->format('Y-m-d') : '';
         $this->notes = $tag->notes;
 
         $this->editMode = true;
@@ -63,6 +60,15 @@ class RfidManagement extends Component
 
     public function save()
     {
+        // Auto-sync expiry date from vehicle's registration expiry
+        $expiryDate = null;
+        if ($this->vehicle_id) {
+            $vehicle = Vehicle::find($this->vehicle_id);
+            if ($vehicle && $vehicle->expires_at) {
+                $expiryDate = $vehicle->expires_at->format('Y-m-d');
+            }
+        }
+
         if ($this->editMode) {
             $this->validate(array_merge($this->rules, [
                 'uid' => 'required|string|unique:rfid_tags,uid,' . $this->selectedTag->id
@@ -73,7 +79,7 @@ class RfidManagement extends Component
                 'user_id' => $this->user_id,
                 'vehicle_id' => $this->vehicle_id,
                 'status' => $this->status,
-                'expiry_date' => $this->expiry_date ?: null,
+                'expiry_date' => $expiryDate,
                 'notes' => $this->notes
             ]);
 
@@ -86,7 +92,7 @@ class RfidManagement extends Component
                 'user_id' => $this->user_id,
                 'vehicle_id' => $this->vehicle_id,
                 'status' => $this->status,
-                'expiry_date' => $this->expiry_date ?: null,
+                'expiry_date' => $expiryDate,
                 'notes' => $this->notes
             ]);
 
@@ -116,7 +122,6 @@ class RfidManagement extends Component
         $this->user_id = '';
         $this->vehicle_id = '';
         $this->status = 'active';
-        $this->expiry_date = '';
         $this->notes = '';
         $this->resetValidation();
     }

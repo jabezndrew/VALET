@@ -25,10 +25,8 @@ unsigned long servoCloseTime = 0;
 bool servoIsOpen = false;
 unsigned long lastRfidCheck = 0;
 unsigned long lastWiFiCheck = 0;
-unsigned long lastScanTime = 0;
 const unsigned long RFID_CHECK_INTERVAL = 100; // Check RFID every 100ms
 const unsigned long WIFI_CHECK_INTERVAL = 30000; // Check WiFi every 30 seconds
-const unsigned long SCAN_COOLDOWN = 2000; // 2 second cooldown between scans
 
 void setup() {
   delay(1000);
@@ -121,11 +119,6 @@ void loop() {
     rfid.PCD_Init();
   }
 
-  // Cooldown after last scan to prevent double-scanning
-  if (currentMillis - lastScanTime < SCAN_COOLDOWN) {
-    return;
-  }
-
   // Check for new card
   if (!rfid.PICC_IsNewCardPresent()) {
     return;
@@ -143,15 +136,12 @@ void loop() {
   }
   uid.toUpperCase();
 
-  Serial.print("RFID: ");
-  Serial.println(uid);
-
   // Halt card
   rfid.PICC_HaltA();
   rfid.PCD_StopCrypto1();
 
-  // Mark scan time
-  lastScanTime = currentMillis;
+  Serial.print("RFID: ");
+  Serial.println(uid);
 
   // Verify with API
   verifyRFID(uid);
@@ -209,6 +199,12 @@ void verifyRFID(String uid) {
     } else {
       Serial.print("DENIED: ");
       Serial.println(message);
+
+      // Close gate immediately on invalid scan
+      if (servoIsOpen) {
+        gateServo.write(0);
+        servoIsOpen = false;
+      }
     }
 
   } else {
@@ -224,8 +220,6 @@ void verifyRFID(String uid) {
 
   http.end();
 
-  // Clear buffer
-  while (Serial.available()) {
-    Serial.read();
-  }
+  // Reinitialize RFID reader to allow immediate rescan of same card
+  rfid.PCD_Init();
 }
