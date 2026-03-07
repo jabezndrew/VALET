@@ -173,26 +173,7 @@
                 </a>
             </div>
             @endif
-
-            <!-- Public Display - Security, SSD, Admin -->
-            @if($isSecurity || $isSsd || $isAdmin)
-            <div class="col-md-4 col-lg-3">
-                <a href="/parking-display" class="text-decoration-none" target="_blank">
-                    <div class="card tool-card h-100">
-                        <div class="card-body text-center py-4">
-                            <div class="tool-icon bg-success bg-opacity-10 text-success mx-auto mb-3">
-                                <i class="fas fa-tv fa-2x"></i>
-                            </div>
-                            <h5 class="card-title mb-2">Public Display</h5>
-                            <p class="card-text text-muted small mb-2">Open public parking display</p>
-                            <span class="badge bg-success">Display</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            @endif
-
-
+            
             <!-- Clear Cache - Admin only -->
             @if($isAdmin)
             <div class="col-md-4 col-lg-3">
