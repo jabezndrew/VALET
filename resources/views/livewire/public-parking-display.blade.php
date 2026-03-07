@@ -243,14 +243,17 @@
                                          @endif
 
                                          style="
+                                            position: absolute !important;
                                             left: {{ $x }}px;
                                             top: {{ $y }}px;
-                                            width: 60px;
-                                            height: 85px;
+                                            width: 60px !important;
+                                            height: 85px !important;
                                             font-size: 22px;
                                             transform: rotate({{ $rotation }}deg);
+                                            transform-origin: center center;
                                             pointer-events: auto;
                                             cursor: pointer;
+                                            box-sizing: border-box !important;
                                             {{ $isSelected ? 'box-shadow: 0 0 20px 5px #FFD700; border: 3px solid #FFD700 !important; z-index: 600;' : '' }}
                                          "
                                     >

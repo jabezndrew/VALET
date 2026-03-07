@@ -59,8 +59,8 @@ class PublicParkingDisplay extends Component
 
             $spacesWithSensors = $spaces->filter(fn($s) => $s->sensorAssignment !== null);
             $total = $spacesWithSensors->count();
-            $occupied = $spacesWithSensors->filter(fn($s) => $s->is_occupied)->count();
-            $available = $total - $occupied;
+            $occupied = $spacesWithSensors->filter(fn($s) => $s->getEffectiveStatus() === 'occupied')->count();
+            $available = $spacesWithSensors->filter(fn($s) => $s->getEffectiveStatus() === 'available')->count();
 
             $this->allFloorStats[$floor] = [
                 'total' => $total,
@@ -192,7 +192,7 @@ class PublicParkingDisplay extends Component
         $this->selectedSpace->setManualOverride(
             $this->overrideStatus,
             'Guard',
-            60
+            10
         );
 
         session()->flash('success', "Spot {$this->selectedSpace->space_code} marked as {$this->overrideStatus}. Override expires in 1 hour.");
