@@ -457,7 +457,7 @@
                                 class="guard-status-option {{ $overrideStatus === 'occupied' ? 'selected occupied' : '' }}"
                                 wire:click="$set('overrideStatus', 'occupied')"
                             >
-                                <i class="fas fa-car" style="color: #dc3545; font-size: 1.5rem;"></i>
+                                <i class="fas fa-car" style="color: #721c24; font-size: 1.5rem;"></i>
                                 <div style="margin-top: 5px; font-weight: 600;">Occupied</div>
                             </div>
                             <div
