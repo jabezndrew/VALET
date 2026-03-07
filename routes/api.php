@@ -34,6 +34,9 @@ Route::prefix('public')->group(function () {
     Route::post('/rfid/exit', [RfidController::class, 'exit']);
     Route::get('/rfid/scans', [RfidController::class, 'recentScans']);
     Route::post('/guest/verify', [RfidController::class, 'verifyGuest']);
+
+    // Guard override endpoint (requires auth - security role)
+    Route::post('/parking/{spaceId}/override', [ParkingController::class, 'override']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {

@@ -28,6 +28,7 @@ class ParkingController extends Controller
                         'slot_name' => $space->slot_name,
                         'section' => $space->section,
                         'is_occupied' => (bool) $space->is_occupied,
+                        'effective_status' => $hasSensor ? $space->getEffectiveStatus() : 'inactive',
                         'is_active' => $hasSensor,
                         'distance_cm' => $space->distance_cm,
                         'floor_level' => $space->floor_level,
@@ -36,6 +37,10 @@ class ParkingController extends Controller
                         'rotation' => $space->rotation,
                         'width' => $space->width,
                         'height' => $space->height,
+                        'manual_override' => (bool) $space->manual_override,
+                        'manual_status' => $space->manual_status,
+                        'manual_override_expires' => $space->manual_override_expires,
+                        'manual_override_by' => $space->manual_override_by,
                         'created_at' => $space->created_at,
                         'updated_at' => $space->updated_at,
                     ];
@@ -228,12 +233,46 @@ class ParkingController extends Controller
             return response()->json(['error' => 'Failed to fetch floor data'], 500);
         }
     }
-
     /**
-     * Get complete parking map data for mobile app
-     * This endpoint provides all necessary data for mobile to render the parking map
-     * identical to the web version
+     * Guard override endpoint - security role only
      */
+    public function override(Request $request, $spaceId): JsonResponse
+    {
+        if (!auth()->check() || auth()->user()->role !== 'security') {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:available,occupied,blocked',
+            'pin'    => 'required|string',
+        ]);
+
+        if ($validated['pin'] !== config('app.guard_pin', '1234')) {
+            return response()->json(['success' => false, 'message' => 'Invalid PIN. Please try again.'], 422);
+        }
+
+        $space = ParkingSpace::find($spaceId);
+        if (!$space) {
+            return response()->json(['success' => false, 'message' => 'Parking space not found.'], 404);
+        }
+
+        $space->setManualOverride($validated['status'], auth()->user()->name, 60);
+
+        return response()->json([
+            'success' => true,
+            'message' => "Spot {$space->space_code} marked as {$validated['status']}. Override expires in 1 hour.",
+            'space'   => [
+                'id'                      => $space->id,
+                'space_code'              => $space->space_code,
+                'manual_override'         => true,
+                'manual_status'           => $space->manual_status,
+                'manual_override_expires' => $space->manual_override_expires,
+                'manual_override_by'      => $space->manual_override_by,
+                'effective_status'        => $space->getEffectiveStatus(),
+            ],
+        ]);
+    }
+
     public function getMapData(Request $request): JsonResponse
     {
         try {
