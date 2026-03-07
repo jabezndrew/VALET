@@ -53,22 +53,6 @@ Route::get('/clear-cache/{secret}', function ($secret) {
     return response('<pre>' . $output . '</pre><br><strong>All caches cleared!</strong><br><a href="/parking-display">Go to Parking Display</a>');
 })->name('public.clear-cache');
 
-Route::get('/clear-parking-logs/{secret}', function ($secret) {
-    if ($secret !== 'secret') {
-        abort(403, 'Unauthorized');
-    }
-
-    \DB::table('parking_entries')->truncate();
-    \DB::table('rfid_scan_logs')->truncate();
-    \Illuminate\Support\Facades\Cache::forget('rfid_scan_latest');
-
-    $output = "parking_entries cleared\n";
-    $output .= "rfid_scan_logs cleared\n";
-    $output .= "rfid_scan_latest cache cleared\n";
-
-    return response('<pre>' . $output . '</pre><br><strong>All parking logs cleared!</strong><br><a href="/tools">Back to Tools</a>');
-})->name('public.clear-parking-logs');
-
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');
 });
