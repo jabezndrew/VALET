@@ -50,7 +50,7 @@ body {
     transform: scale(0.50) rotate(270deg) !important;
     transform-origin: center center !important;
     justify-content: right;
-
+    margin-top: -100px !important;
 }
 
 /* Facilities */
@@ -124,11 +124,13 @@ body {
 }
 
 .parking-spot-box.occupied {
-    border: 4px solid #dc3545;
-    background: rgba(220, 53, 69, 0.1);
+    border: 4px solid #B22020;
+    background: #dc3545;
+    color: white;
     box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3);
     cursor: not-allowed !important;
-    opacity: 0.7;
+    opacity: 0.9;
+    font-weight: 700 !important;
 }
 
 .parking-spot-box.occupied:hover {
@@ -275,7 +277,7 @@ body {
 /* Extra large screens (1920px and up) */
 @media (min-width: 1920px) {
     .parking-map-container {
-        transform: scale(0.65) rotate(3600deg) !important;
+        transform: scale(0.60) rotate(360deg) !important;
     }
     .parking-map-wrapper {
         min-height: 700px !important;
@@ -285,7 +287,7 @@ body {
 /* Large screens (1600px - 1919px) */
 @media (min-width: 1600px) and (max-width: 1919px) {
     .parking-map-container {
-        transform: scale(0.58) rotate(360deg) !important;
+        transform: scale(0.55) rotate(360deg) !important;
     }
     .parking-map-wrapper {
         min-height: 650px !important;
