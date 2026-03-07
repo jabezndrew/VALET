@@ -1,7 +1,7 @@
 <div>
     <div id="alert-container"></div>
 
-    <div class="container mt4">
+    <div class="container mt-4">
         <!-- Header -->
         <div class="d-flex justify-content-between align-items-center mb-4">
             <div>
