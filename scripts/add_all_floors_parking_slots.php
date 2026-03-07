@@ -152,7 +152,7 @@ foreach ($floors as $floor) {
         $slotNumber++;
     }
 
-    echo "  ✓ {$floor['name']} completed\n";
+    echo "  [OK] {$floor['name']} completed\n";
 }
 
 echo "\n========================================\n";
