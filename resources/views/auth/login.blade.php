@@ -1,3 +1,4 @@
+@php /** @var \Illuminate\Support\ViewErrorBag $errors */ @endphp
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -244,10 +245,6 @@
                                         Remember me
                                     </label>
                                 </div>
-                                
-                                <a href="#" class="text-decoration-none" style="color: #B22020;">
-                                    Forgot Password?
-                                </a>
                             </div>
                             
                             <button type="submit" class="btn btn-login">
