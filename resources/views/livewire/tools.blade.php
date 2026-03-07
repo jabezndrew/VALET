@@ -179,26 +179,9 @@
                     </div>
                 </a>
             </div>
+            
             @endif
             
-            <!-- Clear Cache - Admin only -->
-            @if($isAdmin)
-            <div class="col-md-4 col-lg-3">
-                <a href="/clear-cache/valet2025secret" class="text-decoration-none">
-                    <div class="card tool-card h-100">
-                        <div class="card-body text-center py-4">
-                            <div class="tool-icon bg-dark bg-opacity-10 text-dark mx-auto mb-3">
-                                <i class="fas fa-broom fa-2x"></i>
-                            </div>
-                            <h5 class="card-title mb-2">Clear Cache</h5>
-                            <p class="card-text text-muted small mb-2">Clear all system caches</p>
-                            <span class="badge bg-dark">System</span>
-                        </div>
-                    </div>
-                </a>
-            </div>
-            @endif
-
             <!-- Clear Parking Logs - Admin only -->
             @if($isAdmin)
             <div class="col-md-4 col-lg-3">
@@ -212,24 +195,6 @@
                         <span class="badge bg-danger">Danger</span>
                     </div>
                 </div>
-            </div>
-            @endif
-
-            <!-- Seed Parking - Admin only -->
-            @if($isAdmin)
-            <div class="col-md-4 col-lg-3">
-                <a href="{{ route('admin.seed-parking') }}" class="text-decoration-none">
-                    <div class="card tool-card h-100">
-                        <div class="card-body text-center py-4">
-                            <div class="tool-icon bg-dark bg-opacity-10 text-dark mx-auto mb-3">
-                                <i class="fas fa-database fa-2x"></i>
-                            </div>
-                            <h5 class="card-title mb-2">Seed Parking</h5>
-                            <p class="card-text text-muted small mb-2">Reset parking space data</p>
-                            <span class="badge bg-dark">System</span>
-                        </div>
-                    </div>
-                </a>
             </div>
             @endif
         </div>
