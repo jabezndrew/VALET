@@ -256,7 +256,7 @@ class ParkingController extends Controller
             return response()->json(['success' => false, 'message' => 'Parking space not found.'], 404);
         }
 
-        $space->setManualOverride($validated['status'], auth()->user()->name, 60);
+        $space->setManualOverride($validated['status'], auth()->user()->name, 10);
 
         return response()->json([
             'success' => true,
