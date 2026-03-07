@@ -1,13 +1,23 @@
-<div wire:poll.3s="loadParkingData">
+<div @if(!$showActionModal) wire:poll.3s="loadParkingData" @endif>
+    {{-- Toast Messages (guard actions) --}}
+    @if(session()->has('success'))
+        <div style="position: fixed; bottom: 80px; left: 20px; right: 20px; z-index: 3000;">
+            <div class="guard-toast success">
+                <i class="fas fa-check-circle"></i>
+                {{ session('success') }}
+            </div>
+        </div>
+    @endif
+
     <div class="container-fluid p-0" style="background: white; min-height: 100vh;">
 
         <!-- Main Content -->
         <div class="row g-0">
             <div class="col-12 position-relative">
 
-                <!-- Route Control Buttons -->
+                <!-- Route Control Buttons / Open Issues Alert -->
                 <div style="position: absolute; top: 30px; left: 30px; z-index: 1000;">
-                    @if($selectedSpot)
+                    @if($selectedSpot && !(auth()->check() && auth()->user()->role === 'security'))
                         <!-- Clear Route Button -->
                         <button wire:click="clearRoute" class="route-toggle-btn active" style="padding: 12px 20px; font-size: 14px;">
                             <svg class="icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -16,10 +26,20 @@
                             <span style="width:80px">Clear Route</span>
                         </button>
                     @endif
+
+                    @auth
+                        @if(auth()->user()->role === 'security' && $openIncidentsCount > 0 && !$selectedSpot)
+                            <div class="guard-issues-alert" wire:click="openIncidentsModal" style="cursor: pointer;">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                {{ $openIncidentsCount }} Open Issue(s) reported
+                                <i class="fas fa-chevron-right ms-2" style="font-size: 0.85rem;"></i>
+                            </div>
+                        @endif
+                    @endauth
                 </div>
 
                 <!-- Floor Selector - Top Right Cards -->
-                <div style="position: absolute; top: 30px; right: 30px; z-index: 1000; width: 320px;">
+                <div style="position: absolute; top: 30px; right: 30px; z-index: 999; width: 320px;">
                     <div style="background: rgba(255,255,255,0.95); border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
                         <h6 style="font-size: 1.3rem; font-weight: 700; color: #3A3A3C; margin-bottom: 20px;">
                             Select Floor
@@ -91,7 +111,7 @@
                         </div>
                     @else
                         <div class="parking-map-wrapper">
-                            <div class="parking-map-container">
+                            <div wire:key="map-{{ $selectedFloor }}" class="parking-map-container">
 
                                 <!-- Traffic Flow Arrows - Individual Directional Indicators -->
                                 @php
@@ -195,6 +215,10 @@
                                 </div>
 
                                 <!-- Parking Spots -->
+                                @php
+                                    $isSecurityUser = auth()->check() && auth()->user()->role === 'security';
+                                @endphp
+
                                 @foreach($parkingSpaces as $space)
                                     @php
                                         $hasAssignedSensor = $space->sensorAssignment !== null;
@@ -202,26 +226,36 @@
                                         $x = $space->x_position ?? 0;
                                         $y = $space->y_position ?? 0;
                                         $rotation = $space->rotation ?? 0;
-                                        $isOccupied = $space->is_occupied;
+                                        $effectiveStatus = $hasAssignedSensor ? $space->getEffectiveStatus() : 'inactive';
+                                        $isManualOverride = $hasAssignedSensor && $space->isManualOverrideActive();
                                         $isSelected = $selectedSpot === $slotName;
                                         $columnCode = $space->column_code ?? '';
                                     @endphp
 
-                                    <div class="parking-spot-box {{ $hasAssignedSensor ? ($isOccupied ? 'occupied' : 'available') : 'inactive' }} {{ $isSelected ? 'selected-spot' : '' }}"
-                                         wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}', {{ $x }}, {{ $y }})"
+                                    <div wire:key="spot-{{ $space->id }}"
+                                         class="parking-spot-box {{ $effectiveStatus }} {{ !$isSecurityUser && $isSelected ? 'selected-spot' : '' }} {{ $isManualOverride ? 'manual-override' : '' }}"
+                                         @if($isSecurityUser && $hasAssignedSensor)
+                                             wire:click="openActionModal({{ $space->id }}, 'override')"
+                                             title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}{{ $isManualOverride ? ' (Manual Override)' : '' }}"
+                                         @elseif(!$isSecurityUser && $hasAssignedSensor)
+                                             wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}', {{ $x }}, {{ $y }})"
+                                             title="Click to show route to {{ $slotName }}"
+                                         @endif
+
                                          style="
+                                            position: absolute !important;
                                             left: {{ $x }}px;
                                             top: {{ $y }}px;
-                                            width: 60px;
-                                            height: 85px;
+                                            width: 60px !important;
+                                            height: 85px !important;
                                             font-size: 22px;
                                             transform: rotate({{ $rotation }}deg);
+                                            transform-origin: center center;
                                             pointer-events: auto;
                                             cursor: pointer;
-                                            transition: all 0.3s ease;
+                                            box-sizing: border-box !important;
                                             {{ $isSelected ? 'box-shadow: 0 0 20px 5px #FFD700; border: 3px solid #FFD700 !important; z-index: 600;' : '' }}
                                          "
-                                         title="Click to show route to {{ $slotName }}"
                                     >
                                         {{ $slotName }}
                                     </div>
@@ -317,7 +351,7 @@
                                     ];
                                 @endphp
 
-                                @if($showRoute && $selectedSpot && $selectedSpotX > 0)
+                                @if($showRoute && $selectedSpot && !(auth()->check() && auth()->user()->role === 'security'))
                                 <svg class="route-overlay" viewBox="0 0 1200 1400" style="position: absolute; top: 0; left: 0; width: 1200px; height: 1400px; pointer-events: none; z-index: 500;">
                                     <defs>
                                         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
@@ -368,8 +402,238 @@
             </div>
         </div>
     </div>
+
+    {{-- Guard Action Modal --}}
+    @auth
+    @if(auth()->user()->role === 'security' && $showActionModal && $selectedSpace)
+    <div class="guard-action-overlay" wire:click.self="closeActionModal">
+        <div class="guard-action-modal">
+            <div class="guard-action-header">
+                <h3>Spot Actions</h3>
+                <button class="guard-action-close" wire:click="closeActionModal">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="guard-action-body">
+                {{-- Space Info --}}
+                <div class="guard-space-info">
+                    <span class="guard-space-code">{{ $selectedSpace->space_code }}</span>
+                    <span class="guard-space-status {{ $selectedSpace->getEffectiveStatus() }}">
+                        {{ ucfirst($selectedSpace->getEffectiveStatus()) }}
+                    </span>
+                    @if($selectedSpace->isManualOverrideActive())
+                        <div style="margin-top: 8px; font-size: 0.85rem; color: #fd7e14;">
+                            <i class="fas fa-hand-paper me-1"></i>
+                            Manual override active (expires {{ $selectedSpace->manual_override_expires->diffForHumans() }})
+                        </div>
+                    @endif
+                </div>
+
+                {{-- Action Tabs --}}
+                <div class="guard-action-tabs">
+                    <button
+                        class="guard-action-tab {{ $actionType === 'override' ? 'active' : '' }}"
+                        wire:click="$set('actionType', 'override')">
+                        Override Status
+                    </button>
+                    <button
+                        class="guard-action-tab {{ $actionType === 'report' ? 'active' : '' }}"
+                        wire:click="$set('actionType', 'report')">
+                        Report Issue
+                    </button>
+                </div>
+
+                {{-- Override Form --}}
+                @if($actionType === 'override')
+                    <div class="guard-form-group">
+                        <label class="guard-form-label">Set Status:</label>
+                        <div class="guard-status-options">
+                            <div
+                                class="guard-status-option {{ $overrideStatus === 'available' ? 'selected available' : '' }}"
+                                wire:click="$set('overrideStatus', 'available')"
+                            >
+                                <i class="fas fa-check-circle" style="color: #28a745; font-size: 1.5rem;"></i>
+                                <div style="margin-top: 5px; font-weight: 600;">Available</div>
+                            </div>
+                            <div
+                                class="guard-status-option {{ $overrideStatus === 'occupied' ? 'selected occupied' : '' }}"
+                                wire:click="$set('overrideStatus', 'occupied')"
+                            >
+                                <i class="fas fa-car" style="color: #721c24; font-size: 1.5rem;"></i>
+                                <div style="margin-top: 5px; font-weight: 600;">Occupied</div>
+                            </div>
+                            <div
+                                class="guard-status-option {{ $overrideStatus === 'blocked' ? 'selected blocked' : '' }}"
+                                wire:click="$set('overrideStatus', 'blocked')"
+                            >
+                                <i class="fas fa-ban" style="color: #fd7e14; font-size: 1.5rem;"></i>
+                                <div style="margin-top: 5px; font-weight: 600;">Blocked</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">
+                        <i class="fas fa-info-circle me-1"></i>
+                        Override will automatically expire in 1 hour or when sensor detects a change.
+                    </p>
+
+                    {{-- PIN Input --}}
+                    <div class="guard-form-group" style="padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                        <label class="guard-form-label">Enter PIN to confirm:</label>
+                        @if($pinError)
+                            <div style="background: #f8d7da; color: #721c24; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem;">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {{ $pinError }}
+                            </div>
+                        @endif
+                        <input type="password" class="guard-form-input" wire:model="pinInput" placeholder="****" maxlength="8" inputmode="numeric" style="text-align: center; font-size: 1.1rem; letter-spacing: 3px;">
+                    </div>
+
+                    @if($selectedSpace->isManualOverrideActive())
+                        <button class="guard-action-submit" style="background: #6c757d; margin-bottom: 10px;" wire:click="clearOverride({{ $selectedSpace->id }})">
+                            <i class="fas fa-undo me-2"></i> Clear Override
+                        </button>
+                    @endif
+
+                    <button class="guard-action-submit override" wire:click="submitOverride">
+                        <i class="fas fa-check me-2"></i> Apply Override
+                    </button>
+                @endif
+
+                {{-- Report Form --}}
+                @if($actionType === 'report')
+                    <div class="guard-form-group">
+                        <label class="guard-form-label">Issue Category:</label>
+                        <select class="guard-form-select" wire:model="incidentCategory">
+                            <option value="debris">Debris / Obstruction</option>
+                            <option value="damaged">Damaged Spot</option>
+                            <option value="blocked">Blocked Area</option>
+                            <option value="light_issue">Light Issue</option>
+                            <option value="sensor_issue">Sensor Issue</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+
+                    <div class="guard-form-group">
+                        <label class="guard-form-label">Notes (Optional):</label>
+                        <textarea class="guard-form-textarea" wire:model="incidentNotes" placeholder="Describe the issue..."></textarea>
+                    </div>
+
+                    {{-- PIN Input --}}
+                    <div class="guard-form-group" style="padding-top: 15px; border-top: 1px solid #e0e0e0;">
+                        <label class="guard-form-label">
+                            <i class="fas fa-shield-alt me-1" style="color: #B22020;"></i>
+                            Enter PIN to confirm:
+                        </label>
+                        @if($pinError)
+                            <div style="background: #f8d7da; color: #721c24; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem;">
+                                <i class="fas fa-exclamation-circle me-1"></i>
+                                {{ $pinError }}
+                            </div>
+                        @endif
+                        <input type="password" class="guard-form-input" wire:model="pinInput" placeholder="****" maxlength="8" inputmode="numeric" style="text-align: center; font-size: 1.1rem; letter-spacing: 3px;">
+                    </div>
+
+                    <button class="guard-action-submit report" wire:click="submitIncident">
+                        <i class="fas fa-paper-plane me-2"></i> Submit Report
+                    </button>
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
+
+    {{-- Open Incidents Modal --}}
+    @if(auth()->user()->role === 'security' && $showIncidentsModal)
+    <div class="guard-action-overlay" wire:click.self="closeIncidentsModal">
+        <div class="guard-action-modal" style="max-width: 550px;">
+            <div class="guard-action-header" style="background: linear-gradient(135deg, #fd7e14 0%, #e06b00 100%); color: white; border-radius: 20px 20px 0 0;">
+                <h3>
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    Open Issues ({{ count($openIncidents) }})
+                </h3>
+                <button class="guard-action-close" wire:click="closeIncidentsModal" style="color: white;">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <div class="guard-action-body" style="max-height: 60vh; overflow-y: auto;">
+                @if(count($openIncidents) === 0)
+                    <div class="text-center py-4">
+                        <i class="fas fa-check-circle" style="font-size: 3rem; color: #28a745; opacity: 0.5;"></i>
+                        <p class="mt-3 text-muted">No open issues at this time.</p>
+                    </div>
+                @else
+                    <div class="guard-incidents-list">
+                        @php
+                            $categoryLabels = [
+                                'debris' => 'Debris / Obstruction',
+                                'damaged' => 'Damaged Spot',
+                                'blocked' => 'Blocked Area',
+                                'light_issue' => 'Light Issue',
+                                'sensor_issue' => 'Sensor Issue',
+                                'other' => 'Other Issue',
+                            ];
+                            $categoryIcons = [
+                                'debris' => 'fa-trash',
+                                'damaged' => 'fa-car-crash',
+                                'blocked' => 'fa-ban',
+                                'light_issue' => 'fa-lightbulb',
+                                'sensor_issue' => 'fa-wifi',
+                                'other' => 'fa-question-circle',
+                            ];
+                        @endphp
+
+                        @foreach($openIncidents as $incident)
+                            <div class="guard-incident-card">
+                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+                                    <div style="font-weight: 700; color: #fd7e14; font-size: 0.95rem;">
+                                        <i class="fas {{ $categoryIcons[$incident['category']] ?? 'fa-exclamation-circle' }} me-2"></i>
+                                        {{ $categoryLabels[$incident['category']] ?? $incident['category'] }}
+                                    </div>
+                                    <div style="font-size: 0.8rem; color: #999;">
+                                        {{ \Carbon\Carbon::parse($incident['created_at'])->diffForHumans() }}
+                                    </div>
+                                </div>
+
+                                <div style="margin-bottom: 12px;">
+                                    <div style="font-size: 1rem; margin-bottom: 8px;">
+                                        <i class="fas fa-map-marker-alt me-1"></i>
+                                        <strong>{{ $incident['space_code'] ?? 'N/A' }}</strong>
+                                        <span class="text-muted ms-2">{{ $incident['floor_level'] }}</span>
+                                    </div>
+                                    @if($incident['notes'])
+                                        <div style="font-size: 0.9rem; color: #666; background: white; padding: 10px; border-radius: 8px; margin-top: 8px;">
+                                            <i class="fas fa-sticky-note me-1"></i>
+                                            {{ $incident['notes'] }}
+                                        </div>
+                                    @endif
+                                </div>
+
+                                <div style="display: flex; align-items: center; gap: 10px; justify-content: flex-end;">
+                                    <input type="password" class="guard-form-input" wire:model="pinInput" placeholder="PIN" maxlength="8" inputmode="numeric" style="width: 80px; text-align: center; font-size: 0.9rem; padding: 6px 10px;">
+                                    <button class="guard-btn-resolve" wire:click="resolveIncident({{ $incident['id'] }})">
+                                        <i class="fas fa-check me-1"></i> Mark Resolved
+                                    </button>
+                                </div>
+                                @if($pinError)
+                                    <div style="color: #dc3545; font-size: 0.8rem; margin-top: 5px; text-align: right;">
+                                        <i class="fas fa-exclamation-circle me-1"></i>
+                                        {{ $pinError }}
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                @endif
+            </div>
+        </div>
+    </div>
+    @endif
+    @endauth
 </div>
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=1.6') }}">
+<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=1.8') }}">
 @endpush

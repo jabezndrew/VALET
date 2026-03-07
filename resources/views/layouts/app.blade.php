@@ -4,8 +4,8 @@
    <meta charset="UTF-8">
    <meta name="viewport" content="width=device-width, initial-scale=1.0">
    <meta name="csrf-token" content="{{ csrf_token() }}">
-   <title>@yield('title', 'VALET Smart Parking')</title>
-
+   <title>@yield('title', 'VALET')</title>
+   <link rel="icon" type="image/png" href="{{ asset('images/logosmall.png') }}">
    <!-- Bootstrap CSS -->
    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
    <!-- Font Awesome -->
@@ -394,6 +394,68 @@ main, .container, .valet-header + * {
    overflow: visible !important;
 }
 
+/* Icon Navigation */
+.icon-nav {
+   gap: 8px;
+   background: rgba(0,0,0,0.2);
+   padding: 8px 12px;
+   border-radius: 16px;
+}
+
+.icon-nav-link {
+   position: relative;
+   width: 44px;
+   height: 44px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   color: rgba(255,255,255,0.7);
+   border-radius: 12px;
+   transition: all 0.3s ease;
+   text-decoration: none;
+   cursor: pointer;
+   font-size: 1.2rem;
+}
+
+.icon-nav-link:hover {
+   color: white;
+   background: rgba(255,255,255,0.1);
+}
+
+.icon-nav-link.active {
+   color: white;
+   background: rgba(255,255,255,0.15);
+}
+
+.icon-nav-link.active::after {
+   content: '';
+   position: absolute;
+   bottom: 2px;
+   left: 50%;
+   transform: translateX(-50%);
+   width: 20px;
+   height: 3px;
+   background: white;
+   border-radius: 2px;
+}
+
+.icon-badge {
+   position: absolute;
+   top: 2px;
+   right: 2px;
+   background: #ffc107;
+   color: #333;
+   font-size: 0.65rem;
+   font-weight: bold;
+   min-width: 16px;
+   height: 16px;
+   border-radius: 8px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   padding: 0 4px;
+}
+
 .navbar-nav {
    gap: 15px;
 }
@@ -675,78 +737,76 @@ main, .container, .valet-header + * {
        <div class="container">
            <div class="d-flex justify-content-between align-items-center">
                <div class="d-flex align-items-center">
-                   <div class="valet-logo-container">
-                       <img src="/images/valet-logo.jpg" alt="VALET" class="valet-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-                       <i class="fas fa-car" style="display: none; font-size: 1.5rem; color: #B22020;"></i>
-                   </div>
-                   <div class="ms-3">
-                       <h3 class="text-white mb-0 fw-bold">VALET</h3>
-                       <span class="text-white-50">Your Virtual Parking Buddy</span>
-                   </div>
-               </div>
+                  <a href="{{ route('dashboard') }}" ckass="d-flex algin-items-center text-decoration-none">
+                     <div class="valet-logo-container">
+                        <img src="/images/valet-logo.jpg" alt="VALET" class="valet-logo" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
+                        <i class="fas fa-car" style="display: none; font-size: 1.5rem; color: #B22020;"></i>
+                     </div>
+                     </a>
+                     <div class="ms-3">
+                        <h3 class="text-white mb-0 fw-bold">VALET</h3>
+                        <span class="text-white-50">Your Virtual Parking Buddy</span>
+                     </div>
+                  
+                  </div>
 
                <!-- Navigation -->
                @auth
                <div class="d-flex align-items-center">
-                   <nav class="navbar-nav d-flex flex-row me-3">
-                       <a class="nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
+                   <nav class="icon-nav d-flex flex-row me-3">
+                       <a class="icon-nav-link {{ request()->routeIs('dashboard') ? 'active' : '' }}"
                           href="{{ route('dashboard') }}"
-                          wire:navigate>
-                           Dashboard
+                          wire:navigate
+                          title="Dashboard">
+                           <i class="fas fa-home"></i>
                        </a>
-
-                       @if(auth()->user()->canViewCars())
-                       <a class="nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}"
-                          href="{{ route('cars.index') }}"
-                          wire:navigate>
-                           Vehicles
-                       </a>
-                       @endif
 
                        @if(auth()->user()->canManageUsers())
-                       <a class="nav-link {{ request()->routeIs('admin.users') ? 'active' : '' }}"
+                       <a class="icon-nav-link {{ request()->routeIs('admin.users') ? 'active' : '' }}"
                           href="{{ route('admin.users') }}"
-                          wire:navigate>
-                           Users
+                          wire:navigate
+                          title="Users">
+                           <i class="fas fa-users"></i>
                            @if(auth()->user()->canApprovePendingAccounts())
                                @php
                                    $pendingCount = DB::table('pending_accounts')->where('status', 'pending')->count();
                                @endphp
                                @if($pendingCount > 0)
-                                   <span class="badge bg-warning text-dark ms-1">{{ $pendingCount }}</span>
+                                   <span class="icon-badge">{{ $pendingCount }}</span>
                                @endif
                            @endif
                        </a>
                        @endif
 
-                        <a class="nav-link {{ request()->routeIs('parking-display') ? 'active' : '' }}"
-                          href="{{ route('parking-display') }}"
-                          wire:navigate>
-                           Parking Map
-                        </a>
-                       @if(auth()->user()->role === 'admin')
-                       <a class="nav-link {{ request()->routeIs('admin.sensors') ? 'active' : '' }}"
-                          href="{{ route('admin.sensors') }}"
-                          wire:navigate>
-                           Sensors
-                       </a>
-                       <a class="nav-link {{ request()->routeIs('admin.rfid') ? 'active' : '' }}"
-                          href="{{ route('admin.rfid') }}"
-                          wire:navigate>
-                           RFID Tags
+                       @if(auth()->user()->canViewCars())
+                       <a class="icon-nav-link {{ request()->routeIs('cars.*') ? 'active' : '' }}"
+                          href="{{ route('cars.index') }}"
+                          wire:navigate
+                          title="Vehicles">
+                           <i class="fas fa-car"></i>
                        </a>
                        @endif
 
-                       <!-- Feedback Button - Now matches other nav items -->
-                       <a class="nav-link {{ request()->routeIs('feedback.*') ? 'active' : '' }}"
+                       <a class="icon-nav-link {{ request()->routeIs('feedback.*') ? 'active' : '' }}"
                           href="{{ route('feedback.index') }}"
-                          wire:navigate>
-                           Feedback
+                          wire:navigate
+                          title="Feedback">
+                           <i class="fas fa-comments"></i>
+                       </a>
+
+                       <a class="icon-nav-link {{ request()->is('parking-display') ? 'active' : '' }}"
+                          href="/parking-display"
+                          wire:navigate
+                          title="Parking Map">
+                           <i class="fas fa-map-marked-alt"></i>
                        </a>
                    </nav>
 
+                   <!-- Overnight Parking Notification Bell -->
+                   @livewire('overnight-parking-alert')
+
                    <!-- User Dropdown - ONLY this has button styling -->
-                   <div class="user-dropdown-wrapper">
+                   <div class="user-dropdown-wrapper ms-2">
                        <button class="user-dropdown" onclick="toggleUserDropdown()">
                            {{ auth()->user()->name }}
                            <i class="fas fa-chevron-down ms-2"></i>
@@ -756,6 +816,14 @@ main, .container, .valet-header + * {
                            <div class="dropdown-role-info">
                                <strong>{{ auth()->user()->getRoleDisplayName() }}</strong>
                            </div>
+                           <div class="dropdown-divider"></div>
+                           <a href="{{ route('profile') }}" class="dropdown-item" wire:navigate>
+                              <i class="fas fa-user me-2"></i> Profile
+                           </a>
+                           <div class="dropdown-divider"></div>
+                           <a href="{{ route('tools') }}" class="dropdown-item" wire:navigate>
+                              <i class="fas fa-toolbox me-2"></i> Tools
+                           </a>
                            <div class="dropdown-divider"></div>
                            <button onclick="logout()" class="dropdown-item logout-btn">
                                Logout

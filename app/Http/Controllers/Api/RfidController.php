@@ -7,6 +7,8 @@ use Illuminate\Http\Request;
 use App\Models\RfidTag;
 use App\Models\GuestAccess;
 use App\Models\ParkingEntry;
+use App\Models\RfidScanLog;
+use App\Services\ExpoPushNotificationService;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\Cache;
 
@@ -38,11 +40,27 @@ class RfidController extends Controller
                     'message' => 'RFID not registered. Please go to office.',
                     'user_name' => 'N/A',
                     'vehicle_plate' => 'N/A',
-                    'duration' => 10
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
                 // Store in cache for real-time monitoring
                 Cache::put('rfid_scan_latest', $scanData, 15);
+
+                // Log scan event
+                RfidScanLog::create([
+                    'uid' => $uid,
+                    'status' => 'invalid',
+                    'message' => 'RFID not registered',
+                    'scan_type' => 'entry',
+                    'gate_mac' => $gateMac,
+                ]);
+
+                // Send push notification to security
+                ExpoPushNotificationService::sendRfidAlert('invalid', [
+                    'uid' => $uid,
+                    'gate_mac' => $gateMac
+                ]);
 
                 return response()->json($scanData);
             }
@@ -56,10 +74,30 @@ class RfidController extends Controller
                     'message' => 'RFID expired. Please go to office.',
                     'user_name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
-                    'duration' => 10
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
                 Cache::put('rfid_scan_latest', $scanData, 15);
+
+                // Log scan event
+                RfidScanLog::create([
+                    'uid' => $uid,
+                    'status' => 'expired',
+                    'message' => 'RFID expired',
+                    'scan_type' => 'entry',
+                    'gate_mac' => $gateMac,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                ]);
+
+                // Send push notification to security
+                ExpoPushNotificationService::sendRfidAlert('expired', [
+                    'uid' => $uid,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'gate_mac' => $gateMac
+                ]);
 
                 return response()->json($scanData);
             }
@@ -72,10 +110,93 @@ class RfidController extends Controller
                     'message' => 'RFID ' . $rfidTag->status . '. Please go to office.',
                     'user_name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
-                    'duration' => 10
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
                 Cache::put('rfid_scan_latest', $scanData, 15);
+
+                // Log scan event
+                RfidScanLog::create([
+                    'uid' => $uid,
+                    'status' => $rfidTag->status,
+                    'message' => 'RFID ' . $rfidTag->status,
+                    'scan_type' => 'entry',
+                    'gate_mac' => $gateMac,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                ]);
+
+                // Send push notification to security
+                ExpoPushNotificationService::sendRfidAlert($rfidTag->status, [
+                    'uid' => $uid,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'gate_mac' => $gateMac
+                ]);
+
+                return response()->json($scanData);
+            }
+
+            // Check if linked vehicle is valid (active, not expired, not disabled)
+            if ($rfidTag->vehicle && !$rfidTag->vehicle->isValid()) {
+                $vehicle = $rfidTag->vehicle;
+                $reason = !$vehicle->is_active
+                    ? 'Vehicle registration is disabled.'
+                    : 'Vehicle registration has expired.';
+
+                $scanData = [
+                    'uid' => $uid,
+                    'valid' => false,
+                    'message' => $reason,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $vehicle->plate_number ?? 'N/A',
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
+                ];
+
+                Cache::put('rfid_scan_latest', $scanData, 15);
+
+                RfidScanLog::create([
+                    'uid' => $uid,
+                    'status' => 'invalid',
+                    'message' => $reason,
+                    'scan_type' => 'entry',
+                    'gate_mac' => $gateMac,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $vehicle->plate_number ?? 'N/A',
+                ]);
+
+                return response()->json($scanData);
+            }
+
+            // Check if vehicle is already inside
+            $activeEntry = ParkingEntry::where('rfid_tag_id', $rfidTag->id)
+                ->where('status', 'parked')
+                ->exists();
+
+            if ($activeEntry) {
+                $scanData = [
+                    'uid' => $uid,
+                    'valid' => false,
+                    'message' => 'Vehicle is already inside.',
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
+                ];
+
+                Cache::put('rfid_scan_latest', $scanData, 15);
+
+                RfidScanLog::create([
+                    'uid' => $uid,
+                    'status' => 'invalid',
+                    'message' => 'Vehicle already inside',
+                    'scan_type' => 'entry',
+                    'gate_mac' => $gateMac,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                ]);
 
                 return response()->json($scanData);
             }
@@ -98,6 +219,7 @@ class RfidController extends Controller
                 'uid' => $uid,
                 'user_name' => $rfidTag->user->name ?? 'Unknown',
                 'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                'scan_time' => now()->timestamp . '.' . now()->micro,
                 'user' => [
                     'name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
@@ -107,6 +229,17 @@ class RfidController extends Controller
 
             // Store in cache for real-time monitoring
             Cache::put('rfid_scan_latest', $scanData, 15);
+
+            // Log scan event
+            RfidScanLog::create([
+                'uid' => $uid,
+                'status' => 'valid',
+                'message' => 'Access granted',
+                'scan_type' => 'entry',
+                'gate_mac' => $gateMac,
+                'user_name' => $rfidTag->user->name ?? 'Unknown',
+                'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+            ]);
 
             return response()->json($scanData);
 
@@ -135,7 +268,7 @@ class RfidController extends Controller
             $gateMac = $request->gate_mac;
 
             // Find RFID tag
-            $rfidTag = RfidTag::where('uid', $uid)->first();
+            $rfidTag = RfidTag::where('uid', $uid)->with(['user', 'vehicle'])->first();
 
             if (!$rfidTag) {
                 return response()->json([
@@ -160,6 +293,17 @@ class RfidController extends Controller
                     'duration_minutes' => $durationMinutes,
                     'status' => 'exited',
                     'exit_gate_mac' => $gateMac
+                ]);
+
+                // Log scan event
+                RfidScanLog::create([
+                    'uid' => $uid,
+                    'status' => 'valid',
+                    'message' => 'Exit logged',
+                    'scan_type' => 'exit',
+                    'gate_mac' => $gateMac,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                 ]);
 
                 return response()->json([
@@ -293,5 +437,38 @@ class RfidController extends Controller
                 'duration' => 10
             ], 500);
         }
+    }
+
+    /**
+     * Get recent RFID scan events (for mobile polling)
+     */
+    public function recentScans(Request $request)
+    {
+        $minutes = (int) $request->query('minutes', 5);
+        $minutes = max(1, min($minutes, 60));
+
+        $scans = RfidScanLog::where('created_at', '>=', now()->subMinutes($minutes))
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(function ($scan) {
+                return [
+                    'id' => $scan->id,
+                    'uid' => $scan->uid,
+                    'status' => $scan->status,
+                    'message' => $scan->message,
+                    'scan_type' => $scan->scan_type,
+                    'gate_mac' => $scan->gate_mac,
+                    'user_name' => $scan->user_name,
+                    'vehicle_plate' => $scan->vehicle_plate,
+                    'timestamp' => $scan->created_at->toISOString(),
+                ];
+            });
+
+        return response()->json([
+            'scans' => $scans,
+            'count' => $scans->count(),
+            'from' => now()->subMinutes($minutes)->toISOString(),
+            'to' => now()->toISOString(),
+        ]);
     }
 }

@@ -32,7 +32,11 @@ Route::prefix('public')->group(function () {
     // RFID endpoints (for ESP32 gate controllers)
     Route::post('/rfid/verify', [RfidController::class, 'verify']);
     Route::post('/rfid/exit', [RfidController::class, 'exit']);
+    Route::get('/rfid/scans', [RfidController::class, 'recentScans']);
     Route::post('/guest/verify', [RfidController::class, 'verifyGuest']);
+
+    // Guard override endpoint (requires auth - security role)
+    Route::post('/parking/{spaceId}/override', [ParkingController::class, 'override']);
 });
 
 Route::middleware('auth:sanctum')->group(function () {
@@ -43,6 +47,8 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/validate', 'validate');
         Route::post('/reset-password', 'resetPassword');
         Route::post('/set-default-passwords', 'setDefaultPasswords');
+        Route::post('/user/push-token', 'updatePushToken');
+        Route::delete('/user/push-token', 'removePushToken');
     });
 
     Route::controller(FeedbackController::class)->prefix('feedbacks')->group(function () {
