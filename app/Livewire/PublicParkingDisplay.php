@@ -35,8 +35,12 @@ class PublicParkingDisplay extends Component
     public $openIncidents = [];
     public $showIncidentsModal = false;
 
-    public function mount()
+    public function mount($floor = null)
     {
+        if ($floor) {
+            $this->selectedFloor = $floor;
+        }
+
         $this->loadAllFloorStats();
         $this->loadParkingData();
 

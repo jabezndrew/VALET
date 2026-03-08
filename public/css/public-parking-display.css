@@ -11,7 +11,7 @@ body {
     overflow-x: hidden;
 }
 
-/* Header Button */
+/* Header */
 .manage {
     background: #B22020;
     border-radius: 10px;
@@ -47,7 +47,7 @@ body {
     width: 85rem !important;
     height: 80rem !important;
     background: white !important;
-    transform: scale(0.50) rotate(270deg) !important;
+    transform: scale(0.50) rotate(360deg) !important;
     transform-origin: center center !important;
     justify-content: right;
     margin-top: -100px !important;
@@ -199,7 +199,6 @@ body {
     pointer-events: none;
 }
 
-/* Parking Spot Labels (Text Only) */
 .parking-spot-label {
     position: absolute;
     font-size: 18px;
@@ -228,7 +227,6 @@ body {
     box-shadow: 0 2px 8px rgba(46, 213, 115, 0.4);
 }
 
-/* Inactive slots */
 .parking-spot-label.inactive,
 .parking-spot-occupied.inactive {
     opacity: 0.4;
@@ -236,19 +234,15 @@ body {
     background: rgba(18, 18, 19, 0.3) !important;
     border: 2px dashed #6c757d !important;
 }
-
 .parking-spot-label.inactive {
     color: #3a3e42 !important;
     text-decoration: line-through;
     font-style: italic;
 }
-
 .parking-spot-occupied.inactive .car-icon-img {
     opacity: 0.3;
     filter: grayscale(100%);
 }
-
-/* Section Labels */
 .section-label {
     position: absolute;
     font-size: 24px;
@@ -261,8 +255,6 @@ body {
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);
     z-index: 10;
 }
-
-/* Divider Lines */
 .divider-line {
     position: absolute;
     background-color: #fff;
@@ -273,89 +265,98 @@ body {
 @media (min-width: 1920px) {
     .parking-map-container {
         transform: scale(0.60) rotate(360deg) !important;
+        transform-origin: center center !important;
     }
-    .parking-map-wrapper {
-        min-height: 700px !important;
-    }
+    .parking-map-wrapper { min-height: 900px !important; height: 90vh !important; overflow: visible !important; }
 }
 
 /* Large screens (1600px - 1919px) */
 @media (min-width: 1600px) and (max-width: 1919px) {
     .parking-map-container {
         transform: scale(0.55) rotate(360deg) !important;
+        transform-origin: center center !important;
     }
-    .parking-map-wrapper {
-        min-height: 650px !important;
-    }
+    .parking-map-wrapper { min-height: 850px !important; height: 90vh !important; overflow: visible !important; }
 }
 
 /* Desktop (1400px - 1599px) */
 @media (min-width: 1400px) and (max-width: 1599px) {
     .parking-map-container {
         transform: scale(0.50) rotate(360deg) !important;
+        transform-origin: center center !important;
     }
-    .parking-map-wrapper {
-        min-height: 600px !important;
-    }
+    .parking-map-wrapper { min-height: 800px !important; height: 90vh !important; overflow: visible !important; }
 }
 
 /* Medium desktop (1200px - 1399px) */
 @media (min-width: 1200px) and (max-width: 1399px) {
     .parking-map-container {
-        transform: scale(0.44) rotate(90deg) !important;
+        transform: scale(0.44) rotate(360deg) !important;
+        transform-origin: center center !important;
     }
-    .parking-map-wrapper {
-        min-height: 550px !important;
-    }
+    .parking-map-wrapper { min-height: 750px !important; height: 90vh !important; overflow: visible !important; }
 }
 
-/* Small desktop/Tablet landscape (992px - 1199px) */
+/* Small desktop / Tablet landscape (992px - 1199px) */
 @media (min-width: 992px) and (max-width: 1199px) {
     .parking-map-container {
-        transform: scale(0.38) rotate(90deg) !important;
+        transform: scale(0.38) rotate(360deg) !important;
+        transform-origin: center center !important;
     }
-    .parking-map-wrapper {
-        min-height: 500px !important;
-    }
+    .parking-map-wrapper { min-height: 700px !important; height: 90vh !important; overflow: visible !important; }
 }
 
 /* Tablet portrait (768px - 991px) */
 @media (min-width: 768px) and (max-width: 991px) {
     .parking-map-container {
-        transform: scale(0.33) rotate(90deg) !important;
+        transform: scale(0.33) rotate(360deg) !important;
+        transform-origin: center center !important;
     }
-    .parking-map-wrapper {
-        min-height: 450px !important;
-    }
+    .parking-map-wrapper { min-height: 600px !important; height: 90vh !important; overflow: visible !important; }
 }
 
 /* Mobile landscape (576px - 767px) */
 @media (min-width: 576px) and (max-width: 767px) {
     .parking-map-container {
-        transform: scale(0.28) rotate(90deg) !important;
+        transform: scale(0.28) rotate(360deg) !important;
+        transform-origin: center center !important;
     }
-    .parking-map-wrapper {
-        min-height: 400px !important;
-    }
+    .parking-map-wrapper { min-height: 500px !important; height: 90vh !important; overflow: visible !important; }
 }
 
-/* Mobile portrait (up to 575px) */
-@media (max-width: 575px) {
+/* Mobile portrait (401px - 575px) */
+@media (min-width: 401px) and (max-width: 575px) {
     .parking-map-container {
-        transform: scale(0.24) rotate(90deg) !important;
+        transform: scale(0.24) rotate(360deg) !important;
+        transform-origin: center center !important;
     }
-    .parking-map-wrapper {
-        min-height: 350px !important;
-    }
+    .parking-map-wrapper { min-height: 450px !important; height: 90vh !important; overflow: visible !important; }
 }
 
-/* Very small screens */
-@media (max-width: 400px) {
+/* Small mobile - Samsung Galaxy A8 and similar (361px - 400px) */
+@media (min-width: 361px) and (max-width: 400px) {
     .parking-map-container {
-        transform: scale(0.20) rotate(90deg) !important;
+        transform: scale(0.20) rotate(360deg) !important;
+        transform-origin: center center !important;
     }
-    .parking-map-wrapper {
-        min-height: 320px !important;
+    .parking-map-wrapper { min-height: 380px !important; height: 90vh !important; overflow: visible !important; }
+}
+
+/* Very small screens - Samsung Galaxy A8 portrait (max 360px) */
+@media (max-width: 360px) {
+    .parking-map-container {
+        transform: scale(0.18) rotate(360deg) !important;
+        transform-origin: center center !important;
+    }
+    .parking-map-wrapper { min-height: 350px !important; height: 90vh !important; overflow: visible !important; }
+}
+
+
+/* 1400px wide, short height (e.g. 1400x1000 and below) */
+@media (min-width: 1400px) and (min-height: 1000px) {
+    .parking-map-container {
+        transform: scale(0.45) rotate(360deg) !important;
+        transform-origin: center center !important;
     }
 }
 
@@ -558,8 +559,7 @@ body {
     border-radius: 20px;
     width: 90%;
     max-width: 500px;
-    max-height: 80vh;
-    overflow-y: auto;
+    overflow: visible;
     animation: guardModalIn 0.3s ease;
 }
 
@@ -759,3 +759,134 @@ body {
     transform: scale(1.02);
     box-shadow: 0 4px 12px rgba(40, 167, 69, 0.4);
 }
+
+/* ========================================
+   Guard Modal - Responsive
+   ======================================== */
+
+/* Large screens - make modal wider */
+@media (min-width: 1400px) {
+    .guard-action-modal {
+        max-width: 560px;
+    }
+    .guard-status-option {
+        padding: 18px 12px;
+    }
+    .guard-action-submit {
+        padding: 16px;
+        font-size: 1.15rem;
+    }
+}
+
+/* Medium desktop (1200px - 1399px) */
+@media (min-width: 1200px) and (max-width: 1399px) {
+    .guard-action-modal {
+        max-width: 520px;
+    }
+}
+
+/* Tablet landscape (992px - 1199px) */
+@media (min-width: 992px) and (max-width: 1199px) {
+    .guard-action-modal {
+        width: 92%;
+        max-width: 500px;
+    }
+    .guard-action-body {
+        padding: 18px;
+    }
+    .guard-status-option {
+        padding: 14px 10px;
+    }
+}
+
+/* Tablet portrait (768px - 991px) */
+@media (min-width: 768px) and (max-width: 991px) {
+    .guard-action-modal {
+        width: 85%;
+        max-width: 480px;
+        border-radius: 16px;
+    }
+    .guard-action-header { padding: 16px 18px; }
+    .guard-action-header h3 { font-size: 1.1rem; }
+    .guard-action-body { padding: 16px 18px; }
+    .guard-space-code { font-size: 1.3rem; }
+    .guard-status-options { gap: 8px; }
+    .guard-status-option { padding: 13px 8px; font-size: 0.9rem; }
+    .guard-action-tab { padding: 11px 8px; font-size: 0.9rem; }
+    .guard-action-submit { padding: 14px; font-size: 1rem; }
+    .guard-form-input,
+    .guard-form-select,
+    .guard-form-textarea { font-size: 0.95rem; padding: 10px; }
+}
+
+/* Mobile landscape (576px - 767px) */
+@media (min-width: 576px) and (max-width: 767px) {
+    .guard-action-modal {
+        width: 92%;
+        max-width: 460px;
+        border-radius: 14px;
+    }
+    .guard-action-header { padding: 14px 16px; }
+    .guard-action-header h3 { font-size: 1rem; }
+    .guard-action-body { padding: 14px 16px; }
+    .guard-space-code { font-size: 1.2rem; }
+    .guard-status-options { gap: 7px; }
+    .guard-status-option { padding: 11px 6px; font-size: 0.85rem; }
+    .guard-status-option i { font-size: 1.3rem; }
+    .guard-action-tab { padding: 10px 6px; font-size: 0.85rem; }
+    .guard-action-submit { padding: 13px; font-size: 0.95rem; }
+    .guard-form-input,
+    .guard-form-select,
+    .guard-form-textarea { font-size: 0.9rem; padding: 10px; }
+}
+
+/* Mobile portrait - bottom sheet (max 575px) */
+@media (max-width: 575px) {
+    .guard-action-overlay {
+        align-items: flex-end;
+    }
+    .guard-action-modal {
+        width: 100%;
+        max-width: 100%;
+        border-radius: 20px 20px 0 0;
+    }
+    .guard-action-header { padding: 14px 16px; }
+    .guard-action-header h3 { font-size: 1rem; }
+    .guard-action-close { font-size: 1.3rem; }
+    .guard-action-body { padding: 14px 16px; }
+    .guard-space-info { padding: 12px; margin-bottom: 14px; }
+    .guard-space-code { font-size: 1.15rem; }
+    .guard-space-status { font-size: 0.78rem; padding: 3px 10px; margin-left: 6px; }
+    .guard-action-tabs { gap: 7px; margin-bottom: 14px; }
+    .guard-action-tab { padding: 10px 6px; font-size: 0.82rem; border-radius: 8px; }
+    .guard-status-options { gap: 6px; }
+    .guard-status-option { padding: 10px 4px; font-size: 0.78rem; border-radius: 8px; }
+    .guard-status-option i { font-size: 1.2rem; }
+    .guard-form-group { margin-bottom: 12px; }
+    .guard-form-label { font-size: 0.88rem; margin-bottom: 5px; }
+    .guard-form-input,
+    .guard-form-select,
+    .guard-form-textarea { font-size: 0.88rem; padding: 9px; border-radius: 8px; }
+    .guard-form-textarea { min-height: 75px; }
+    .guard-action-submit { padding: 12px; font-size: 0.92rem; border-radius: 10px; }
+    .guard-incident-card { padding: 11px; }
+    .guard-btn-resolve { padding: 7px 13px; font-size: 0.82rem; }
+}
+
+/* Very small screens (max 360px) */
+@media (max-width: 360px) {
+    .guard-action-modal {
+    }
+    .guard-action-header { padding: 12px 14px; }
+    .guard-action-body { padding: 12px 14px; }
+    .guard-space-code { font-size: 1.05rem; }
+    .guard-status-option { padding: 8px 3px; font-size: 0.75rem; }
+    .guard-status-option i { font-size: 1.1rem; }
+    .guard-action-tab { padding: 9px 5px; font-size: 0.78rem; }
+    .guard-action-submit { padding: 11px; font-size: 0.88rem; }
+    .guard-form-input,
+    .guard-form-select,
+    .guard-form-textarea { font-size: 0.85rem; padding: 8px; }
+}
+
+
