@@ -635,5 +635,5 @@
 </div>
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=1.8') }}">
+<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=2.5') }}">
 @endpush
