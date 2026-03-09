@@ -133,6 +133,10 @@ body {
     font-weight: 700 !important;
 }
 
+.parking-spot-box.security-clickable {
+    cursor: pointer !important;
+}
+
 .parking-spot-box.occupied:hover {
     box-shadow: 0 4px 12px rgba(220, 53, 69, 0.3) !important;
 }
@@ -485,7 +489,7 @@ body {
 
 /* Manual Override Badge */
 .parking-spot-box.manual-override {
-    position: relative;
+    position: absolute;
 }
 
 .parking-spot-box.manual-override::after {
@@ -721,6 +725,7 @@ body {
 
 .guard-action-submit.override {
     background: #8B0000;
+    margin-bottom: 10px;
 }
 
 .guard-action-submit.report {

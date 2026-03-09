@@ -411,4 +411,61 @@ class ParkingController extends Controller
             ], 500);
         }
     }
+
+    public function override(Request $request, $spaceId): JsonResponse
+    {
+        if (!auth()->check() || auth()->user()->role !== 'security') {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $validated = $request->validate([
+            'status' => 'required|in:available,occupied',
+            'pin'    => 'required|string',
+            'reason' => 'nullable|string|max:255',
+        ]);
+
+        if ($validated['pin'] !== config('app.guard_pin', '1234')) {
+            return response()->json(['success' => false, 'message' => 'Invalid PIN. Please try again.'], 422);
+        }
+
+        $space = ParkingSpace::find($spaceId);
+        if (!$space) {
+            return response()->json(['success' => false, 'message' => 'Parking space not found.'], 404);
+        }
+
+        $space->setManualOverride(
+            $validated['status'],
+            auth()->user()->name,
+            $validated['reason'] ?? 'Overridden via mobile app'
+        );
+
+        return response()->json([
+            'success'    => true,
+            'message'    => "Spot {$space->space_code} overridden to {$validated['status']}. Active until cleared.",
+            'space_code' => $space->space_code,
+            'status'     => $validated['status'],
+            'overridden_by' => auth()->user()->name,
+            'reason'     => $space->override_reason,
+        ]);
+    }
+
+    public function clearOverride(Request $request, $spaceId): JsonResponse
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['security', 'admin', 'ssd'])) {
+            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
+        }
+
+        $space = ParkingSpace::find($spaceId);
+        if (!$space) {
+            return response()->json(['success' => false, 'message' => 'Parking space not found.'], 404);
+        }
+
+        $space->clearManualOverride();
+
+        return response()->json([
+            'success'    => true,
+            'message'    => "Override cleared for spot {$space->space_code}.",
+            'space_code' => $space->space_code,
+        ]);
+    }
 }

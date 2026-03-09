@@ -14,6 +14,8 @@ class OvernightParkingAlert extends Component
     public $overnightVehicles = [];
     public $overnightCount = 0;
     public $hasUnseenAlerts = false;
+    public $overrideNotifications = [];
+    public $unseenOverrideCount = 0;
 
     // Configure overnight threshold (hours parked to be considered overnight)
     public const OVERNIGHT_HOURS = 12; // 12 hours threshold
@@ -32,6 +34,18 @@ class OvernightParkingAlert extends Component
             $this->overnightCount = 0;
             $this->overnightVehicles = [];
             return;
+        }
+
+        // Load override notifications (admin/ssd only — not security since security is the sender)
+        if (in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            $allOverrides = Cache::get('admin_override_notifications', []);
+            $seenOverrideIds = Cache::get('seen_overrides_' . auth()->id(), []);
+            $this->overrideNotifications = array_reverse($allOverrides); // newest first
+            $unseenOverrides = array_filter($allOverrides, fn($n) => !in_array($n['id'], $seenOverrideIds));
+            $this->unseenOverrideCount = count($unseenOverrides);
+        } else {
+            $this->overrideNotifications = [];
+            $this->unseenOverrideCount = 0;
         }
 
         // Check if the table exists first to prevent errors
@@ -64,11 +78,12 @@ class OvernightParkingAlert extends Component
             $currentIds = collect($this->overnightVehicles)->pluck('id')->sort()->values()->toArray();
             $seenIds = Cache::get('overnight_seen_' . auth()->id(), []);
             $newIds = array_diff($currentIds, $seenIds);
-            $this->hasUnseenAlerts = count($newIds) > 0;
+            $this->hasUnseenAlerts = count($newIds) > 0 || $this->unseenOverrideCount > 0;
         } catch (\Exception $e) {
             // Silently fail if table doesn't exist or other DB issues
             $this->overnightCount = 0;
             $this->overnightVehicles = [];
+            $this->hasUnseenAlerts = $this->unseenOverrideCount > 0;
         }
     }
 
@@ -77,9 +92,17 @@ class OvernightParkingAlert extends Component
         $this->loadOvernightVehicles();
         $this->showModal = true;
 
-        // Mark all current alerts as seen
+        // Mark all current overnight alerts as seen
         $seenIds = collect($this->overnightVehicles)->pluck('id')->sort()->values()->toArray();
         Cache::put('overnight_seen_' . auth()->id(), $seenIds, now()->addDays(7));
+
+        // Mark all override notifications as seen
+        if (!empty($this->overrideNotifications)) {
+            $allOverrideIds = array_column($this->overrideNotifications, 'id');
+            Cache::put('seen_overrides_' . auth()->id(), $allOverrideIds, now()->addDays(7));
+            $this->unseenOverrideCount = 0;
+        }
+
         $this->hasUnseenAlerts = false;
     }
 

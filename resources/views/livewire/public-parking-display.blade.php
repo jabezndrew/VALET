@@ -233,7 +233,7 @@
                                     @endphp
 
                                     <div wire:key="spot-{{ $space->id }}"
-                                         class="parking-spot-box {{ $effectiveStatus }} {{ !$isSecurityUser && $isSelected ? 'selected-spot' : '' }} {{ $isManualOverride ? 'manual-override' : '' }}"
+                                         class="parking-spot-box {{ $effectiveStatus }} {{ !$isSecurityUser && $isSelected ? 'selected-spot' : '' }} {{ $isManualOverride ? 'manual-override' : '' }} {{ $isSecurityUser && $hasAssignedSensor ? 'security-clickable' : '' }}"
                                          @if($isSecurityUser && $hasAssignedSensor)
                                              wire:click="openActionModal({{ $space->id }}, 'override')"
                                              title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}{{ $isManualOverride ? ' (Manual Override)' : '' }}"
@@ -406,7 +406,7 @@
     <div class="guard-action-overlay" wire:click.self="closeActionModal">
         <div class="guard-action-modal">
             <div class="guard-action-header">
-                <h3>Spot Actions</h3>
+                <h3>Override Status</h3>
                 <button class="guard-action-close" wire:click="closeActionModal">
                     <i class="fas fa-times"></i>
                 </button>
@@ -419,30 +419,9 @@
                     <span class="guard-space-status {{ $selectedSpace->getEffectiveStatus() }}">
                         {{ ucfirst($selectedSpace->getEffectiveStatus()) }}
                     </span>
-                    @if($selectedSpace->isManualOverrideActive())
-                        <div style="margin-top: 8px; font-size: 0.85rem; color: #fd7e14;">
-                            <i class="fas fa-hand-paper me-1"></i>
-                            Manual override active (expires {{ $selectedSpace->manual_override_expires->diffForHumans() }})
-                        </div>
-                    @endif
-                </div>
-
-                {{-- Action Tabs --}}
-                <div class="guard-action-tabs">
-                    <button
-                        class="guard-action-tab {{ $actionType === 'override' ? 'active' : '' }}"
-                        wire:click="$set('actionType', 'override')">
-                        Override Status
-                    </button>
-                    <button
-                        class="guard-action-tab {{ $actionType === 'report' ? 'active' : '' }}"
-                        wire:click="$set('actionType', 'report')">
-                        Report Issue
-                    </button>
                 </div>
 
                 {{-- Override Form --}}
-                @if($actionType === 'override')
                     <div class="guard-form-group">
                         <label class="guard-form-label">Set Status:</label>
                         <div class="guard-status-options">
@@ -460,20 +439,28 @@
                                 <i class="fas fa-car" style="color: #721c24; font-size: 1.5rem;"></i>
                                 <div style="margin-top: 5px; font-weight: 600;">Occupied</div>
                             </div>
-                            <div
-                                class="guard-status-option {{ $overrideStatus === 'blocked' ? 'selected blocked' : '' }}"
-                                wire:click="$set('overrideStatus', 'blocked')"
-                            >
-                                <i class="fas fa-ban" style="color: #fd7e14; font-size: 1.5rem;"></i>
-                                <div style="margin-top: 5px; font-weight: 600;">Blocked</div>
-                            </div>
                         </div>
                     </div>
 
-                    <p style="font-size: 0.85rem; color: #666; margin-bottom: 15px;">
-                        <i class="fas fa-info-circle me-1"></i>
-                        Override will automatically expire in 1 hour or when sensor detects a change.
-                    </p>
+                    <div class="guard-form-group">
+                        <label class="guard-form-label">Reason <span style="color: #dc3545;">*</span></label>
+                        <select class="guard-form-select" wire:model.live="overrideReason">
+                            <option value="">— Select a reason —</option>
+                            <option value="Sensor not detecting vehicle (false available)">Sensor not detecting vehicle</option>
+                            <option value="Sensor hardware malfunction">Sensor hardware malfunction</option>
+                            <option value="Spot under maintenance or repair">Spot under maintenance or repair</option>
+                            <option value="Other">Other</option>
+                        </select>
+                        @if($overrideReason === 'Other')
+                            <input type="text" class="guard-form-input" wire:model="overrideCustomReason"
+                                   placeholder="Please specify..." style="margin-top: 8px;">
+                        @endif
+                        @if($overrideError)
+                            <div style="color: #dc3545; font-size: 0.85rem; margin-top: 6px;">
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ $overrideError }}
+                            </div>
+                        @endif
+                    </div>
 
                     {{-- PIN Input --}}
                     <div class="guard-form-group" style="padding-top: 15px; border-top: 1px solid #e0e0e0;">
@@ -486,56 +473,15 @@
                         @endif
                         <input type="password" class="guard-form-input" wire:model="pinInput" placeholder="****" maxlength="8" inputmode="numeric" style="text-align: center; font-size: 1.1rem; letter-spacing: 3px;">
                     </div>
-
-                    @if($selectedSpace->isManualOverrideActive())
-                        <button class="guard-action-submit" style="background: #6c757d; margin-bottom: 10px;" wire:click="clearOverride({{ $selectedSpace->id }})">
-                            <i class="fas fa-undo me-2"></i> Clear Override
-                        </button>
-                    @endif
-
                     <button class="guard-action-submit override" wire:click="submitOverride">
                         <i class="fas fa-check me-2"></i> Apply Override
                     </button>
-                @endif
 
-                {{-- Report Form --}}
-                @if($actionType === 'report')
-                    <div class="guard-form-group">
-                        <label class="guard-form-label">Issue Category:</label>
-                        <select class="guard-form-select" wire:model="incidentCategory">
-                            <option value="debris">Debris / Obstruction</option>
-                            <option value="damaged">Damaged Spot</option>
-                            <option value="blocked">Blocked Area</option>
-                            <option value="light_issue">Light Issue</option>
-                            <option value="sensor_issue">Sensor Issue</option>
-                            <option value="other">Other</option>
-                        </select>
-                    </div>
-
-                    <div class="guard-form-group">
-                        <label class="guard-form-label">Notes (Optional):</label>
-                        <textarea class="guard-form-textarea" wire:model="incidentNotes" placeholder="Describe the issue..."></textarea>
-                    </div>
-
-                    {{-- PIN Input --}}
-                    <div class="guard-form-group" style="padding-top: 15px; border-top: 1px solid #e0e0e0;">
-                        <label class="guard-form-label">
-                            <i class="fas fa-shield-alt me-1" style="color: #B22020;"></i>
-                            Enter PIN to confirm:
-                        </label>
-                        @if($pinError)
-                            <div style="background: #f8d7da; color: #721c24; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem;">
-                                <i class="fas fa-exclamation-circle me-1"></i>
-                                {{ $pinError }}
-                            </div>
-                        @endif
-                        <input type="password" class="guard-form-input" wire:model="pinInput" placeholder="****" maxlength="8" inputmode="numeric" style="text-align: center; font-size: 1.1rem; letter-spacing: 3px;">
-                    </div>
-
-                    <button class="guard-action-submit report" wire:click="submitIncident">
-                        <i class="fas fa-paper-plane me-2"></i> Submit Report
-                    </button>
-                @endif
+                    @if($selectedSpace->isManualOverrideActive())
+                        <button class="guard-action-submit" style="background: #6c757d;" wire:click="clearOverride({{ $selectedSpace->id }})">
+                            <i class="fas fa-undo me-2"></i> Clear Override
+                        </button>
+                    @endif
             </div>
         </div>
     </div>
@@ -632,5 +578,5 @@
 </div>
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=2.5') }}">
+<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=2.7') }}">
 @endpush
