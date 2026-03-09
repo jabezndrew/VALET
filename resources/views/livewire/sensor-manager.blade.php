@@ -105,6 +105,16 @@
                                                 <small class="text-muted">
                                                     {{ $sensor->parkingSpace->floor_level }}
                                                 </small>
+                                                @if($sensor->parkingSpace->manual_override)
+                                                    <br>
+                                                    <span class="badge bg-warning text-dark mt-1">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i>Overridden: {{ $sensor->parkingSpace->manual_status }}
+                                                    </span>
+                                                    @if($sensor->parkingSpace->override_reason)
+                                                        <br>
+                                                        <small class="text-muted fst-italic">{{ $sensor->parkingSpace->override_reason }}</small>
+                                                    @endif
+                                                @endif
                                             @endif
                                         @else
                                             <span class="text-muted">Not assigned</span>
@@ -156,10 +166,24 @@
                                             <i class="fas fa-edit"></i>
                                         </button>
 
-                                        @if($sensor->space_code)
+                                        @if($sensor->space_code && $sensor->parkingSpace)
+                                            @if($sensor->parkingSpace->manual_override)
+                                                <button wire:click="clearOverride({{ $sensor->id }})"
+                                                        class="btn btn-sm btn-success"
+                                                        title="Clear Override">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </button>
+                                            @else
+                                                <button wire:click="openOverrideModal({{ $sensor->id }})"
+                                                        class="btn btn-sm btn-warning"
+                                                        title="Override Status">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </button>
+                                            @endif
+
                                             <button wire:click="unassignSensor({{ $sensor->id }})"
                                                     wire:confirm="Are you sure you want to unassign this sensor?"
-                                                    class="btn btn-sm btn-warning"
+                                                    class="btn btn-sm btn-outline-warning"
                                                     title="Unassign">
                                                 <i class="fas fa-unlink"></i>
                                             </button>
@@ -180,6 +204,78 @@
             @endif
         </div>
     </div>
+
+    {{-- Override Modal --}}
+    @if($showOverrideModal && $overrideSensor)
+        <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);" tabindex="-1">
+            <div class="modal-dialog modal-dialog-centered">
+                <div class="modal-content">
+                    <div class="modal-header" style="background: linear-gradient(135deg, #fd7e14, #e06b00); color: white;">
+                        <h5 class="modal-title">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            Override Sensor — {{ $overrideSensor->space_code }}
+                        </h5>
+                        <button type="button" class="btn-close btn-close-white" wire:click="closeOverrideModal"></button>
+                    </div>
+                    <div class="modal-body">
+
+                        <div class="alert alert-warning py-2">
+                            <i class="fas fa-info-circle me-1"></i>
+                            This will manually set the spot status and <strong>override sensor readings</strong> until cleared.
+                        </div>
+
+                        @if($sensor->parkingSpace ?? false)
+                            <p class="text-muted mb-3">
+                                Floor: <strong>{{ $overrideSensor->parkingSpace->floor_level }}</strong>
+                                &nbsp;|&nbsp; Sensor: <code>{{ $overrideSensor->mac_address }}</code>
+                            </p>
+                        @endif
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Set Status to:</label>
+                            <div class="d-flex gap-3">
+                                <button type="button"
+                                        wire:click="$set('overrideStatus', 'available')"
+                                        class="btn flex-fill py-3 fs-5 {{ $overrideStatus === 'available' ? 'btn-success' : 'btn-outline-success' }}">
+                                    <i class="fas fa-check-circle me-2"></i> Available
+                                </button>
+                                <button type="button"
+                                        wire:click="$set('overrideStatus', 'occupied')"
+                                        class="btn flex-fill py-3 fs-5 {{ $overrideStatus === 'occupied' ? 'btn-danger' : 'btn-outline-danger' }}">
+                                    <i class="fas fa-car me-2"></i> Occupied
+                                </button>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Reason <span class="text-danger">*</span></label>
+                            <select class="form-select" wire:model.live="overrideReason">
+                                <option value="">— Select a reason —</option>
+                                <option value="Sensor not detecting vehicle (false available)">Sensor not detecting vehicle</option>
+                                <option value="Sensor hardware malfunction">Sensor hardware malfunction</option>
+                                <option value="Spot under maintenance or repair">Spot under maintenance or repair</option>
+                                <option value="Other">Other</option>
+                            </select>
+                            @if($overrideReason === 'Other')
+                                <input type="text" class="form-control mt-2" wire:model="overrideCustomReason"
+                                       placeholder="Please specify..." autofocus>
+                            @endif
+                            @if($overrideError)
+                                <div class="text-danger small mt-1">{{ $overrideError }}</div>
+                            @endif
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" wire:click="closeOverrideModal">Cancel</button>
+                        <button type="button" class="btn btn-warning text-white" wire:click="submitOverride">
+                            <i class="fas fa-exclamation-triangle me-1"></i> Apply Override
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    @endif
 
     {{-- Assignment Modal --}}
     @if($showAssignModal && $selectedSensor)

@@ -48,6 +48,7 @@ class ParkingSpace extends Model
         'manual_override_at',
         'manual_override_expires',
         'manual_override_by',
+        'override_reason',
     ];
 
     /**
@@ -189,14 +190,15 @@ class ParkingSpace extends Model
     /**
      * Set manual override status
      */
-    public function setManualOverride(string $status, string $overrideBy = 'Guard', int $expiresInMinutes = 60): bool
+    public function setManualOverride(string $status, string $overrideBy = 'Guard', ?string $reason = null): bool
     {
         return $this->update([
             'manual_override' => true,
             'manual_status' => $status,
             'manual_override_at' => now(),
-            'manual_override_expires' => now()->addMinutes($expiresInMinutes),
+            'manual_override_expires' => null,
             'manual_override_by' => $overrideBy,
+            'override_reason' => $reason,
         ]);
     }
 
@@ -211,24 +213,16 @@ class ParkingSpace extends Model
             'manual_override_at' => null,
             'manual_override_expires' => null,
             'manual_override_by' => null,
+            'override_reason' => null,
         ]);
     }
 
     /**
-     * Check if manual override is still active
+     * Check if manual override is active (stays until manually cleared)
      */
     public function isManualOverrideActive(): bool
     {
-        if (!$this->manual_override) {
-            return false;
-        }
-
-        if ($this->manual_override_expires && $this->manual_override_expires->isPast()) {
-            $this->clearManualOverride();
-            return false;
-        }
-
-        return true;
+        return (bool) $this->manual_override;
     }
 
     /**
