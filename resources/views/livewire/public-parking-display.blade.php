@@ -230,6 +230,7 @@
                                         $isManualOverride = $hasAssignedSensor && $space->isManualOverrideActive();
                                         $isSelected = $selectedSpot === $slotName;
                                         $columnCode = $space->column_code ?? '';
+                                        $isClickableForUser = !$isSecurityUser && $hasAssignedSensor && $effectiveStatus === 'available';
                                     @endphp
 
                                     <div wire:key="spot-{{ $space->id }}"
@@ -237,7 +238,7 @@
                                          @if($isSecurityUser && $hasAssignedSensor)
                                              wire:click="openActionModal({{ $space->id }}, 'override')"
                                              title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}{{ $isManualOverride ? ' (Manual Override)' : '' }}"
-                                         @elseif(!$isSecurityUser && $hasAssignedSensor)
+                                         @elseif($isClickableForUser)
                                              wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}', {{ $x }}, {{ $y }})"
                                              title="Click to show route to {{ $slotName }}"
                                          @endif
@@ -251,8 +252,8 @@
                                             font-size: 22px;
                                             transform: rotate({{ $rotation }}deg);
                                             transform-origin: center center;
-                                            pointer-events: auto;
-                                            cursor: pointer;
+                                            pointer-events: {{ ($isSecurityUser && $hasAssignedSensor) || $isClickableForUser ? 'auto' : 'none' }};
+                                            cursor: {{ $isClickableForUser || ($isSecurityUser && $hasAssignedSensor) ? 'pointer' : 'default' }};
                                             box-sizing: border-box !important;
                                             {{ $isSelected ? 'box-shadow: 0 0 20px 5px #FFD700; border: 3px solid #FFD700 !important; z-index: 600;' : '' }}
                                          "

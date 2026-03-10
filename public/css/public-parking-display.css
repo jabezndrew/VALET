@@ -488,10 +488,7 @@ body {
 
 /* Manual Override Badge */
 .parking-spot-box.manual-override {
-<<<<<<< HEAD
-=======
     position: absolute;
->>>>>>> rxtnnn
 }
 
 .parking-spot-box.manual-override::after {

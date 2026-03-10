@@ -15,16 +15,19 @@
 
         <!-- Modal -->
         @if($showModal)
-        <div class="modal fade show" style="display: block;" tabindex="-1" wire:click.self="closeModal">
-            <div class="modal-dialog modal-lg">
-                <div class="modal-content">
-                    <div class="modal-header bg-danger text-white">
-                        <h5 class="modal-title">
-                            <i class="fas fa-bell me-2"></i>Alerts
-                        </h5>
-                        <button type="button" class="btn-close btn-close-white" wire:click="closeModal"></button>
-                    </div>
-                    <div class="modal-body" style="max-height: 70vh; overflow-y: auto;">
+        <div style="position: fixed; inset: 0; z-index: 9999; display: flex; align-items: center; justify-content: center; padding: 1.75rem;" wire:click.self="closeModal">
+            {{-- Backdrop --}}
+            <div style="position: fixed; inset: 0; background: rgba(0,0,0,0.5);" wire:click="closeModal"></div>
+            <div style="position: relative; z-index: 10000; width: 100%; max-width: 800px; display: flex; flex-direction: column; max-height: 90vh; background: white; border-radius: 12px; box-shadow: 0 10px 40px rgba(0,0,0,0.3);">
+                {{-- Header --}}
+                <div class="modal-header bg-danger text-white" style="border-radius: 12px 12px 0 0; flex-shrink: 0; padding: 16px 20px;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-bell me-2"></i>ALERTS
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" wire:click="closeModal"></button>
+                </div>
+                {{-- Scrollable Body --}}
+                <div style="overflow-y: auto; flex: 1; padding: 20px;">
 
                         {{-- Guard Override Notifications (admin/ssd only) --}}
                         @if(in_array(auth()->user()->role, ['admin', 'ssd']) && count($overrideNotifications) > 0)
@@ -94,14 +97,9 @@
                             </div>
                         @endif
 
-                    </div>
-                    <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" wire:click="closeModal">Close</button>
-                    </div>
                 </div>
             </div>
         </div>
-        <div class="modal-backdrop fade show" wire:click="closeModal"></div>
         @endif
     @endif
 
@@ -140,7 +138,12 @@
     .notification-bell.has-alerts:hover {
         color: #ffca2c;
     }
-
+    .modal-title{
+        font-size: 1.25rem;
+        display: flex;
+        align-items: center;
+        font-weight: 700;
+    }
     .notification-badge {
         position: absolute;
         top: 2px;

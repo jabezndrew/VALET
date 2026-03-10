@@ -65,10 +65,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/stats', 'stats');
         Route::get('/floor/{floorLevel}', 'getByFloor');
         Route::post('/{spaceId}/override', 'override');
-<<<<<<< HEAD
-=======
         Route::delete('/{spaceId}/override', 'clearOverride');
->>>>>>> rxtnnn
     });
 
     Route::controller(ParkingConfigController::class)->prefix('parking-config')->group(function () {
