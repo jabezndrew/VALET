@@ -7,6 +7,7 @@ use App\Models\ParkingSpace;
 use App\Models\SensorAssignment;
 use App\Models\GuardIncident;
 use App\Models\Feedback;
+use Illuminate\Support\Facades\Cache;
 
 class PublicParkingDisplay extends Component
 {
@@ -29,6 +30,9 @@ class PublicParkingDisplay extends Component
     public $selectedSpace = null;
     public $actionType = '';
     public $overrideStatus = 'occupied';
+    public $overrideReason = '';
+    public $overrideCustomReason = '';
+    public $overrideError = '';
     public $incidentCategory = 'debris';
     public $incidentNotes = '';
     public $openIncidentsCount = 0;
@@ -167,6 +171,9 @@ class PublicParkingDisplay extends Component
         $this->showActionModal = true;
 
         $this->overrideStatus = $this->selectedSpace->getEffectiveStatus();
+        $this->overrideReason = '';
+        $this->overrideCustomReason = '';
+        $this->overrideError = '';
         $this->incidentCategory = 'debris';
         $this->incidentNotes = '';
         $this->pinError = '';
@@ -178,11 +185,32 @@ class PublicParkingDisplay extends Component
         $this->showActionModal = false;
         $this->selectedSpace = null;
         $this->actionType = '';
+        $this->overrideReason = '';
+        $this->overrideCustomReason = '';
+        $this->overrideError = '';
+        $this->pinInput = '';
+        $this->pinError = '';
     }
 
     public function submitOverride()
     {
         if (!$this->selectedSpace || !$this->isGuardUser()) {
+            return;
+        }
+
+        $currentStatus = $this->selectedSpace->getEffectiveStatus();
+        if ($this->overrideStatus === $currentStatus) {
+            $this->overrideError = "Spot is already marked as {$currentStatus}. Select a different status.";
+            return;
+        }
+
+        if (empty($this->overrideReason)) {
+            $this->overrideError = 'Please select a reason for the override.';
+            return;
+        }
+
+        if ($this->overrideReason === 'Other' && empty(trim($this->overrideCustomReason))) {
+            $this->overrideError = 'Please specify the reason.';
             return;
         }
 
@@ -193,13 +221,35 @@ class PublicParkingDisplay extends Component
             return;
         }
 
+        $finalReason = $this->overrideReason === 'Other' ? $this->overrideCustomReason : $this->overrideReason;
+
         $this->selectedSpace->setManualOverride(
             $this->overrideStatus,
+<<<<<<< HEAD
             'Guard',
             10
+=======
+            auth()->user()->name,
+            $finalReason
+>>>>>>> rxtnnn
         );
 
-        session()->flash('success', "Spot {$this->selectedSpace->space_code} marked as {$this->overrideStatus}. Override expires in 1 hour.");
+        // Send notification to admin/SSD via cache
+        $notifications = Cache::get('admin_override_notifications', []);
+        $notifications[] = [
+            'id' => uniqid(),
+            'type' => 'guard_override',
+            'space_code' => $this->selectedSpace->space_code,
+            'status' => $this->overrideStatus,
+            'reason' => $finalReason,
+            'guard_name' => auth()->user()->name,
+            'floor_level' => $this->selectedFloor,
+            'created_at' => now()->toISOString(),
+            'read' => false,
+        ];
+        Cache::put('admin_override_notifications', $notifications, now()->addDays(7));
+
+        session()->flash('success', "Spot {$this->selectedSpace->space_code} marked as {$this->overrideStatus}. Override active until cleared.");
 
         $this->pinInput = '';
         $this->pinError = '';
