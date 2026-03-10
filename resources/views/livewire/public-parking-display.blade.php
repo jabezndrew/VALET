@@ -228,17 +228,16 @@
                                         $y = $space->y_position ?? 0;
                                         $rotation = $space->rotation ?? 0;
                                         $effectiveStatus = $hasAssignedSensor ? $space->getEffectiveStatus() : 'inactive';
-                                        $isManualOverride = $hasAssignedSensor && $space->isManualOverrideActive();
                                         $isSelected = $selectedSpot === $slotName;
                                         $columnCode = $space->column_code ?? '';
                                         $isClickableForUser = !$isActionUser && $hasAssignedSensor && $effectiveStatus === 'available';
                                     @endphp
 
                                     <div wire:key="spot-{{ $space->id }}"
-                                         class="parking-spot-box {{ $effectiveStatus }} {{ !$isActionUser && $isSelected ? 'selected-spot' : '' }} {{ $isManualOverride ? 'manual-override' : '' }} {{ $isActionUser && $hasAssignedSensor ? 'security-clickable' : '' }}"
+                                         class="parking-spot-box {{ $effectiveStatus }} {{ !$isActionUser && $isSelected ? 'selected-spot' : '' }} {{ $isActionUser && $hasAssignedSensor ? 'security-clickable' : '' }}"
                                          @if($isActionUser && $hasAssignedSensor)
                                              wire:click="openActionModal({{ $space->id }})"
-                                             title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}{{ $isManualOverride ? ' (Manual Override)' : '' }}"
+                                             title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}"
                                          @elseif($isClickableForUser)
                                              wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}', {{ $x }}, {{ $y }})"
                                              title="Click to show route to {{ $slotName }}"
