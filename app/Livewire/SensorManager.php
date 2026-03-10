@@ -170,9 +170,13 @@ class SensorManager extends Component
                 ]
             );
 
-            // Always reset to available on (re)assignment
+            // Always reset to available on (re)assignment, clear any stale flags
             $parkingSpace->update([
                 'is_occupied' => false,
+                'manual_override' => false,
+                'manual_status' => null,
+                'manual_override_by' => null,
+                'override_reason' => null,
                 'malfunctioned' => false,
                 'malfunction_reason' => null,
                 'malfunction_reported_by' => null,
