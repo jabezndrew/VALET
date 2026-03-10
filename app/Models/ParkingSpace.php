@@ -195,6 +195,7 @@ class ParkingSpace extends Model
         return $this->update([
             'manual_override' => true,
             'manual_status' => $status,
+            'is_occupied' => $status === 'occupied',
             'manual_override_at' => now(),
             'manual_override_expires' => null,
             'manual_override_by' => $overrideBy,
@@ -210,6 +211,7 @@ class ParkingSpace extends Model
         return $this->update([
             'manual_override' => false,
             'manual_status' => null,
+            'is_occupied' => false,
             'manual_override_at' => null,
             'manual_override_expires' => null,
             'manual_override_by' => null,
