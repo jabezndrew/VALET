@@ -430,6 +430,8 @@ class SensorManager extends Component
 
     public function render()
     {
+        $this->loadSensors();
+
         return view('livewire.sensor-manager')->layout('layouts.app');
     }
 }
