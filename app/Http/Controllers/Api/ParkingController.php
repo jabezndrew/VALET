@@ -180,8 +180,11 @@ class ParkingController extends Controller
                     'column_code' => $space->column_code,
                     'slot_number' => $space->slot_number,
                     'floor_level' => $space->floor_level,
-                    'is_occupied' => $space->is_occupied,
-                    'distance_cm' => $space->distance_cm
+                    'is_occupied' => $space->isManualOverrideActive()
+                        ? ($space->manual_status === 'occupied')
+                        : (bool) $space->is_occupied,
+                    'distance_cm' => $space->distance_cm,
+                    'manual_override' => (bool) $space->manual_override,
                 ]
             ]);
 
