@@ -24,17 +24,11 @@ class PublicParkingDisplay extends Component
     public $selectedSpotY = 0;
 
     // Guard action properties (only used by security roles)
-    public $pinInput = '';
-    public $pinError = '';
     public $showActionModal = false;
     public $selectedSpace = null;
-    public $actionType = '';
-    public $overrideStatus = 'occupied';
-    public $overrideReason = '';
-    public $overrideCustomReason = '';
-    public $overrideError = '';
-    public $incidentCategory = 'debris';
-    public $incidentNotes = '';
+    public $malfunctionReason = '';
+    public $malfunctionCustomReason = '';
+    public $malfunctionError = '';
     public $openIncidentsCount = 0;
     public $openIncidents = [];
     public $showIncidentsModal = false;
@@ -49,7 +43,7 @@ class PublicParkingDisplay extends Component
         $this->loadAllFloorStats();
         $this->loadParkingData();
 
-        if (auth()->check() && auth()->user()->role === 'security') {
+        if (auth()->check() && $this->isGuardUser()) {
             $this->loadOpenIncidentsCount();
         }
     }
@@ -150,7 +144,7 @@ class PublicParkingDisplay extends Component
 
     public function isGuardUser()
     {
-        return auth()->check() && auth()->user()->role === 'security';
+        return auth()->check() && in_array(auth()->user()->role, ['security', 'admin', 'ssd']);
     }
 
     public function loadOpenIncidentsCount()
@@ -158,85 +152,88 @@ class PublicParkingDisplay extends Component
         $this->openIncidentsCount = GuardIncident::where('status', 'open')->count();
     }
 
-    public function openActionModal($spaceId, $type)
+    public function openActionModal($spaceId)
     {
         if (!$this->isGuardUser()) {
             return;
         }
 
-        // Clear any active route
         $this->clearRoute();
-
-        $this->selectedSpace = ParkingSpace::find($spaceId);
-        $this->actionType = $type;
+        $this->selectedSpace = ParkingSpace::with('sensorAssignment')->find($spaceId);
         $this->showActionModal = true;
+        $this->malfunctionReason = '';
+        $this->malfunctionCustomReason = '';
+        $this->malfunctionError = '';
+    }
 
-        $this->overrideStatus = $this->selectedSpace->getEffectiveStatus();
-        $this->overrideReason = '';
-        $this->overrideCustomReason = '';
-        $this->overrideError = '';
-        $this->incidentCategory = 'debris';
-        $this->incidentNotes = '';
-        $this->pinError = '';
-        $this->pinInput = '';
+    public function clearMalfunctionFromModal()
+    {
+        if (!$this->selectedSpace || !$this->isGuardUser()) {
+            return;
+        }
+
+        $this->selectedSpace->clearMalfunction();
+
+        $notifications = Cache::get('admin_override_notifications', []);
+        $notifications[] = [
+            'id'          => uniqid(),
+            'type'        => 'malfunction_cleared',
+            'space_code'  => $this->selectedSpace->space_code,
+            'status'      => 'available',
+            'reason'      => 'Malfunction report cleared',
+            'guard_name'  => auth()->user()->name,
+            'floor_level' => $this->selectedFloor,
+            'created_at'  => now()->toISOString(),
+            'read'        => false,
+        ];
+        Cache::put('admin_override_notifications', $notifications, now()->addDays(7));
+
+        session()->flash('success', "Malfunction flag cleared for spot {$this->selectedSpace->space_code}.");
+        $this->closeActionModal();
+        $this->loadParkingData();
     }
 
     public function closeActionModal()
     {
         $this->showActionModal = false;
         $this->selectedSpace = null;
-        $this->actionType = '';
-        $this->overrideReason = '';
-        $this->overrideCustomReason = '';
-        $this->overrideError = '';
-        $this->pinInput = '';
-        $this->pinError = '';
+        $this->malfunctionReason = '';
+        $this->malfunctionCustomReason = '';
+        $this->malfunctionError = '';
     }
 
-    public function submitOverride()
+    public function reportMalfunction()
     {
         if (!$this->selectedSpace || !$this->isGuardUser()) {
             return;
         }
 
-        $currentStatus = $this->selectedSpace->getEffectiveStatus();
-        if ($this->overrideStatus === $currentStatus) {
-            $this->overrideError = "Spot is already marked as {$currentStatus}. Select a different status.";
+        if ($this->selectedSpace->malfunctioned) {
+            $this->malfunctionError = 'This spot is already flagged as malfunctioned.';
             return;
         }
 
-        if (empty($this->overrideReason)) {
-            $this->overrideError = 'Please select a reason for the override.';
+        if (empty($this->malfunctionReason)) {
+            $this->malfunctionError = 'Please select an issue type.';
             return;
         }
 
-        if ($this->overrideReason === 'Other' && empty(trim($this->overrideCustomReason))) {
-            $this->overrideError = 'Please specify the reason.';
+        if ($this->malfunctionReason === 'Other' && empty(trim($this->malfunctionCustomReason))) {
+            $this->malfunctionError = 'Please describe the issue.';
             return;
         }
 
-        $correctPin = config('app.guard_pin', '1234');
-        if ($this->pinInput !== $correctPin) {
-            $this->pinError = 'Invalid PIN. Please try again.';
-            $this->pinInput = '';
-            return;
-        }
+        $finalReason = $this->malfunctionReason === 'Other' ? $this->malfunctionCustomReason : $this->malfunctionReason;
 
-        $finalReason = $this->overrideReason === 'Other' ? $this->overrideCustomReason : $this->overrideReason;
+        $this->selectedSpace->reportMalfunction(auth()->user()->name, $finalReason);
 
-        $this->selectedSpace->setManualOverride(
-            $this->overrideStatus,
-            auth()->user()->name,
-            $finalReason
-        );
-
-        // Send notification to admin/SSD via cache
+        // Notify admin/SSD via cache
         $notifications = Cache::get('admin_override_notifications', []);
         $notifications[] = [
             'id' => uniqid(),
-            'type' => 'guard_override',
+            'type' => 'malfunction_report',
             'space_code' => $this->selectedSpace->space_code,
-            'status' => $this->overrideStatus,
+            'status' => 'malfunctioned',
             'reason' => $finalReason,
             'guard_name' => auth()->user()->name,
             'floor_level' => $this->selectedFloor,
@@ -245,36 +242,9 @@ class PublicParkingDisplay extends Component
         ];
         Cache::put('admin_override_notifications', $notifications, now()->addDays(7));
 
-        session()->flash('success', "Spot {$this->selectedSpace->space_code} marked as {$this->overrideStatus}. Override active until cleared.");
-
-        $this->pinInput = '';
-        $this->pinError = '';
+        session()->flash('success', "Spot {$this->selectedSpace->space_code} flagged as malfunctioned. Admin has been notified.");
         $this->closeActionModal();
         $this->loadParkingData();
-    }
-
-    public function clearOverride($spaceId)
-    {
-        if (!$this->isGuardUser()) {
-            return;
-        }
-
-        $correctPin = config('app.guard_pin', '1234');
-        if ($this->pinInput !== $correctPin) {
-            $this->pinError = 'Invalid PIN. Please try again.';
-            $this->pinInput = '';
-            return;
-        }
-
-        $space = ParkingSpace::find($spaceId);
-        if ($space) {
-            $space->clearManualOverride();
-            session()->flash('success', "Manual override cleared for {$space->space_code}.");
-            $this->pinInput = '';
-            $this->pinError = '';
-            $this->closeActionModal();
-            $this->loadParkingData();
-        }
     }
 
     public function submitIncident()

@@ -29,38 +29,72 @@
                 {{-- Scrollable Body --}}
                 <div style="overflow-y: auto; flex: 1; padding: 20px;">
 
-                        {{-- Guard Override Notifications (admin/ssd only) --}}
+                        {{-- Guard Notifications (admin/ssd only) --}}
                         @if(in_array(auth()->user()->role, ['admin', 'ssd']) && count($overrideNotifications) > 0)
-                            <h6 class="fw-bold mb-3" style="color: #fd7e14;">
-                                <i class="fas fa-exclamation-triangle me-2"></i>Guard Overrides
-                            </h6>
-                            @foreach($overrideNotifications as $notif)
-                                <div style="background: #fff8f0; border: 1px solid #ffd0a0; border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;">
-                                    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
-                                        <div>
-                                            <span style="font-weight: 700; font-size: 1rem; color: #333;">
-                                                Spot {{ $notif['space_code'] }}
-                                            </span>
-                                            <span class="badge ms-2 {{ $notif['status'] === 'available' ? 'bg-success' : 'bg-danger' }}">
-                                                {{ ucfirst($notif['status']) }}
-                                            </span>
+                            @php
+                                $malfunctionNotifs = array_values(array_filter($overrideNotifications, fn($n) => ($n['type'] ?? '') === 'malfunction_report'));
+                                $overrideNotifs = array_values(array_filter($overrideNotifications, fn($n) => ($n['type'] ?? '') !== 'malfunction_report'));
+                            @endphp
+
+                            @if(count($malfunctionNotifs) > 0)
+                                <h6 class="fw-bold mb-3" style="color: #e0a800;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Malfunction Reports
+                                </h6>
+                                @foreach($malfunctionNotifs as $notif)
+                                    <div style="background: #fffbea; border: 1px solid #e0a800; border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                            <div>
+                                                <span style="font-weight: 700; font-size: 1rem; color: #333;">Spot {{ $notif['space_code'] }}</span>
+                                                <span class="badge ms-2" style="background: #e0a800; color: #3d2e00;">Malfunctioned</span>
+                                            </div>
+                                            <small style="color: #999; white-space: nowrap; margin-left: 10px;">
+                                                {{ \Carbon\Carbon::parse($notif['created_at'])->diffForHumans() }}
+                                            </small>
                                         </div>
-                                        <small style="color: #999; white-space: nowrap; margin-left: 10px;">
-                                            {{ \Carbon\Carbon::parse($notif['created_at'])->diffForHumans() }}
-                                        </small>
-                                    </div>
-                                    <div style="font-size: 0.88rem; color: #666; margin-top: 5px;">
-                                        <i class="fas fa-user me-1"></i> {{ $notif['guard_name'] }}
-                                        &nbsp;·&nbsp;
-                                        <i class="fas fa-map-marker-alt me-1"></i> {{ $notif['floor_level'] }}
-                                    </div>
-                                    @if(!empty($notif['reason']))
-                                        <div style="font-size: 0.85rem; color: #555; margin-top: 4px; font-style: italic;">
-                                            <i class="fas fa-info-circle me-1"></i>{{ $notif['reason'] }}
+                                        <div style="font-size: 0.88rem; color: #666; margin-top: 5px;">
+                                            <i class="fas fa-user me-1"></i> {{ $notif['guard_name'] }}
+                                            &nbsp;·&nbsp;
+                                            <i class="fas fa-map-marker-alt me-1"></i> {{ $notif['floor_level'] }}
                                         </div>
-                                    @endif
-                                </div>
-                            @endforeach
+                                        @if(!empty($notif['reason']))
+                                            <div style="font-size: 0.85rem; color: #555; margin-top: 4px; font-style: italic;">
+                                                <i class="fas fa-info-circle me-1"></i>{{ $notif['reason'] }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            @endif
+
+                            @if(count($overrideNotifs) > 0)
+                                <h6 class="fw-bold mb-3" style="color: #fd7e14;">
+                                    <i class="fas fa-exclamation-triangle me-2"></i>Guard Overrides
+                                </h6>
+                                @foreach($overrideNotifs as $notif)
+                                    <div style="background: #fff8f0; border: 1px solid #ffd0a0; border-radius: 10px; padding: 12px 16px; margin-bottom: 10px;">
+                                        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+                                            <div>
+                                                <span style="font-weight: 700; font-size: 1rem; color: #333;">Spot {{ $notif['space_code'] }}</span>
+                                                <span class="badge ms-2 {{ $notif['status'] === 'available' ? 'bg-success' : 'bg-danger' }}">
+                                                    {{ ucfirst($notif['status']) }}
+                                                </span>
+                                            </div>
+                                            <small style="color: #999; white-space: nowrap; margin-left: 10px;">
+                                                {{ \Carbon\Carbon::parse($notif['created_at'])->diffForHumans() }}
+                                            </small>
+                                        </div>
+                                        <div style="font-size: 0.88rem; color: #666; margin-top: 5px;">
+                                            <i class="fas fa-user me-1"></i> {{ $notif['guard_name'] }}
+                                            &nbsp;·&nbsp;
+                                            <i class="fas fa-map-marker-alt me-1"></i> {{ $notif['floor_level'] }}
+                                        </div>
+                                        @if(!empty($notif['reason']))
+                                            <div style="font-size: 0.85rem; color: #555; margin-top: 4px; font-style: italic;">
+                                                <i class="fas fa-info-circle me-1"></i>{{ $notif['reason'] }}
+                                            </div>
+                                        @endif
+                                    </div>
+                                @endforeach
+                            @endif
                             <hr>
                         @endif
 

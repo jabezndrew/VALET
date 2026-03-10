@@ -217,6 +217,7 @@
                                 <!-- Parking Spots -->
                                 @php
                                     $isSecurityUser = auth()->check() && auth()->user()->role === 'security';
+                                    $isActionUser = auth()->check() && in_array(auth()->user()->role, ['security', 'admin', 'ssd']);
                                 @endphp
 
                                 @foreach($parkingSpaces as $space)
@@ -230,13 +231,13 @@
                                         $isManualOverride = $hasAssignedSensor && $space->isManualOverrideActive();
                                         $isSelected = $selectedSpot === $slotName;
                                         $columnCode = $space->column_code ?? '';
-                                        $isClickableForUser = !$isSecurityUser && $hasAssignedSensor && $effectiveStatus === 'available';
+                                        $isClickableForUser = !$isActionUser && $hasAssignedSensor && $effectiveStatus === 'available';
                                     @endphp
 
                                     <div wire:key="spot-{{ $space->id }}"
-                                         class="parking-spot-box {{ $effectiveStatus }} {{ !$isSecurityUser && $isSelected ? 'selected-spot' : '' }} {{ $isManualOverride ? 'manual-override' : '' }} {{ $isSecurityUser && $hasAssignedSensor ? 'security-clickable' : '' }}"
-                                         @if($isSecurityUser && $hasAssignedSensor)
-                                             wire:click="openActionModal({{ $space->id }}, 'override')"
+                                         class="parking-spot-box {{ $effectiveStatus }} {{ !$isActionUser && $isSelected ? 'selected-spot' : '' }} {{ $isManualOverride ? 'manual-override' : '' }} {{ $isActionUser && $hasAssignedSensor ? 'security-clickable' : '' }}"
+                                         @if($isActionUser && $hasAssignedSensor)
+                                             wire:click="openActionModal({{ $space->id }})"
                                              title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}{{ $isManualOverride ? ' (Manual Override)' : '' }}"
                                          @elseif($isClickableForUser)
                                              wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}', {{ $x }}, {{ $y }})"
@@ -252,8 +253,8 @@
                                             font-size: 22px;
                                             transform: rotate({{ $rotation }}deg);
                                             transform-origin: center center;
-                                            pointer-events: {{ ($isSecurityUser && $hasAssignedSensor) || $isClickableForUser ? 'auto' : 'none' }};
-                                            cursor: {{ $isClickableForUser || ($isSecurityUser && $hasAssignedSensor) ? 'pointer' : 'default' }};
+                                            pointer-events: {{ ($isActionUser && $hasAssignedSensor) || $isClickableForUser ? 'auto' : 'none' }};
+                                            cursor: {{ $isClickableForUser || ($isActionUser && $hasAssignedSensor) ? 'pointer' : 'default' }};
                                             box-sizing: border-box !important;
                                             {{ $isSelected ? 'box-shadow: 0 0 20px 5px #FFD700; border: 3px solid #FFD700 !important; z-index: 600;' : '' }}
                                          "
@@ -404,88 +405,90 @@
         </div>
     </div>
 
-    {{-- Guard Action Modal --}}
+    {{-- Malfunction Report Modal (Security + Admin/SSD) --}}
     @auth
-    @if(auth()->user()->role === 'security' && $showActionModal && $selectedSpace)
+    @if($this->isGuardUser() && $showActionModal && $selectedSpace)
     <div class="guard-action-overlay" wire:click.self="closeActionModal">
         <div class="guard-action-modal">
-            <div class="guard-action-header">
-                <h3>Override Status</h3>
-                <button class="guard-action-close" wire:click="closeActionModal">
+            <div class="guard-action-header" style="background: #B22020;">
+                <h3 style="color: #fff;">
+                    <i class="fas fa-exclamation-triangle me-2" style="color: #fff;"></i>
+                    Flag as Malfunctioned — {{ $selectedSpace->space_code }}
+                </h3>
+                <button class="guard-action-close" wire:click="closeActionModal" style="color: #fff;">
                     <i class="fas fa-times"></i>
                 </button>
             </div>
 
             <div class="guard-action-body">
-                {{-- Space Info --}}
-                <div class="guard-space-info">
-                    <span class="guard-space-code">{{ $selectedSpace->space_code }}</span>
-                    <span class="guard-space-status {{ $selectedSpace->getEffectiveStatus() }}">
-                        {{ ucfirst($selectedSpace->getEffectiveStatus()) }}
-                    </span>
-                </div>
+                {{-- Floor + Sensor info row --}}
+                <p style="font-size: 0.88rem; color: #555; margin-bottom: 18px;">
+                    Floor: <strong>{{ $selectedSpace->floor_level }}</strong>
+                    @if($selectedSpace->sensorAssignment)
+                        &nbsp;|&nbsp; Sensor:
+                        <span style="font-family: monospace; color: #B22020; font-weight: 600;">
+                            {{ $selectedSpace->sensorAssignment->mac_address ?? $selectedSpace->sensorAssignment->space_code ?? 'N/A' }}
+                        </span>
+                    @endif
+                </p>
 
-                {{-- Override Form --}}
-                    <div class="guard-form-group">
-                        <label class="guard-form-label">Set Status:</label>
-                        <div class="guard-status-options">
-                            <div
-                                class="guard-status-option {{ $overrideStatus === 'available' ? 'selected available' : '' }}"
-                                wire:click="$set('overrideStatus', 'available')"
-                            >
-                                <i class="fas fa-check-circle" style="color: #28a745; font-size: 1.5rem;"></i>
-                                <div style="margin-top: 5px; font-weight: 600;">Available</div>
-                            </div>
-                            <div
-                                class="guard-status-option {{ $overrideStatus === 'occupied' ? 'selected occupied' : '' }}"
-                                wire:click="$set('overrideStatus', 'occupied')"
-                            >
-                                <i class="fas fa-car" style="color: #721c24; font-size: 1.5rem;"></i>
-                                <div style="margin-top: 5px; font-weight: 600;">Occupied</div>
-                            </div>
-                        </div>
+                @if($selectedSpace->malfunctioned)
+                    {{-- Already flagged state --}}
+                    <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 0.9rem; color: #856404;">
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        <strong>Already flagged as malfunctioned.</strong><br>
+                        <span style="color: #666;">
+                            Reported by {{ $selectedSpace->malfunction_reported_by }}
+                            — {{ \Carbon\Carbon::parse($selectedSpace->malfunctioned_at)->diffForHumans() }}
+                        </span><br>
+                        @if($selectedSpace->malfunction_reason)
+                            <em style="color: #555;">{{ $selectedSpace->malfunction_reason }}</em>
+                        @endif
                     </div>
-
+                    <div style="display: flex; gap: 10px;">
+                        <button class="guard-action-submit" style="background: #28a745; color: #fff; flex: 1;"
+                                wire:click="clearMalfunctionFromModal">
+                            <i class="fas fa-check-circle me-1"></i> Clear Malfunction
+                        </button>
+                        <button class="guard-action-submit" style="background: #6c757d; color: #fff; flex: 1;"
+                                wire:click="closeActionModal">
+                            Cancel
+                        </button>
+                    </div>
+                @else
+                    {{-- Report form --}}
                     <div class="guard-form-group">
-                        <label class="guard-form-label">Reason <span style="color: #dc3545;">*</span></label>
-                        <select class="guard-form-select" wire:model.live="overrideReason">
-                            <option value="">— Select a reason —</option>
-                            <option value="Sensor not detecting vehicle (false available)">Sensor not detecting vehicle</option>
+                        <label class="guard-form-label">Issue type <span style="color: #dc3545;">*</span></label>
+                        <select class="guard-form-select" wire:model.live="malfunctionReason">
+                            <option value="">— Select an issue —</option>
+                            <option value="Sensor not detecting vehicles">Sensor not detecting vehicles</option>
                             <option value="Sensor hardware malfunction">Sensor hardware malfunction</option>
+                            <option value="Sensor offline / no data">Sensor offline / no data</option>
                             <option value="Spot under maintenance or repair">Spot under maintenance or repair</option>
                             <option value="Other">Other</option>
                         </select>
-                        @if($overrideReason === 'Other')
-                            <input type="text" class="guard-form-input" wire:model="overrideCustomReason"
-                                   placeholder="Please specify..." style="margin-top: 8px;">
+                        @if($malfunctionReason === 'Other')
+                            <input type="text" class="guard-form-input" wire:model="malfunctionCustomReason"
+                                   placeholder="Please describe the issue..." style="margin-top: 8px;">
                         @endif
-                        @if($overrideError)
+                        @if($malfunctionError)
                             <div style="color: #dc3545; font-size: 0.85rem; margin-top: 6px;">
-                                <i class="fas fa-exclamation-circle me-1"></i>{{ $overrideError }}
+                                <i class="fas fa-exclamation-circle me-1"></i>{{ $malfunctionError }}
                             </div>
                         @endif
                     </div>
 
-                    {{-- PIN Input --}}
-                    <div class="guard-form-group" style="padding-top: 15px; border-top: 1px solid #e0e0e0;">
-                        <label class="guard-form-label">Enter PIN to confirm:</label>
-                        @if($pinError)
-                            <div style="background: #f8d7da; color: #721c24; padding: 8px 12px; border-radius: 8px; margin-bottom: 10px; font-size: 0.9rem;">
-                                <i class="fas fa-exclamation-circle me-1"></i>
-                                {{ $pinError }}
-                            </div>
-                        @endif
-                        <input type="password" class="guard-form-input" wire:model="pinInput" placeholder="****" maxlength="8" inputmode="numeric" style="text-align: center; font-size: 1.1rem; letter-spacing: 3px;">
-                    </div>
-                    <button class="guard-action-submit override" wire:click="submitOverride">
-                        <i class="fas fa-check me-2"></i> Apply Override
-                    </button>
-
-                    @if($selectedSpace->isManualOverrideActive())
-                        <button class="guard-action-submit" style="background: #6c757d;" wire:click="clearOverride({{ $selectedSpace->id }})">
-                            <i class="fas fa-undo me-2"></i> Clear Override
+                    <div style="display: flex; gap: 10px; margin-top: 8px;">
+                        <button class="guard-action-submit" style="background: #6c757d; color: #fff; flex: 1;"
+                                wire:click="closeActionModal">
+                            Cancel
                         </button>
-                    @endif
+                        <button class="guard-action-submit" style="background: #B22020; color: #fff; flex: 1;"
+                                wire:click="reportMalfunction">
+                            <i class="fas fa-flag me-1"></i> Flag Spot
+                        </button>
+                    </div>
+                @endif
             </div>
         </div>
     </div>
@@ -582,5 +585,5 @@
 </div>
 
 @push('styles')
-<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=2.7') }}">
+<link rel="stylesheet" href="{{ asset('css/public-parking-display.css?v=2.9') }}">
 @endpush

@@ -49,6 +49,10 @@ class ParkingSpace extends Model
         'manual_override_expires',
         'manual_override_by',
         'override_reason',
+        'malfunctioned',
+        'malfunction_reason',
+        'malfunction_reported_by',
+        'malfunctioned_at',
     ];
 
     /**
@@ -65,6 +69,8 @@ class ParkingSpace extends Model
         'manual_override' => 'boolean',
         'manual_override_at' => 'datetime',
         'manual_override_expires' => 'datetime',
+        'malfunctioned' => 'boolean',
+        'malfunctioned_at' => 'datetime',
     ];
 
     /**
@@ -228,14 +234,44 @@ class ParkingSpace extends Model
     }
 
     /**
-     * Get effective status (considering manual override)
+     * Get effective status (considering malfunction and manual override)
      */
     public function getEffectiveStatus(): string
     {
+        if ($this->malfunctioned) {
+            return 'malfunctioned';
+        }
+
         if ($this->isManualOverrideActive()) {
             return $this->manual_status;
         }
 
         return $this->is_occupied ? 'occupied' : 'available';
+    }
+
+    /**
+     * Report sensor malfunction (security role)
+     */
+    public function reportMalfunction(string $reportedBy, ?string $reason = null): bool
+    {
+        return $this->update([
+            'malfunctioned' => true,
+            'malfunction_reason' => $reason,
+            'malfunction_reported_by' => $reportedBy,
+            'malfunctioned_at' => now(),
+        ]);
+    }
+
+    /**
+     * Clear malfunction report (admin)
+     */
+    public function clearMalfunction(): bool
+    {
+        return $this->update([
+            'malfunctioned' => false,
+            'malfunction_reason' => null,
+            'malfunction_reported_by' => null,
+            'malfunctioned_at' => null,
+        ]);
     }
 }
