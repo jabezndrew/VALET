@@ -24,6 +24,13 @@ class SensorManager extends Component
     public $overrideCustomReason = '';
     public $overrideError = '';
 
+    // Malfunction modal
+    public $showMalfunctionModal = false;
+    public $malfunctionSensor = null;
+    public $malfunctionReason = '';
+    public $malfunctionCustomReason = '';
+    public $malfunctionError = '';
+
     // Floor/Column/Slot configuration
     public $floorNumber = '';
     public $columnCode = '';
@@ -297,6 +304,70 @@ class SensorManager extends Component
         if ($sensor && $sensor->parkingSpace) {
             $sensor->parkingSpace->clearManualOverride();
             session()->flash('success', "Override cleared for spot {$sensor->parkingSpace->space_code}.");
+            $this->loadSensors();
+        }
+    }
+
+    public function openMalfunctionModal($sensorId)
+    {
+        $sensor = SensorAssignment::with('parkingSpace')->find($sensorId);
+        if (!$sensor || !$sensor->parkingSpace) {
+            session()->flash('error', 'Sensor has no assigned parking space.');
+            return;
+        }
+        $this->malfunctionSensor = $sensor;
+        $this->malfunctionReason = '';
+        $this->malfunctionCustomReason = '';
+        $this->malfunctionError = '';
+        $this->showMalfunctionModal = true;
+    }
+
+    public function closeMalfunctionModal()
+    {
+        $this->showMalfunctionModal = false;
+        $this->malfunctionSensor = null;
+        $this->malfunctionReason = '';
+        $this->malfunctionCustomReason = '';
+        $this->malfunctionError = '';
+    }
+
+    public function reportMalfunction()
+    {
+        if (!$this->malfunctionSensor || !$this->malfunctionSensor->parkingSpace) {
+            return;
+        }
+
+        $space = $this->malfunctionSensor->parkingSpace;
+
+        if ($space->malfunctioned) {
+            $this->malfunctionError = 'This spot is already flagged as malfunctioned.';
+            return;
+        }
+
+        if (empty($this->malfunctionReason)) {
+            $this->malfunctionError = 'Please select an issue type.';
+            return;
+        }
+
+        if ($this->malfunctionReason === 'Other' && empty(trim($this->malfunctionCustomReason))) {
+            $this->malfunctionError = 'Please describe the issue.';
+            return;
+        }
+
+        $finalReason = $this->malfunctionReason === 'Other' ? $this->malfunctionCustomReason : $this->malfunctionReason;
+        $space->reportMalfunction(auth()->user()->name, $finalReason);
+
+        session()->flash('success', "Spot {$space->space_code} flagged as malfunctioned.");
+        $this->closeMalfunctionModal();
+        $this->loadSensors();
+    }
+
+    public function clearMalfunction($sensorId)
+    {
+        $sensor = SensorAssignment::with('parkingSpace')->find($sensorId);
+        if ($sensor && $sensor->parkingSpace) {
+            $sensor->parkingSpace->clearMalfunction();
+            session()->flash('success', "Malfunction cleared for spot {$sensor->parkingSpace->space_code}.");
             $this->loadSensors();
         }
     }
