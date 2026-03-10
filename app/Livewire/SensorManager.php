@@ -254,7 +254,7 @@ class SensorManager extends Component
             return;
         }
         $this->overrideSensor = $sensor;
-        $this->overrideStatus = $sensor->parkingSpace->manual_status ?? 'available';
+        $this->overrideStatus = $sensor->parkingSpace->getEffectiveStatus();
         $this->overrideReason = $sensor->parkingSpace->override_reason ?? '';
         $this->overrideError = '';
         $this->showOverrideModal = true;
@@ -263,6 +263,13 @@ class SensorManager extends Component
     public function submitOverride()
     {
         if (!$this->overrideSensor || !$this->overrideSensor->parkingSpace) {
+            return;
+        }
+
+        $space = $this->overrideSensor->parkingSpace;
+        $currentStatus = $space->getEffectiveStatus();
+        if ($this->overrideStatus === $currentStatus) {
+            $this->overrideError = "Spot is already marked as {$currentStatus}. Select a different status.";
             return;
         }
 
@@ -277,8 +284,6 @@ class SensorManager extends Component
         }
 
         $finalReason = $this->overrideReason === 'Other' ? $this->overrideCustomReason : $this->overrideReason;
-
-        $space = $this->overrideSensor->parkingSpace;
         $space->setManualOverride($this->overrideStatus, auth()->user()->name, $finalReason);
 
         session()->flash('success', "Override set for spot {$space->space_code}.");
