@@ -16,6 +16,14 @@ class SensorManager extends Component
     public $selectedSpaceCode = '';
     public $filterStatus = 'all'; // all, assigned, unassigned
 
+    // Override modal
+    public $showOverrideModal = false;
+    public $overrideSensor = null;
+    public $overrideStatus = 'available';
+    public $overrideReason = '';
+    public $overrideCustomReason = '';
+    public $overrideError = '';
+
     // Floor/Column/Slot configuration
     public $floorNumber = '';
     public $columnCode = '';
@@ -236,6 +244,66 @@ class SensorManager extends Component
         } catch (\Exception $e) {
             session()->flash('error', 'Failed to stop identify mode: ' . $e->getMessage());
         }
+    }
+
+    public function openOverrideModal($sensorId)
+    {
+        $sensor = SensorAssignment::with('parkingSpace')->find($sensorId);
+        if (!$sensor || !$sensor->parkingSpace) {
+            session()->flash('error', 'Sensor has no assigned parking space.');
+            return;
+        }
+        $this->overrideSensor = $sensor;
+        $this->overrideStatus = $sensor->parkingSpace->manual_status ?? 'available';
+        $this->overrideReason = $sensor->parkingSpace->override_reason ?? '';
+        $this->overrideError = '';
+        $this->showOverrideModal = true;
+    }
+
+    public function submitOverride()
+    {
+        if (!$this->overrideSensor || !$this->overrideSensor->parkingSpace) {
+            return;
+        }
+
+        if (empty($this->overrideReason)) {
+            $this->overrideError = 'Please select a reason for the override.';
+            return;
+        }
+
+        if ($this->overrideReason === 'Other' && empty(trim($this->overrideCustomReason))) {
+            $this->overrideError = 'Please specify the reason.';
+            return;
+        }
+
+        $finalReason = $this->overrideReason === 'Other' ? $this->overrideCustomReason : $this->overrideReason;
+
+        $space = $this->overrideSensor->parkingSpace;
+        $space->setManualOverride($this->overrideStatus, auth()->user()->name, $finalReason);
+
+        session()->flash('success', "Override set for spot {$space->space_code}.");
+        $this->closeOverrideModal();
+        $this->loadSensors();
+    }
+
+    public function clearOverride($sensorId)
+    {
+        $sensor = SensorAssignment::with('parkingSpace')->find($sensorId);
+        if ($sensor && $sensor->parkingSpace) {
+            $sensor->parkingSpace->clearManualOverride();
+            session()->flash('success', "Override cleared for spot {$sensor->parkingSpace->space_code}.");
+            $this->loadSensors();
+        }
+    }
+
+    public function closeOverrideModal()
+    {
+        $this->showOverrideModal = false;
+        $this->overrideSensor = null;
+        $this->overrideStatus = 'available';
+        $this->overrideReason = '';
+        $this->overrideCustomReason = '';
+        $this->overrideError = '';
     }
 
     public function closeAssignModal()
