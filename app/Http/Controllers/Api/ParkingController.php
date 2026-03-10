@@ -152,6 +152,12 @@ class ParkingController extends Controller
             }
 
             // Insert or update parking space using Eloquent
+            // Check if space exists and has an active manual override
+            $existingSpace = ParkingSpace::where($uniqueField)->first();
+            if ($existingSpace && $existingSpace->isManualOverrideActive()) {
+                // Override is active — skip updating is_occupied so sensor doesn't undo it
+                unset($validated['is_occupied']);
+            }
             $space = ParkingSpace::updateOrCreate($uniqueField, $validated);
 
             // Determine if this is an assigned sensor or temporary tracking
@@ -233,46 +239,6 @@ class ParkingController extends Controller
             return response()->json(['error' => 'Failed to fetch floor data'], 500);
         }
     }
-    /**
-     * Guard override endpoint - security role only
-     */
-    public function override(Request $request, $spaceId): JsonResponse
-    {
-        if (!auth()->check() || auth()->user()->role !== 'security') {
-            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
-        }
-
-        $validated = $request->validate([
-            'status' => 'required|in:available,occupied,blocked',
-            'pin'    => 'required|string',
-        ]);
-
-        if ($validated['pin'] !== config('app.guard_pin', '1234')) {
-            return response()->json(['success' => false, 'message' => 'Invalid PIN. Please try again.'], 422);
-        }
-
-        $space = ParkingSpace::find($spaceId);
-        if (!$space) {
-            return response()->json(['success' => false, 'message' => 'Parking space not found.'], 404);
-        }
-
-        $space->setManualOverride($validated['status'], auth()->user()->name, 10);
-
-        return response()->json([
-            'success' => true,
-            'message' => "Spot {$space->space_code} marked as {$validated['status']}. Override expires in 1 hour.",
-            'space'   => [
-                'id'                      => $space->id,
-                'space_code'              => $space->space_code,
-                'manual_override'         => true,
-                'manual_status'           => $space->manual_status,
-                'manual_override_expires' => $space->manual_override_expires,
-                'manual_override_by'      => $space->manual_override_by,
-                'effective_status'        => $space->getEffectiveStatus(),
-            ],
-        ]);
-    }
-
     public function getMapData(Request $request): JsonResponse
     {
         try {
