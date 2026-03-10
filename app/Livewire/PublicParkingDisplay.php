@@ -402,6 +402,11 @@ class PublicParkingDisplay extends Component
 
     public function render()
     {
+        $this->parkingSpaces = ParkingSpace::where('floor_level', $this->selectedFloor)
+            ->with('sensorAssignment')
+            ->orderBy('slot_name')
+            ->get();
+
         return view('livewire.public-parking-display')
             ->layout('layouts.app');
     }
