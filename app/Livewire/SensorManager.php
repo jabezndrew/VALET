@@ -16,14 +16,6 @@ class SensorManager extends Component
     public $selectedSpaceCode = '';
     public $filterStatus = 'all'; // all, assigned, unassigned
 
-    // Override modal
-    public $showOverrideModal = false;
-    public $overrideSensor = null;
-    public $overrideStatus = 'available';
-    public $overrideReason = '';
-    public $overrideCustomReason = '';
-    public $overrideError = '';
-
     // Malfunction modal
     public $showMalfunctionModal = false;
     public $malfunctionSensor = null;
@@ -178,6 +170,15 @@ class SensorManager extends Component
                 ]
             );
 
+            // Always reset to available on (re)assignment
+            $parkingSpace->update([
+                'is_occupied' => false,
+                'malfunctioned' => false,
+                'malfunction_reason' => null,
+                'malfunction_reported_by' => null,
+                'malfunctioned_at' => null,
+            ]);
+
             $this->selectedSensor->update([
                 'space_code' => $spaceCode,
                 'status' => 'active'
@@ -253,61 +254,6 @@ class SensorManager extends Component
         }
     }
 
-    public function openOverrideModal($sensorId)
-    {
-        $sensor = SensorAssignment::with('parkingSpace')->find($sensorId);
-        if (!$sensor || !$sensor->parkingSpace) {
-            session()->flash('error', 'Sensor has no assigned parking space.');
-            return;
-        }
-        $this->overrideSensor = $sensor;
-        $this->overrideStatus = $sensor->parkingSpace->getEffectiveStatus();
-        $this->overrideReason = $sensor->parkingSpace->override_reason ?? '';
-        $this->overrideError = '';
-        $this->showOverrideModal = true;
-    }
-
-    public function submitOverride()
-    {
-        if (!$this->overrideSensor || !$this->overrideSensor->parkingSpace) {
-            return;
-        }
-
-        $space = $this->overrideSensor->parkingSpace;
-        $currentStatus = $space->getEffectiveStatus();
-        if ($this->overrideStatus === $currentStatus) {
-            $this->overrideError = "Spot is already marked as {$currentStatus}. Select a different status.";
-            return;
-        }
-
-        if (empty($this->overrideReason)) {
-            $this->overrideError = 'Please select a reason for the override.';
-            return;
-        }
-
-        if ($this->overrideReason === 'Other' && empty(trim($this->overrideCustomReason))) {
-            $this->overrideError = 'Please specify the reason.';
-            return;
-        }
-
-        $finalReason = $this->overrideReason === 'Other' ? $this->overrideCustomReason : $this->overrideReason;
-        $space->setManualOverride($this->overrideStatus, auth()->user()->name, $finalReason);
-
-        session()->flash('success', "Override set for spot {$space->space_code}.");
-        $this->closeOverrideModal();
-        $this->loadSensors();
-    }
-
-    public function clearOverride($sensorId)
-    {
-        $sensor = SensorAssignment::with('parkingSpace')->find($sensorId);
-        if ($sensor && $sensor->parkingSpace) {
-            $sensor->parkingSpace->clearManualOverride();
-            session()->flash('success', "Override cleared for spot {$sensor->parkingSpace->space_code}.");
-            $this->loadSensors();
-        }
-    }
-
     public function openMalfunctionModal($sensorId)
     {
         $sensor = SensorAssignment::with('parkingSpace')->find($sensorId);
@@ -370,16 +316,6 @@ class SensorManager extends Component
             session()->flash('success', "Malfunction cleared for spot {$sensor->parkingSpace->space_code}.");
             $this->loadSensors();
         }
-    }
-
-    public function closeOverrideModal()
-    {
-        $this->showOverrideModal = false;
-        $this->overrideSensor = null;
-        $this->overrideStatus = 'available';
-        $this->overrideReason = '';
-        $this->overrideCustomReason = '';
-        $this->overrideError = '';
     }
 
     public function closeAssignModal()
