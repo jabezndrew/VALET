@@ -61,6 +61,7 @@
                                 <th>Status</th>
                                 <th>Sensor ID</th>
                                 <th>Assigned Space</th>
+                                <th>Parking Status</th>
                                 <th>Firmware</th>
                                 <th>Last Seen</th>
                                 <th>Actions</th>
@@ -118,6 +119,26 @@
                                             @endif
                                         @else
                                             <span class="text-muted">Not assigned</span>
+                                        @endif
+                                    </td>
+
+                                    {{-- Parking Status --}}
+                                    <td>
+                                        @if($sensor->parkingSpace)
+                                            @php $effectiveStatus = $sensor->parkingSpace->getEffectiveStatus(); @endphp
+                                            @if($effectiveStatus === 'occupied')
+                                                <span class="badge bg-danger">
+                                                    <i class="fas fa-car me-1"></i>Occupied
+                                                </span>
+                                            @elseif($effectiveStatus === 'available')
+                                                <span class="badge bg-success">
+                                                    <i class="fas fa-check-circle me-1"></i>Available
+                                                </span>
+                                            @else
+                                                <span class="badge bg-secondary">—</span>
+                                            @endif
+                                        @else
+                                            <span class="text-muted">—</span>
                                         @endif
                                     </td>
 
