@@ -115,15 +115,6 @@
                                                         <br>
                                                         <small class="text-muted fst-italic">{{ $sensor->parkingSpace->malfunction_reason }}</small>
                                                     @endif
-                                                @elseif($sensor->parkingSpace->manual_override)
-                                                    <br>
-                                                    <span class="badge bg-warning text-dark mt-1">
-                                                        <i class="fas fa-exclamation-triangle me-1"></i>Overridden: {{ $sensor->parkingSpace->manual_status }}
-                                                    </span>
-                                                    @if($sensor->parkingSpace->override_reason)
-                                                        <br>
-                                                        <small class="text-muted fst-italic">{{ $sensor->parkingSpace->override_reason }}</small>
-                                                    @endif
                                                 @endif
                                             @endif
                                         @else
@@ -205,13 +196,6 @@
                                                 <button wire:click="clearMalfunction({{ $sensor->id }})"
                                                         class="btn btn-sm btn-success"
                                                         title="Clear Malfunction Report">
-                                                    <i class="fas fa-check-circle"></i>
-                                                </button>
-                                            @endif
-                                            @if($sensor->parkingSpace->manual_override)
-                                                <button wire:click="clearOverride({{ $sensor->id }})"
-                                                        class="btn btn-sm btn-success"
-                                                        title="Clear Override">
                                                     <i class="fas fa-check-circle"></i>
                                                 </button>
                                             @endif
