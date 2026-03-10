@@ -39,6 +39,8 @@ class OvernightParkingAlert extends Component
         // Load override notifications (admin/ssd only — not security since security is the sender)
         if (in_array(auth()->user()->role, ['admin', 'ssd'])) {
             $allOverrides = Cache::get('admin_override_notifications', []);
+            // Filter out notifications reported by the current user (admin flagged their own)
+            $allOverrides = array_values(array_filter($allOverrides, fn($n) => ($n['guard_name'] ?? '') !== auth()->user()->name));
             $seenOverrideIds = Cache::get('seen_overrides_' . auth()->id(), []);
             $this->overrideNotifications = array_reverse($allOverrides); // newest first
             $unseenOverrides = array_filter($allOverrides, fn($n) => !in_array($n['id'], $seenOverrideIds));
