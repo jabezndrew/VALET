@@ -106,7 +106,16 @@
                                                 <small class="text-muted">
                                                     {{ $sensor->parkingSpace->floor_level }}
                                                 </small>
-                                                @if($sensor->parkingSpace->manual_override)
+                                                @if($sensor->parkingSpace->malfunctioned)
+                                                    <br>
+                                                    <span class="badge mt-1" style="background: #FFDE42; color: black;">
+                                                        <i class="fas fa-exclamation-triangle me-1"></i>Malfunctioned
+                                                    </span>
+                                                    @if($sensor->parkingSpace->malfunction_reason)
+                                                        <br>
+                                                        <small class="text-muted fst-italic">{{ $sensor->parkingSpace->malfunction_reason }}</small>
+                                                    @endif
+                                                @elseif($sensor->parkingSpace->manual_override)
                                                     <br>
                                                     <span class="badge bg-warning text-dark mt-1">
                                                         <i class="fas fa-exclamation-triangle me-1"></i>Overridden: {{ $sensor->parkingSpace->manual_status }}
@@ -133,6 +142,10 @@
                                             @elseif($effectiveStatus === 'available')
                                                 <span class="badge bg-success">
                                                     <i class="fas fa-check-circle me-1"></i>Available
+                                                </span>
+                                            @elseif($effectiveStatus === 'malfunctioned')
+                                                <span class="badge" style="background: #FFDE42; color: black;">
+                                                    <i class="fas fa-exclamation-triangle me-1"></i>Malfunctioned
                                                 </span>
                                             @else
                                                 <span class="badge bg-secondary">—</span>
@@ -188,16 +201,25 @@
                                         </button>
 
                                         @if($sensor->space_code && $sensor->parkingSpace)
+                                            @if($sensor->parkingSpace->malfunctioned)
+                                                <button wire:click="clearMalfunction({{ $sensor->id }})"
+                                                        class="btn btn-sm btn-success"
+                                                        title="Clear Malfunction Report">
+                                                    <i class="fas fa-check-circle"></i>
+                                                </button>
+                                            @endif
                                             @if($sensor->parkingSpace->manual_override)
                                                 <button wire:click="clearOverride({{ $sensor->id }})"
                                                         class="btn btn-sm btn-success"
                                                         title="Clear Override">
                                                     <i class="fas fa-check-circle"></i>
                                                 </button>
-                                            @else
-                                                <button wire:click="openOverrideModal({{ $sensor->id }})"
-                                                        class="btn btn-sm btn-warning"
-                                                        title="Override Status">
+                                            @endif
+                                            @if(!$sensor->parkingSpace->malfunctioned)
+                                                <button wire:click="openMalfunctionModal({{ $sensor->id }})"
+                                                        class="btn btn-sm"
+                                                        style="background: #FFDE42; color: #3d2e00;"
+                                                        title="Flag as Malfunctioned">
                                                     <i class="fas fa-exclamation-triangle"></i>
                                                 </button>
                                             @endif
@@ -226,72 +248,67 @@
         </div>
     </div>
 
-    {{-- Override Modal --}}
-    @if($showOverrideModal && $overrideSensor)
-        <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);" tabindex="-1">
+    {{-- Malfunction Modal --}}
+    @if($showMalfunctionModal && $malfunctionSensor)
+        <div class="modal fade show" style="display: block; background: rgba(0,0,0,0.5);" tabindex="-1" wire:click.self="closeMalfunctionModal">
             <div class="modal-dialog modal-dialog-centered">
-                <div class="modal-content">
-                    <div class="modal-header" style="background: linear-gradient(135deg, #fd7e14, #e06b00); color: white;">
+                <div class="modal-content" style="border-radius: 20px; overflow: hidden;">
+                    <div class="modal-header" style="background: #B22020; color: white; border-radius: 20px 20px 0 0;">
                         <h5 class="modal-title">
                             <i class="fas fa-exclamation-triangle me-2"></i>
-                            Override Sensor — {{ $overrideSensor->space_code }}
+                            Flag as Malfunctioned — {{ $malfunctionSensor->space_code }}
                         </h5>
-                        <button type="button" class="btn-close btn-close-white" wire:click="closeOverrideModal"></button>
+                        <button type="button" class="btn-close btn-close-white" wire:click="closeMalfunctionModal"></button>
                     </div>
                     <div class="modal-body">
 
-                        <div class="alert alert-warning py-2">
-                            <i class="fas fa-info-circle me-1"></i>
-                            This will manually set the spot status and <strong>override sensor readings</strong> until cleared.
-                        </div>
-
-                        @if($sensor->parkingSpace ?? false)
+                        @if($malfunctionSensor->parkingSpace)
                             <p class="text-muted mb-3">
-                                Floor: <strong>{{ $overrideSensor->parkingSpace->floor_level }}</strong>
-                                &nbsp;|&nbsp; Sensor: <code>{{ $overrideSensor->mac_address }}</code>
+                                Floor: <strong>{{ $malfunctionSensor->parkingSpace->floor_level }}</strong>
+                                &nbsp;|&nbsp; Sensor: <code>{{ $malfunctionSensor->mac_address }}</code>
                             </p>
                         @endif
 
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Set Status to:</label>
-                            <div class="d-flex gap-3">
-                                <button type="button"
-                                        wire:click="$set('overrideStatus', 'available')"
-                                        class="btn flex-fill py-3 fs-5 {{ $overrideStatus === 'available' ? 'btn-success' : 'btn-outline-success' }}">
-                                    <i class="fas fa-check-circle me-2"></i> Available
-                                </button>
-                                <button type="button"
-                                        wire:click="$set('overrideStatus', 'occupied')"
-                                        class="btn flex-fill py-3 fs-5 {{ $overrideStatus === 'occupied' ? 'btn-danger' : 'btn-outline-danger' }}">
-                                    <i class="fas fa-car me-2"></i> Occupied
-                                </button>
+                        @if($malfunctionSensor->parkingSpace?->malfunctioned)
+                            <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 0.9rem; color: #856404;">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                <strong>Already flagged as malfunctioned.</strong><br>
+                                <span style="color: #666;">Reported by {{ $malfunctionSensor->parkingSpace->malfunction_reported_by }} — {{ \Carbon\Carbon::parse($malfunctionSensor->parkingSpace->malfunctioned_at)->diffForHumans() }}</span><br>
+                                @if($malfunctionSensor->parkingSpace->malfunction_reason)
+                                    <em style="color: #555;">{{ $malfunctionSensor->parkingSpace->malfunction_reason }}</em>
+                                @endif
                             </div>
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label fw-bold">Reason <span class="text-danger">*</span></label>
-                            <select class="form-select" wire:model.live="overrideReason">
-                                <option value="">— Select a reason —</option>
-                                <option value="Sensor not detecting vehicle (false available)">Sensor not detecting vehicle</option>
-                                <option value="Sensor hardware malfunction">Sensor hardware malfunction</option>
-                                <option value="Spot under maintenance or repair">Spot under maintenance or repair</option>
-                                <option value="Other">Other</option>
-                            </select>
-                            @if($overrideReason === 'Other')
-                                <input type="text" class="form-control mt-2" wire:model="overrideCustomReason"
-                                       placeholder="Please specify..." autofocus>
-                            @endif
-                            @if($overrideError)
-                                <div class="text-danger small mt-1">{{ $overrideError }}</div>
-                            @endif
-                        </div>
+                        @else
+                            <div class="mb-3">
+                                <label class="form-label fw-bold">Issue type <span class="text-danger">*</span></label>
+                                <select class="form-select" wire:model.live="malfunctionReason">
+                                    <option value="">— Select an issue —</option>
+                                    <option value="Sensor not detecting vehicles">Sensor not detecting vehicles</option>
+                                    <option value="Sensor hardware malfunction">Sensor hardware malfunction</option>
+                                    <option value="Sensor offline / no data">Sensor offline / no data</option>
+                                    <option value="Spot under maintenance or repair">Spot under maintenance or repair</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                                @if($malfunctionReason === 'Other')
+                                    <input type="text" class="form-control mt-2" wire:model="malfunctionCustomReason"
+                                           placeholder="Please describe the issue...">
+                                @endif
+                                @if($malfunctionError)
+                                    <div class="text-danger small mt-1">
+                                        <i class="fas fa-exclamation-circle me-1"></i>{{ $malfunctionError }}
+                                    </div>
+                                @endif
+                            </div>
+                        @endif
 
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" wire:click="closeOverrideModal">Cancel</button>
-                        <button type="button" class="btn btn-warning text-white" wire:click="submitOverride">
-                            <i class="fas fa-exclamation-triangle me-1"></i> Apply Override
-                        </button>
+                        <button type="button" class="btn btn-secondary" wire:click="closeMalfunctionModal">Cancel</button>
+                        @if(!$malfunctionSensor->parkingSpace?->malfunctioned)
+                            <button type="button" class="btn text-white" style="background: #B22020;" wire:click="reportMalfunction">
+                                Flag Spot
+                            </button>
+                        @endif
                     </div>
                 </div>
             </div>
