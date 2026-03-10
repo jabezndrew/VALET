@@ -148,6 +148,7 @@ class SensorAssignmentController extends Controller
                     'is_assigned' => $sensor->isAssigned(),
                     'identify_mode' => $sensor->identify_mode,
                     'malfunctioned' => $sensor->parkingSpace ? (bool) $sensor->parkingSpace->malfunctioned : false,
+                    'is_occupied' => $sensor->parkingSpace ? (bool) $sensor->parkingSpace->getEffectiveStatus() === 'occupied' : false,
                     'parking_space' => $sensor->parkingSpace
                 ];
             });
