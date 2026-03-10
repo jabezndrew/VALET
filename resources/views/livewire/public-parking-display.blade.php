@@ -49,50 +49,68 @@
                             @foreach($allFloorStats as $floor => $stats)
                                 @php
                                     $hasData = $this->hasFloorData($floor);
+                                    $noAvailable = $stats['available'] === 0;
+                                    $isSelected = $selectedFloor === $floor;
+
+                                    if ($isSelected) {
+                                        $cardBg = 'linear-gradient(135deg, #B22020 0%, #8B0000 100%)';
+                                        $cardBorder = '#B22020';
+                                        $cardShadow = '0 6px 18px rgba(178, 32, 32, 0.4)';
+                                        $titleColor = 'white';
+                                        $subtitleColor = 'rgba(255,255,255,0.85)';
+                                    } elseif ($noAvailable) {
+                                        $cardBg = '#e0e0e0';
+                                        $cardBorder = '#bdbdbd';
+                                        $cardShadow = '0 3px 10px rgba(0,0,0,0.08)';
+                                        $titleColor = '#999';
+                                        $subtitleColor = '#bbb';
+                                    } else {
+                                        $cardBg = 'white';
+                                        $cardBorder = '#e0e0e0';
+                                        $cardShadow = '0 3px 10px rgba(0,0,0,0.15)';
+                                        $titleColor = '#3A3A3C';
+                                        $subtitleColor = '#999';
+                                    }
                                 @endphp
 
                                 <div
                                     wire:key="floor-card-{{ $floor }}"
                                     wire:click="{{ $hasData ? 'changeFloor(\'' . $floor . '\')' : '' }}"
                                     style="
-                                        background: {{ $selectedFloor === $floor
-                                            ? 'linear-gradient(135deg, #B22020 0%, #8B0000 100%)'
-                                            : 'white' }};
-                                        border: 3px solid {{ $selectedFloor === $floor ? '#B22020' : '#e0e0e0' }};
+                                        background: {{ $cardBg }};
+                                        border: 3px solid {{ $cardBorder }};
                                         border-radius: 12px;
                                         padding: 20px;
                                         opacity: {{ $hasData ? '1' : '0.4' }};
                                         transition: all 0.3s ease;
-                                        box-shadow: {{ $selectedFloor === $floor
-                                            ? '0 6px 18px rgba(178, 32, 32, 0.4)'
-                                            : '0 3px 10px rgba(0,0,0,0.15)' }};
+                                        box-shadow: {{ $cardShadow }};
                                         cursor: {{ $hasData ? 'pointer' : 'not-allowed' }};
                                         {{ !$hasData ? 'pointer-events: none;' : '' }}
                                     "
-                                    title="{{ !$hasData ? 'No data available for this floor' : 'View ' . $floor }}"
+                                    title="{{ !$hasData ? 'No data available for this floor' : ($noAvailable && !$isSelected ? 'No available spots on this floor' : 'View ' . $floor) }}"
                                 >
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div style="flex: 1;">
-                                            <div style="font-weight:700;font-size:1.3rem;color:{{ $selectedFloor === $floor ? 'white' : '#3A3A3C' }};">
+                                            <div style="font-weight:700;font-size:1.3rem;color:{{ $titleColor }};">
                                                 {{ $floor }}
                                             </div>
-                                            <small style="color: {{ $selectedFloor === $floor ? 'rgba(255,255,255,0.85)' : '#999' }};">
+                                            <small style="color: {{ $subtitleColor }};">
                                                 Total: {{ $stats['total'] }}
                                             </small>
                                         </div>
 
                                         <div class="d-flex gap-4">
                                             <div class="text-center">
-                                                <div style="font-size:2rem;font-weight:700;color:#28a745;">
+                                                <div style="font-size:2rem;font-weight:700;color:{{ $noAvailable && !$isSelected ? '#aaa' : '#28a745' }};">
                                                     {{ $stats['available'] }}
                                                 </div>
-                                                <small style="color: {{ $selectedFloor === $floor ? 'rgba(255,255,255,0.85)' : '#2e2d2dff' }};">Available</small>
+                                                <small style="color: {{ $subtitleColor }};">Available</small>
                                             </div>
                                             <div class="text-center">
-                                                <div style="font-size:2rem;font-weight:700;color:#dc3545;">
+                                                <div style="font-size:2rem;font-weight:700;color:{{ $noAvailable && !$isSelected ? '#aaa' : '#dc3545' }};">
                                                     {{ $stats['occupied'] }}
                                                 </div>
-                                                <small style="color: {{ $selectedFloor === $floor ? 'rgba(255,255,255,0.85)' : '#2e2d2dff' }};">Occupied</small>
+                                                <small style="color: {{ $subtitleColor }};">Occupied</small>
                                             </div>
                                         </div>
                                     </div>

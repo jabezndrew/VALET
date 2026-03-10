@@ -107,7 +107,7 @@
                     @endphp
 
                     <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="floor-card {{ $floorStat['has_data'] ? 'has-data' : 'no-data' }}"
+                        <div class="floor-card {{ $floorStat['has_data'] ? 'has-data' : 'no-data' }} {{ $floorStat['has_data'] && $floorStat['available'] == 0 ? 'full' : '' }}"
                              @if($floorStat['has_data'])
                                 wire:click="goToFloor('{{ $floorStat['floor_level'] }}')"
                                 style="cursor: pointer;"
@@ -556,6 +556,22 @@
 /* No data styling */
 .floor-card.no-data {
     opacity: 0.8;
+}
+
+/* Full floor - no available spots */
+.floor-card.full {
+    background: #e0e0e0;
+    border-color: #bdbdbd;
+}
+
+.floor-card.full h5,
+.floor-card.full small,
+.floor-card.full .text-muted {
+    color: #999 !important;
+}
+
+.floor-card.full .floor-number {
+    color: #aaa !important;
 }
 
 /*===========================================

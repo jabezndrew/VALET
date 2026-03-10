@@ -254,10 +254,16 @@
                         @endif
 
                         @if($malfunctionSensor->parkingSpace?->malfunctioned)
+                            @php $flaggedByAdmin = $malfunctionSensor->parkingSpace->malfunction_reported_by === auth()->user()->name; @endphp
                             <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 0.9rem; color: #856404;">
                                 <i class="fas fa-exclamation-triangle me-2"></i>
-                                <strong>Already flagged as malfunctioned.</strong><br>
-                                <span style="color: #666;">Reported by {{ $malfunctionSensor->parkingSpace->malfunction_reported_by }} — {{ \Carbon\Carbon::parse($malfunctionSensor->parkingSpace->malfunctioned_at)->diffForHumans() }}</span><br>
+                                @if($flaggedByAdmin)
+                                    <strong>You flagged this spot as malfunctioned.</strong><br>
+                                    <span style="color: #666;">{{ \Carbon\Carbon::parse($malfunctionSensor->parkingSpace->malfunctioned_at)->diffForHumans() }}</span><br>
+                                @else
+                                    <strong>Flagged as malfunctioned by security.</strong><br>
+                                    <span style="color: #666;">Reported by {{ $malfunctionSensor->parkingSpace->malfunction_reported_by }} — {{ \Carbon\Carbon::parse($malfunctionSensor->parkingSpace->malfunctioned_at)->diffForHumans() }}</span><br>
+                                @endif
                                 @if($malfunctionSensor->parkingSpace->malfunction_reason)
                                     <em style="color: #555;">{{ $malfunctionSensor->parkingSpace->malfunction_reason }}</em>
                                 @endif
