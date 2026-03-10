@@ -190,21 +190,13 @@ class ParkingSpace extends Model
     /**
      * Set manual override status
      */
-<<<<<<< HEAD
-    public function setManualOverride(string $status, string $overrideBy = 'Guard', int $expiresInSeconds = 10): bool
-=======
     public function setManualOverride(string $status, string $overrideBy = 'Guard', ?string $reason = null): bool
->>>>>>> rxtnnn
     {
         return $this->update([
             'manual_override' => true,
             'manual_status' => $status,
             'manual_override_at' => now(),
-<<<<<<< HEAD
-            'manual_override_expires' => now()->addSeconds($expiresInSeconds),
-=======
             'manual_override_expires' => null,
->>>>>>> rxtnnn
             'manual_override_by' => $overrideBy,
             'override_reason' => $reason,
         ]);

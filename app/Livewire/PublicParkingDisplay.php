@@ -39,8 +39,9 @@ class PublicParkingDisplay extends Component
     public $openIncidents = [];
     public $showIncidentsModal = false;
 
-    public function mount($floor = null)
+    public function mount()
     {
+        $floor = request()->query('floor');
         if ($floor) {
             $this->selectedFloor = $floor;
         }
@@ -225,13 +226,8 @@ class PublicParkingDisplay extends Component
 
         $this->selectedSpace->setManualOverride(
             $this->overrideStatus,
-<<<<<<< HEAD
-            'Guard',
-            10
-=======
             auth()->user()->name,
             $finalReason
->>>>>>> rxtnnn
         );
 
         // Send notification to admin/SSD via cache
