@@ -154,13 +154,16 @@ class FeedbackController extends Controller
         try {
             $validated = $request->validate([
                 'user_id' => 'required|exists:sys_users,id',
-                'type' => 'required|in:general,bug,feature,parking',
-                'message' => 'required|string|max:2000',
+                'type' => 'required|in:general,bug,feature,parking,technical,suggestion,guard_report',
+                'message' => 'sometimes|nullable|string|max:2000',
                 'rating' => 'nullable|integer|min:1|max:5',
                 'email' => 'nullable|email|max:255',
                 'issues' => 'nullable|array',
                 'device_info' => 'nullable|array',
             ]);
+
+            // Default message to empty string if not provided
+            $validated['message'] = $validated['message'] ?? '';
 
             // Only save rating for general feedback
             $validated['rating'] = ($validated['type'] === 'general') ? ($validated['rating'] ?? null) : null;
