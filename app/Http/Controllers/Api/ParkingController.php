@@ -256,8 +256,9 @@ class ParkingController extends Controller
 
                 $spacesWithSensors = $spaces->filter(fn($s) => $s->sensorAssignment !== null);
                 $total = $spacesWithSensors->count();
-                $occupied = $spacesWithSensors->filter(fn($s) => $s->is_occupied)->count();
-                $available = $total - $occupied;
+                $malfunctionedCount = $spacesWithSensors->filter(fn($s) => $s->malfunctioned)->count();
+                $occupied = $spacesWithSensors->filter(fn($s) => $s->is_occupied && !$s->malfunctioned)->count();
+                $available = $total - $occupied - $malfunctionedCount;
 
                 $allFloorStats[] = [
                     'floor_level' => $floor,
@@ -287,6 +288,8 @@ class ParkingController extends Controller
                     'slot_number' => $space->slot_number,
                     'slot_name' => $space->slot_name,
                     'is_occupied' => (bool) $space->is_occupied,
+                    'malfunctioned' => (bool) $space->malfunctioned,
+                    'malfunction_reason' => $space->malfunction_reason,
                     'is_active' => $hasSensor,
                     'distance_cm' => $space->distance_cm,
                     'x_position' => $space->x_position,
@@ -426,7 +429,7 @@ class ParkingController extends Controller
             $notifications = Cache::get('admin_override_notifications', []);
             $notifications[] = [
                 'id'          => uniqid(),
-                'type'        => 'spot_override',
+                'type'        => 'malfunction_report',
                 'space_code'  => $space->space_code,
                 'status'      => 'malfunctioned',
                 'reason'      => $reason,
