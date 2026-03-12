@@ -60,7 +60,7 @@ class PublicParkingDisplay extends Component
                 continue;
             }
 
-            $spacesWithSensors = $spaces->filter(fn($s) => $s->sensorAssignment !== null);
+            $spacesWithSensors = $spaces->filter(fn($s) => $s->sensorAssignment !== null && !$s->malfunctioned);
             $total = $spacesWithSensors->count();
             $occupied = $spacesWithSensors->filter(fn($s) => $s->getEffectiveStatus() === 'occupied')->count();
             $available = $spacesWithSensors->filter(fn($s) => $s->getEffectiveStatus() === 'available')->count();

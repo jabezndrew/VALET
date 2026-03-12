@@ -326,8 +326,8 @@ class ParkingDashboard extends Component
 
     private function updateStatistics()
     {
-        $spaces = $this->getFilteredSpaces();
-        
+        $spaces = $this->getFilteredSpaces()->filter(fn($s) => !$s->malfunctioned);
+
         $this->totalSpaces = $spaces->count();
         $this->occupiedSpaces = $spaces->filter(function ($space) {
             return $space->is_occupied == 1 || $space->is_occupied === true;
@@ -351,7 +351,7 @@ class ParkingDashboard extends Component
     {
         // Since we're already filtering for spaces with sensor assignments,
         // we just need to filter by floor
-        $floorSpaces = $this->allSpaces->where('floor_level', $floorName);
+        $floorSpaces = $this->allSpaces->where('floor_level', $floorName)->filter(fn($s) => !$s->malfunctioned);
         $total = $floorSpaces->count();
 
         if ($total === 0) {
