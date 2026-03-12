@@ -32,6 +32,7 @@ class ParkingController extends Controller
                         'is_occupied' => (bool) $space->is_occupied,
                         'malfunctioned' => (bool) $space->malfunctioned,
                         'malfunction_reason' => $space->malfunction_reason,
+                        'malfunction_reported_by' => $space->malfunction_reported_by,
                         'effective_status' => $hasSensor ? $space->getEffectiveStatus() : 'inactive',
                         'is_active' => $hasSensor,
                         'distance_cm' => $space->distance_cm,
