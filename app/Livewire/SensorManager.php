@@ -5,6 +5,7 @@ namespace App\Livewire;
 use Livewire\Component;
 use App\Models\SensorAssignment;
 use App\Models\ParkingSpace;
+use Illuminate\Support\Facades\Cache;
 
 class SensorManager extends Component
 {
@@ -306,6 +307,22 @@ class SensorManager extends Component
 
         $finalReason = $this->malfunctionReason === 'Other' ? $this->malfunctionCustomReason : $this->malfunctionReason;
         $space->reportMalfunction(auth()->user()->name, $finalReason);
+
+        // Notify security via bell notification
+        $notifications = Cache::get('admin_override_notifications', []);
+        $notifications[] = [
+            'id'          => uniqid(),
+            'type'        => 'malfunction_report',
+            'space_code'  => $space->space_code,
+            'status'      => 'malfunctioned',
+            'reason'      => $finalReason,
+            'guard_name'  => auth()->user()->name,
+            'reporter_role' => 'admin',
+            'floor_level' => $space->floor_level,
+            'created_at'  => now()->toISOString(),
+            'read'        => false,
+        ];
+        Cache::put('admin_override_notifications', $notifications, now()->addDays(7));
 
         session()->flash('success', "Spot {$space->space_code} flagged as malfunctioned.");
         $this->closeMalfunctionModal();
