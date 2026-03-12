@@ -76,6 +76,59 @@ class ExpoPushNotificationService
     }
 
     /**
+     * Send malfunction report alert to admin/ssd users
+     */
+    public static function sendMalfunctionAlert(string $spaceCode, string $reportedBy, string $reporterRole, ?string $reason): void
+    {
+        $users = SysUser::whereIn('role', ['admin', 'ssd'])
+            ->whereNotNull('expo_push_token')
+            ->where('is_active', true)
+            ->get();
+
+        if ($users->isEmpty()) {
+            return;
+        }
+
+        $roleLabel = match ($reporterRole) {
+            'security' => 'Security Guard',
+            'admin'    => 'Admin',
+            'ssd'      => 'SSD',
+            default    => ucfirst($reporterRole),
+        };
+
+        $body = "Spot {$spaceCode} flagged as malfunctioned by {$roleLabel} {$reportedBy}.";
+        if ($reason) {
+            $body .= " Reason: {$reason}";
+        }
+
+        $messages = $users->map(fn($user) => [
+            'to'        => $user->expo_push_token,
+            'sound'     => 'default',
+            'title'     => '⚠️ Spot Malfunction Reported',
+            'body'      => $body,
+            'data'      => [
+                'alert_type'  => 'spot_malfunction',
+                'space_code'  => $spaceCode,
+                'reported_by' => $reportedBy,
+                'reason'      => $reason,
+                'timestamp'   => now()->toISOString(),
+            ],
+            'channelId' => 'rfid-alerts',
+            'priority'  => 'high',
+        ])->values()->all();
+
+        foreach (array_chunk($messages, 100) as $chunk) {
+            try {
+                Http::post(self::EXPO_PUSH_URL, $chunk);
+            } catch (\Exception $e) {
+                Log::error('Malfunction push notification failed', ['message' => $e->getMessage()]);
+            }
+        }
+
+        Log::info('Malfunction alert sent', ['space_code' => $spaceCode, 'recipients' => $users->count()]);
+    }
+
+    /**
      * Get alert title based on type
      */
     private static function getAlertTitle(string $alertType): string
