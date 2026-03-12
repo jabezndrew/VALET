@@ -236,6 +236,7 @@ class PublicParkingDisplay extends Component
             'status' => 'malfunctioned',
             'reason' => $finalReason,
             'guard_name' => auth()->user()->name,
+            'reporter_role' => 'security',
             'floor_level' => $this->selectedFloor,
             'created_at' => now()->toISOString(),
             'read' => false,

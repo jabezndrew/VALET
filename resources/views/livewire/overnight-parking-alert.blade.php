@@ -29,8 +29,8 @@
                 {{-- Scrollable Body --}}
                 <div style="overflow-y: auto; flex: 1; padding: 20px;">
 
-                        {{-- Guard Notifications (admin/ssd only) --}}
-                        @if(in_array(auth()->user()->role, ['admin', 'ssd']) && count($overrideNotifications) > 0)
+                        {{-- Malfunction Notifications --}}
+                        @if(in_array(auth()->user()->role, ['admin', 'ssd', 'security']) && count($overrideNotifications) > 0)
                             @php
                                 $malfunctionNotifs = array_values(array_filter($overrideNotifications, fn($n) => ($n['type'] ?? '') === 'malfunction_report'));
                                 $overrideNotifs = array_values(array_filter($overrideNotifications, fn($n) => ($n['type'] ?? '') !== 'malfunction_report'));
