@@ -37,10 +37,6 @@ class ParkingController extends Controller
                         'rotation' => $space->rotation,
                         'width' => $space->width,
                         'height' => $space->height,
-                        'manual_override' => (bool) $space->manual_override,
-                        'manual_status' => $space->manual_status,
-                        'manual_override_expires' => $space->manual_override_expires,
-                        'manual_override_by' => $space->manual_override_by,
                         'created_at' => $space->created_at,
                         'updated_at' => $space->updated_at,
                     ];
@@ -151,13 +147,6 @@ class ParkingController extends Controller
                 ], 422);
             }
 
-            // Insert or update parking space using Eloquent
-            // Check if space exists and has an active manual override
-            $existingSpace = ParkingSpace::where($uniqueField)->first();
-            if ($existingSpace && $existingSpace->isManualOverrideActive()) {
-                // Override is active — skip updating is_occupied so sensor doesn't undo it
-                unset($validated['is_occupied']);
-            }
             $space = ParkingSpace::updateOrCreate($uniqueField, $validated);
 
             // Determine if this is an assigned sensor or temporary tracking
@@ -180,11 +169,8 @@ class ParkingController extends Controller
                     'column_code' => $space->column_code,
                     'slot_number' => $space->slot_number,
                     'floor_level' => $space->floor_level,
-                    'is_occupied' => $space->isManualOverrideActive()
-                        ? ($space->manual_status === 'occupied')
-                        : (bool) $space->is_occupied,
+                    'is_occupied' => (bool) $space->is_occupied,
                     'distance_cm' => $space->distance_cm,
-                    'manual_override' => (bool) $space->manual_override,
                 ]
             ]);
 
@@ -420,60 +406,61 @@ class ParkingController extends Controller
         }
     }
 
-    public function override(Request $request, $spaceId): JsonResponse
+    /**
+     * Report a parking space as malfunctioned (security/admin)
+     */
+    public function reportMalfunction(Request $request, $spaceId): JsonResponse
     {
-        if (!auth()->check() || auth()->user()->role !== 'security') {
-            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
-        }
+        try {
+            $space = ParkingSpace::findOrFail($spaceId);
 
-        $validated = $request->validate([
-            'status' => 'required|in:available,occupied',
-            'pin'    => 'required|string',
-            'reason' => 'nullable|string|max:255',
-        ]);
+            $reason = $request->input('reason');
+            $reportedBy = $request->user()?->name ?? 'Unknown';
 
-        if ($validated['pin'] !== config('app.guard_pin', '1234')) {
-            return response()->json(['success' => false, 'message' => 'Invalid PIN. Please try again.'], 422);
-        }
+            $space->reportMalfunction($reportedBy, $reason);
 
-        $space = ParkingSpace::find($spaceId);
-        if (!$space) {
+            return response()->json([
+                'success' => true,
+                'message' => 'Malfunction reported successfully.',
+                'data' => [
+                    'id' => $space->id,
+                    'space_code' => $space->space_code,
+                    'malfunctioned' => true,
+                    'malfunction_reason' => $reason,
+                    'malfunction_reported_by' => $reportedBy,
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Parking space not found.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to report malfunction.', 'details' => $e->getMessage()], 500);
         }
-
-        $space->setManualOverride(
-            $validated['status'],
-            auth()->user()->name,
-            $validated['reason'] ?? 'Overridden via mobile app'
-        );
-
-        return response()->json([
-            'success'    => true,
-            'message'    => "Spot {$space->space_code} overridden to {$validated['status']}. Active until cleared.",
-            'space_code' => $space->space_code,
-            'status'     => $validated['status'],
-            'overridden_by' => auth()->user()->name,
-            'reason'     => $space->override_reason,
-        ]);
     }
 
-    public function clearOverride(Request $request, $spaceId): JsonResponse
+    /**
+     * Clear malfunction on a parking space (security/admin)
+     */
+    public function clearMalfunction($spaceId): JsonResponse
     {
-        if (!auth()->check() || !in_array(auth()->user()->role, ['security', 'admin', 'ssd'])) {
-            return response()->json(['success' => false, 'message' => 'Unauthorized.'], 403);
-        }
+        try {
+            $space = ParkingSpace::findOrFail($spaceId);
 
-        $space = ParkingSpace::find($spaceId);
-        if (!$space) {
+            $space->clearMalfunction();
+
+            return response()->json([
+                'success' => true,
+                'message' => 'Malfunction cleared successfully.',
+                'data' => [
+                    'id' => $space->id,
+                    'space_code' => $space->space_code,
+                    'malfunctioned' => false,
+                ]
+            ]);
+        } catch (\Illuminate\Database\Eloquent\ModelNotFoundException $e) {
             return response()->json(['success' => false, 'message' => 'Parking space not found.'], 404);
+        } catch (\Exception $e) {
+            return response()->json(['success' => false, 'message' => 'Failed to clear malfunction.', 'details' => $e->getMessage()], 500);
         }
-
-        $space->clearManualOverride();
-
-        return response()->json([
-            'success'    => true,
-            'message'    => "Override cleared for spot {$space->space_code}.",
-            'space_code' => $space->space_code,
-        ]);
     }
+
 }
