@@ -36,19 +36,28 @@ class OvernightParkingAlert extends Component
             return;
         }
 
-        // Load override notifications (admin/ssd only — not security since security is the sender)
+        // Load override notifications
+        $allOverrides = Cache::get('admin_override_notifications', []);
+
         if (in_array(auth()->user()->role, ['admin', 'ssd'])) {
-            $allOverrides = Cache::get('admin_override_notifications', []);
-            // Filter out notifications reported by the current user (admin flagged their own)
-            $allOverrides = array_values(array_filter($allOverrides, fn($n) => ($n['guard_name'] ?? '') !== auth()->user()->name));
-            $seenOverrideIds = Cache::get('seen_overrides_' . auth()->id(), []);
-            $this->overrideNotifications = array_reverse($allOverrides); // newest first
-            $unseenOverrides = array_filter($allOverrides, fn($n) => !in_array($n['id'], $seenOverrideIds));
-            $this->unseenOverrideCount = count($unseenOverrides);
+            // Admin/SSD see only security-reported notifications (not their own)
+            $filtered = array_values(array_filter($allOverrides, fn($n) =>
+                ($n['reporter_role'] ?? 'security') === 'security' &&
+                ($n['guard_name'] ?? '') !== auth()->user()->name
+            ));
+        } elseif (auth()->user()->role === 'security') {
+            // Security sees only admin-reported notifications
+            $filtered = array_values(array_filter($allOverrides, fn($n) =>
+                ($n['reporter_role'] ?? 'security') === 'admin'
+            ));
         } else {
-            $this->overrideNotifications = [];
-            $this->unseenOverrideCount = 0;
+            $filtered = [];
         }
+
+        $seenOverrideIds = Cache::get('seen_overrides_' . auth()->id(), []);
+        $this->overrideNotifications = array_reverse($filtered);
+        $unseenOverrides = array_filter($filtered, fn($n) => !in_array($n['id'], $seenOverrideIds));
+        $this->unseenOverrideCount = count($unseenOverrides);
 
         // Check if the table exists first to prevent errors
         try {
