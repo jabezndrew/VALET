@@ -4,8 +4,10 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\ParkingSpace;
 use App\Models\SensorAssignment;
+use App\Services\ExpoPushNotificationService;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
+use Illuminate\Support\Facades\Cache;
 
 class ParkingController extends Controller
 {
@@ -416,8 +418,27 @@ class ParkingController extends Controller
 
             $reason = $request->input('reason');
             $reportedBy = $request->user()?->name ?? 'Unknown';
+            $reporterRole = $request->user()?->role ?? 'unknown';
 
             $space->reportMalfunction($reportedBy, $reason);
+
+            // Web admin bell notification (cache)
+            $notifications = Cache::get('admin_override_notifications', []);
+            $notifications[] = [
+                'id'          => uniqid(),
+                'type'        => 'spot_override',
+                'space_code'  => $space->space_code,
+                'status'      => 'malfunctioned',
+                'reason'      => $reason,
+                'guard_name'  => $reportedBy,
+                'floor_level' => $space->floor_level,
+                'created_at'  => now()->toISOString(),
+                'read'        => false,
+            ];
+            Cache::put('admin_override_notifications', $notifications, now()->addDays(7));
+
+            // Mobile push notification to admin/ssd users
+            ExpoPushNotificationService::sendMalfunctionAlert($space->space_code, $reportedBy, $reporterRole, $reason);
 
             return response()->json([
                 'success' => true,
