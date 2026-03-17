@@ -95,13 +95,13 @@
                         $badgeClass = match(true) {
                             !$floorStat['has_data'] => 'no-data-badge',
                             $floorStat['available'] == 0 => 'full-badge',
-                            $floorStat['available'] <= 5 => 'limited-badge',
+                            $availablePercentage <= 30 => 'limited-badge',
                             default => 'available-badge'
                         };
                         $badgeText = match(true) {
                             !$floorStat['has_data'] => 'NO DATA',
                             $floorStat['available'] == 0 => 'FULL',
-                            $floorStat['available'] <= 5 => 'LIMITED',
+                            $availablePercentage <= 30 => 'LIMITED',
                             default => 'AVAILABLE'
                         };
                     @endphp
