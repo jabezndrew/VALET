@@ -17,7 +17,7 @@
 
                 <!-- Route Control Buttons / Open Issues Alert -->
                 <div style="position: absolute; top: 30px; left: 30px; z-index: 1000;">
-                    @if($selectedSpot && !(auth()->check() && auth()->user()->role === 'security'))
+                    @if($selectedSpot)
                         <!-- Clear Route Button -->
                         <button wire:click="clearRoute" class="route-toggle-btn active" style="padding: 12px 20px; font-size: 14px;">
                             <svg class="icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -51,6 +51,9 @@
                                     $hasData = $this->hasFloorData($floor);
                                     $noAvailable = $stats['available'] === 0;
                                     $isSelected = $selectedFloor === $floor;
+                                    $isActionUserFloor = auth()->check() && in_array(auth()->user()->role, ['security', 'admin', 'ssd']);
+                                    // Regular users cannot click a floor with no available spots
+                                    $isClickable = $hasData && ($isActionUserFloor || !$noAvailable);
 
                                     if ($isSelected) {
                                         $cardBg = 'linear-gradient(135deg, #B22020 0%, #8B0000 100%)';
@@ -75,7 +78,7 @@
 
                                 <div
                                     wire:key="floor-card-{{ $floor }}"
-                                    wire:click="{{ $hasData ? 'changeFloor(\'' . $floor . '\')' : '' }}"
+                                    wire:click="{{ $isClickable ? 'changeFloor(\'' . $floor . '\')' : '' }}"
                                     style="
                                         background: {{ $cardBg }};
                                         border: 3px solid {{ $cardBorder }};
@@ -84,8 +87,8 @@
                                         opacity: {{ $hasData ? '1' : '0.4' }};
                                         transition: all 0.3s ease;
                                         box-shadow: {{ $cardShadow }};
-                                        cursor: {{ $hasData ? 'pointer' : 'not-allowed' }};
-                                        {{ !$hasData ? 'pointer-events: none;' : '' }}
+                                        cursor: {{ $isClickable ? 'pointer' : 'not-allowed' }};
+                                        {{ !$isClickable ? 'pointer-events: none;' : '' }}
                                     "
                                     title="{{ !$hasData ? 'No data available for this floor' : ($noAvailable && !$isSelected ? 'No available spots on this floor' : 'View ' . $floor) }}"
                                 >
@@ -370,7 +373,7 @@
                                     ];
                                 @endphp
 
-                                @if($showRoute && $selectedSpot && !(auth()->check() && auth()->user()->role === 'security'))
+                                @if($showRoute && $selectedSpot)
                                 <svg class="route-overlay" viewBox="0 0 1200 1400" style="position: absolute; top: 0; left: 0; width: 1200px; height: 1400px; pointer-events: none; z-index: 500;">
                                     <defs>
                                         <marker id="arrowhead" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto">
@@ -429,8 +432,13 @@
         <div class="guard-action-modal">
             <div class="guard-action-header" style="background: #B22020;">
                 <h3 style="color: #fff;">
-                    <i class="fas fa-exclamation-triangle me-2" style="color: #fff;"></i>
-                    Flag as Malfunctioned — {{ $selectedSpace->space_code }}
+                    @if($guardActionView === 'choice')
+                        <i class="fas fa-map-marker-alt me-2"></i>
+                        Spot {{ $selectedSpace->space_code }}
+                    @else
+                        <i class="fas fa-exclamation-triangle me-2"></i>
+                        Flag as Malfunctioned — {{ $selectedSpace->space_code }}
+                    @endif
                 </h3>
                 <button class="guard-action-close" wire:click="closeActionModal" style="color: #fff;">
                     <i class="fas fa-times"></i>
@@ -441,15 +449,30 @@
                 {{-- Floor + Sensor info row --}}
                 <p style="font-size: 0.88rem; color: #555; margin-bottom: 18px;">
                     Floor: <strong>{{ $selectedSpace->floor_level }}</strong>
-                    @if($selectedSpace->sensorAssignment)
-                        &nbsp;|&nbsp; Sensor:
-                        <span style="font-family: monospace; color: #B22020; font-weight: 600;">
-                            {{ $selectedSpace->sensorAssignment->mac_address ?? $selectedSpace->sensorAssignment->space_code ?? 'N/A' }}
-                        </span>
-                    @endif
+                    &nbsp;|&nbsp; Status:
+                    <strong style="color: {{ $selectedSpace->getEffectiveStatus() === 'available' ? '#28a745' : ($selectedSpace->getEffectiveStatus() === 'occupied' ? '#dc3545' : '#e0a800') }};">
+                        {{ ucfirst($selectedSpace->getEffectiveStatus()) }}
+                    </strong>
                 </p>
 
-                @if($selectedSpace->malfunctioned)
+                @if($guardActionView === 'choice')
+                    {{-- Choice screen: Show Route or Report Malfunction --}}
+                    <div style="display: flex; flex-direction: column; gap: 12px;">
+                        <button class="guard-action-submit" style="background: #28a745; color: #fff; font-size: 1rem; padding: 14px;"
+                                wire:click="showRouteFromModal">
+                            <i class="fas fa-route me-2"></i> Show Route to Spot
+                        </button>
+                        <button class="guard-action-submit" style="background: #B22020; color: #fff; font-size: 1rem; padding: 14px;"
+                                wire:click="$set('guardActionView', 'malfunction')">
+                            <i class="fas fa-exclamation-triangle me-2"></i> Report Malfunction
+                        </button>
+                        <button class="guard-action-submit" style="background: #6c757d; color: #fff;"
+                                wire:click="closeActionModal">
+                            Cancel
+                        </button>
+                    </div>
+
+                @elseif($selectedSpace->malfunctioned)
                     {{-- Already flagged state --}}
                     <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 0.9rem; color: #856404;">
                         <i class="fas fa-exclamation-triangle me-2"></i>
@@ -496,10 +519,17 @@
                     </div>
 
                     <div style="display: flex; gap: 10px; margin-top: 8px;">
-                        <button class="guard-action-submit" style="background: #6c757d; color: #fff; flex: 1;"
-                                wire:click="closeActionModal">
-                            Cancel
-                        </button>
+                        @if(auth()->user()->role === 'security')
+                            <button class="guard-action-submit" style="background: #6c757d; color: #fff; flex: 1;"
+                                    wire:click="$set('guardActionView', 'choice')">
+                                <i class="fas fa-arrow-left me-1"></i> Back
+                            </button>
+                        @else
+                            <button class="guard-action-submit" style="background: #6c757d; color: #fff; flex: 1;"
+                                    wire:click="closeActionModal">
+                                Cancel
+                            </button>
+                        @endif
                         <button class="guard-action-submit" style="background: #B22020; color: #fff; flex: 1;"
                                 wire:click="reportMalfunction">
                             <i class="fas fa-flag me-1"></i> Flag Spot

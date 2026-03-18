@@ -5,7 +5,7 @@
             min-height: 100vh;
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
         }
-        
+
         .login-container {
             min-height: 100vh;
             display: flex;
@@ -13,24 +13,25 @@
             justify-content: center;
             padding: 20px;
         }
-        
+
         .login-card {
             background: white;
             border-radius: 20px;
-            box-shadow: 0 15px 35px rgba(0,0,0,0.2);
+            box-shadow: 0 15px 35px rgba(0,0,0,0.5);
             overflow: hidden;
             max-width: 900px;
             width: 100%;
         }
-        
+
         .login-left {
             background: #B22020;
             color: white;
+            height: 100%;
             padding: 60px 40px;
             text-align: center;
             position: relative;
         }
-        
+
         .login-left::before {
             content: '';
             position: absolute;
@@ -41,7 +42,7 @@
             background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="40" fill="none" stroke="rgba(255,255,255,0.1)" stroke-width="1"/><circle cx="20" cy="20" r="15" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/><circle cx="80" cy="80" r="20" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="1"/></svg>');
             opacity: 0.1;
         }
-        
+
         .valet-logo-large {
             width: 80px;
             height: 80px;
@@ -54,17 +55,17 @@
             position: relative;
             z-index: 2;
         }
-        
+
         .valet-logo-large img {
             width: 60px;
             height: 60px;
             object-fit: contain;
         }
-        
+
         .login-right {
             padding: 60px 40px;
         }
-        
+
         .form-control {
             border: 2px solid #e9ecef;
             border-radius: 12px;
@@ -72,12 +73,12 @@
             font-size: 16px;
             transition: all 0.3s ease;
         }
-        
+
         .form-control:focus {
             border-color: #B22020;
             box-shadow: 0 0 0 0.2rem rgba(178, 32, 32, 0.25);
         }
-        
+
         .btn-login {
             background: #B22020;
             border: none;
@@ -88,36 +89,36 @@
             width: 100%;
             transition: all 0.3s ease;
         }
-        
+
         .btn-login:hover {
             background: #8B1A1A;
             transform: translateY(-2px);
             box-shadow: 0 5px 15px rgba(178, 32, 32, 0.3);
         }
-        
+
         .form-floating label {
             color: #666;
         }
-        
+
         .alert {
             border-radius: 12px;
             border: none;
         }
-        
+
         .alert-danger {
             background: #fff5f5;
             color: #B22020;
         }
-        
+
         .alert-success {
             background: #f0fff4;
             color: #22c55e;
         }
-        
+
         .remember-check {
             accent-color: #B22020;
         }
-        
+
         .parking-icon {
             font-size: 2rem;
             margin: 10px;
@@ -171,29 +172,29 @@
                             <img src="/images/valet-logo.jpg" alt="VALET" onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
                             <i class="fas fa-car" style="display: none; font-size: 2rem; color: #B22020;"></i>
                         </div>
-                        
+
                         <h2 class="fw-bold mb-3">VALET</h2>
                         <p class="mb-4">Your Virtual Assistant LED Enabled Smart Parking Guide</p>
-                        
+
                         <div class="parking-icons">
                             <i class="fas fa-car parking-icon"></i>
                             <i class="fas fa-parking parking-icon"></i>
                             <i class="fas fa-route parking-icon"></i>
                         </div>
-                        
+
                         <p class="small mt-4 opacity-75">
                             University of San Jose-Recoletos<br>
                             Quadricentennial Campus
                         </p>
                     </div>
                 </div>
-                
+
                 <!-- Right Side - Login Form -->
                 <div class="col-lg-6 col-md-6">
                     <div class="login-right">
                         <h3 class="fw-bold mb-2">Welcome Back</h3>
                         <p class="text-muted mb-4">Sign in to access your VALET dashboard</p>
-                        
+
                         <!-- Alert Messages -->
                         @if(session('success'))
                             <div class="alert alert-success">
@@ -201,14 +202,14 @@
                                 {{ session('success') }}
                             </div>
                         @endif
-                        
+
                         @if($error)
                             <div class="alert alert-danger">
                                 <i class="fas fa-exclamation-circle me-2"></i>
                                 {{ $error }}
                             </div>
                         @endif
-                        
+
                         @if($errors->any())
                             <div class="alert alert-danger">
                                 <i class="fas fa-exclamation-circle me-2"></i>
@@ -217,7 +218,7 @@
                                 @endforeach
                             </div>
                         @endif
-                        
+
                         <!-- LIVEWIRE Login Form -->
                         <form wire:submit.prevent="login">
                             <div class="form-floating mb-3">
@@ -232,7 +233,7 @@
                                 </label>
                                 @error('email') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                            
+
                             <div class="form-floating mb-3 password-field-wrapper">
                                 <input type="password"
                                        class="form-control @error('password') is-invalid @enderror"
@@ -251,25 +252,25 @@
                                 </button>
                                 @error('password') <div class="invalid-feedback">{{ $message }}</div> @enderror
                             </div>
-                            
+
                             <div class="d-flex justify-content-between align-items-center mb-4">
                                 <div class="form-check">
-                                    <input class="form-check-input remember-check" 
-                                           type="checkbox" 
-                                           id="remember" 
+                                    <input class="form-check-input remember-check"
+                                           type="checkbox"
+                                           id="remember"
                                            wire:model="remember">
                                     <label class="form-check-label" for="remember">
                                         Remember me
                                     </label>
                                 </div>
                             </div>
-                            
+
                             <button type="submit" class="btn btn-login">
                                 <i class="fas fa-sign-in-alt me-2"></i>
                                 Sign In
                             </button>
                         </form>
-                        
+
                         <div class="text-center mt-4">
                             <small class="text-muted">
                                 Need access? Contact your administrator
