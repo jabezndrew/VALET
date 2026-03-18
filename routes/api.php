@@ -35,6 +35,9 @@ Route::prefix('public')->group(function () {
     Route::get('/rfid/scans', [RfidController::class, 'recentScans']);
     Route::post('/guest/verify', [RfidController::class, 'verifyGuest']);
 
+    // Mobile staff vehicle lookup (no side effects)
+    Route::post('/verify-vehicle', [RfidController::class, 'lookupVehicle']);
+
 });
 
 Route::middleware('auth:sanctum')->group(function () {
