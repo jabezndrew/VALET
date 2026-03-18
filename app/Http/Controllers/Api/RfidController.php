@@ -471,4 +471,66 @@ class RfidController extends Controller
             'to' => now()->toISOString(),
         ]);
     }
+
+    /**
+     * Lookup-only vehicle verification for mobile staff (no side effects)
+     * POST /public/verify-vehicle
+     * Body: { mode: 'rfid'|'plate', value: string }
+     */
+    public function lookupVehicle(Request $request)
+    {
+        $request->validate([
+            'mode'  => 'required|in:rfid,plate',
+            'value' => 'required|string|max:100',
+        ]);
+
+        $mode  = $request->mode;
+        $value = strtoupper(trim($request->value));
+
+        if ($mode === 'rfid') {
+            $rfidTag = RfidTag::where('uid', $value)->with(['user', 'vehicle'])->first();
+
+            if (!$rfidTag) {
+                return response()->json(['found' => false, 'message' => 'RFID tag not found in system.']);
+            }
+
+            $status = $rfidTag->status;
+            $expired = $rfidTag->expiry_date && Carbon::parse($rfidTag->expiry_date)->isPast();
+
+            return response()->json([
+                'found'   => true,
+                'valid'   => $status === 'active' && !$expired,
+                'status'  => $expired ? 'expired' : $status,
+                'message' => $expired
+                    ? 'RFID tag expired on ' . Carbon::parse($rfidTag->expiry_date)->format('M j, Y')
+                    : ($status === 'active' ? 'RFID tag is active.' : 'RFID tag is ' . $status . '.'),
+                'uid'           => $rfidTag->uid,
+                'user_name'     => $rfidTag->user->name ?? null,
+                'user_role'     => $rfidTag->user->role ?? null,
+                'vehicle_plate' => $rfidTag->vehicle->plate_number ?? null,
+                'vehicle_make'  => $rfidTag->vehicle->vehicle_make ?? null,
+                'vehicle_model' => $rfidTag->vehicle->vehicle_model ?? null,
+                'expiry_date'   => $rfidTag->expiry_date,
+            ]);
+        }
+
+        // Plate lookup
+        $vehicle = \App\Models\Vehicle::with('owner')->where('plate_number', $value)->first();
+
+        if (!$vehicle) {
+            return response()->json(['found' => false, 'message' => 'No registered vehicle found with that plate number.']);
+        }
+
+        return response()->json([
+            'found'         => true,
+            'valid'         => true,
+            'status'        => 'registered',
+            'message'       => 'Vehicle is registered.',
+            'vehicle_plate' => $vehicle->plate_number,
+            'vehicle_make'  => $vehicle->vehicle_make ?? null,
+            'vehicle_model' => $vehicle->vehicle_model ?? null,
+            'user_name'     => $vehicle->owner->name ?? null,
+            'user_role'     => $vehicle->owner->role ?? null,
+        ]);
+    }
 }
