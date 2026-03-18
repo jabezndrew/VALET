@@ -26,6 +26,7 @@ class PublicParkingDisplay extends Component
     // Guard action properties (only used by security roles)
     public $showActionModal = false;
     public $selectedSpace = null;
+    public $guardActionView = 'choice'; // 'choice' or 'malfunction'
     public $malfunctionReason = '';
     public $malfunctionCustomReason = '';
     public $malfunctionError = '';
@@ -160,10 +161,33 @@ class PublicParkingDisplay extends Component
 
         $this->clearRoute();
         $this->selectedSpace = ParkingSpace::with('sensorAssignment')->find($spaceId);
-        $this->showActionModal = true;
         $this->malfunctionReason = '';
         $this->malfunctionCustomReason = '';
         $this->malfunctionError = '';
+
+        // Security sees choice screen for available spots, goes straight to malfunction for others
+        $role = auth()->user()->role;
+        $effectiveStatus = $this->selectedSpace->getEffectiveStatus();
+        if ($role === 'security' && $effectiveStatus === 'available' && !$this->selectedSpace->malfunctioned) {
+            $this->guardActionView = 'choice';
+        } else {
+            $this->guardActionView = 'malfunction';
+        }
+
+        $this->showActionModal = true;
+    }
+
+    public function showRouteFromModal()
+    {
+        if (!$this->selectedSpace) return;
+
+        $this->selectParkingSpot(
+            $this->selectedSpace->slot_name,
+            $this->selectedSpace->column_code,
+            $this->selectedSpace->x_position ?? 0,
+            $this->selectedSpace->y_position ?? 0
+        );
+        $this->closeActionModal();
     }
 
     public function clearMalfunctionFromModal()
@@ -197,6 +221,7 @@ class PublicParkingDisplay extends Component
     {
         $this->showActionModal = false;
         $this->selectedSpace = null;
+        $this->guardActionView = 'choice';
         $this->malfunctionReason = '';
         $this->malfunctionCustomReason = '';
         $this->malfunctionError = '';

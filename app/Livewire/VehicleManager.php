@@ -370,7 +370,7 @@ class VehicleManager extends Component
             'vehicle_color', 'owner_id'
         ]);
         $this->vehicle_type = 'car';
-        $this->expires_at = now()->format('Y-m-d');
+        $this->expires_at = now()->addMonths(6)->format('Y-m-d');
         $this->resetErrorBag();
     }
 

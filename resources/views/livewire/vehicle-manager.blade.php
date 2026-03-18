@@ -294,7 +294,7 @@
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Owner</label>
-                                    <select wire:model="owner_id" class="form-select" required>
+                                    <select wire:model="owner_id" class="form-select {{ $errors->has('owner_id') ? 'is-invalid' : '' }}" required>
                                         <option value="">Select Owner...</option>
                                         @foreach($users as $user)
                                             <option value="{{ $user->id }}">
@@ -302,7 +302,7 @@
                                             </option>
                                         @endforeach
                                     </select>
-                                    @error('owner_id') <div class="text-danger small">{{ $message }}</div> @enderror
+                                    @error('owner_id') <div class="invalid-feedback d-block">{{ $message }}</div> @enderror
                                 </div>
                             </div>
                             <div class="col-md-6">
