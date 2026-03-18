@@ -15,8 +15,8 @@
         <div class="row g-0">
             <div class="col-12 position-relative">
 
-                <!-- Route Control Buttons / Open Issues Alert -->
-                <div style="position: absolute; top: 30px; left: 30px; z-index: 1000;">
+                <!-- Route Control Buttons / Open Issues Alert / Legend -->
+                <div style="position: absolute; top: 30px; left: 30px; z-index: 1000; display: flex; flex-direction: column; gap: 12px;">
                     @if($selectedSpot)
                         <!-- Clear Route Button -->
                         <button wire:click="clearRoute" class="route-toggle-btn active" style="padding: 12px 20px; font-size: 14px;">
@@ -36,6 +36,29 @@
                             </div>
                         @endif
                     @endauth
+
+                    <!-- Legend -->
+                    <div style="background: rgba(255,255,255,0.95); border-radius: 14px; padding: 14px 18px; box-shadow: 0 4px 16px rgba(0,0,0,0.15);">
+                        <div style="font-weight: 700; font-size: 0.75rem; color: #3A3A3C; margin-bottom: 10px; text-transform: uppercase; letter-spacing: 0.05em;">Legend</div>
+                        <div style="display: flex; flex-direction: column; gap: 8px;">
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 20px; height: 20px; border-radius: 4px; background: linear-gradient(135deg, #2ed573 0%, #28a745 100%); border: 2px solid #28a745; flex-shrink: 0;"></div>
+                                <span style="font-size: 0.8rem; color: #444;">Available</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 20px; height: 20px; border-radius: 4px; background: #dc3545; border: 2px solid #B22020; flex-shrink: 0;"></div>
+                                <span style="font-size: 0.8rem; color: #444;">Occupied</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 20px; height: 20px; border-radius: 4px; background: #FFDE42; border: 2px solid #c9ad00; flex-shrink: 0;"></div>
+                                <span style="font-size: 0.8rem; color: #444;">Malfunctioned</span>
+                            </div>
+                            <div style="display: flex; align-items: center; gap: 10px;">
+                                <div style="width: 20px; height: 20px; border-radius: 4px; background: rgba(33,35,37,0.2); border: 2px dashed #242627; flex-shrink: 0;"></div>
+                                <span style="font-size: 0.8rem; color: #444;">No Sensor</span>
+                            </div>
+                        </div>
+                    </div>
                 </div>
 
                 <!-- Floor Selector - Top Right Cards -->
