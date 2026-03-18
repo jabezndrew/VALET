@@ -792,6 +792,14 @@ main, .container, .valet-header + * {
                           wire:navigate
                           title="Feedback">
                            <i class="fas fa-comments"></i>
+                           @if(auth()->user()->isAdmin())
+                               @php
+                                   $pendingFeedbackCount = \App\Models\Feedback::where('status', 'pending')->count();
+                               @endphp
+                               @if($pendingFeedbackCount > 0)
+                                   <span class="icon-badge">{{ $pendingFeedbackCount }}</span>
+                               @endif
+                           @endif
                        </a>
 
                        <a class="icon-nav-link {{ request()->is('parking-display') ? 'active' : '' }}"
