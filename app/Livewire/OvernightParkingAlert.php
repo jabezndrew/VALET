@@ -103,7 +103,6 @@ class OvernightParkingAlert extends Component
         $this->loadOvernightVehicles();
         $this->showModal = true;
 
-        // Mark all current overnight alerts as seen
         $seenIds = collect($this->overnightVehicles)->pluck('id')->sort()->values()->toArray();
         Cache::put('overnight_seen_' . auth()->id(), $seenIds, now()->addDays(7));
 

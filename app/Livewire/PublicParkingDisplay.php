@@ -36,12 +36,17 @@ class PublicParkingDisplay extends Component
 
     public function mount()
     {
+        $this->loadAllFloorStats();
+
         $floor = request()->query('floor');
         if ($floor) {
             $this->selectedFloor = $floor;
+        } elseif (!empty($this->allFloorStats)) {
+            // Auto-select the floor with the most available spots
+            $bestFloor = array_key_first($this->allFloorStats); // already sorted by available desc
+            $this->selectedFloor = $bestFloor;
         }
 
-        $this->loadAllFloorStats();
         $this->loadParkingData();
 
         if (auth()->check() && $this->isGuardUser()) {
