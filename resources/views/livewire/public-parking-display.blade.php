@@ -450,17 +450,17 @@
 
     {{-- Malfunction Report Modal (Security + Admin/SSD) --}}
     @auth
-    @if($this->isGuardUser() && $showActionModal && $selectedSpace)
+    @if($this->isGuardUser() && $showActionModal && $selectedSpaceId)
     <div class="guard-action-overlay" wire:click.self="closeActionModal">
         <div class="guard-action-modal">
             <div class="guard-action-header" style="background: #B22020;">
                 <h3 style="color: #fff;">
                     @if($guardActionView === 'choice')
                         <i class="fas fa-map-marker-alt me-2"></i>
-                        Spot {{ $selectedSpace->space_code }}
+                        Spot {{ $this->selectedSpace->space_code }}
                     @else
                         <i class="fas fa-exclamation-triangle me-2"></i>
-                        Flag as Malfunctioned — {{ $selectedSpace->space_code }}
+                        Flag as Malfunctioned — {{ $this->selectedSpace->space_code }}
                     @endif
                 </h3>
                 <button class="guard-action-close" wire:click="closeActionModal" style="color: #fff;">
@@ -471,10 +471,10 @@
             <div class="guard-action-body">
                 {{-- Floor + Sensor info row --}}
                 <p style="font-size: 0.88rem; color: #555; margin-bottom: 18px;">
-                    Floor: <strong>{{ $selectedSpace->floor_level }}</strong>
+                    Floor: <strong>{{ $this->selectedSpace->floor_level }}</strong>
                     &nbsp;|&nbsp; Status:
-                    <strong style="color: {{ $selectedSpace->getEffectiveStatus() === 'available' ? '#28a745' : ($selectedSpace->getEffectiveStatus() === 'occupied' ? '#dc3545' : '#e0a800') }};">
-                        {{ ucfirst($selectedSpace->getEffectiveStatus()) }}
+                    <strong style="color: {{ $this->selectedSpace->getEffectiveStatus() === 'available' ? '#28a745' : ($this->selectedSpace->getEffectiveStatus() === 'occupied' ? '#dc3545' : '#e0a800') }};">
+                        {{ ucfirst($this->selectedSpace->getEffectiveStatus()) }}
                     </strong>
                 </p>
 
@@ -495,17 +495,17 @@
                         </button>
                     </div>
 
-                @elseif($selectedSpace->malfunctioned)
+                @elseif($this->selectedSpace->malfunctioned)
                     {{-- Already flagged state --}}
                     <div style="background: #fff3cd; border: 1px solid #ffc107; border-radius: 10px; padding: 14px; margin-bottom: 16px; font-size: 0.9rem; color: #856404;">
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         <strong>Already flagged as malfunctioned.</strong><br>
                         <span style="color: #666;">
-                            Reported by {{ $selectedSpace->malfunction_reported_by }}
-                            — {{ \Carbon\Carbon::parse($selectedSpace->malfunctioned_at)->diffForHumans() }}
+                            Reported by {{ $this->selectedSpace->malfunction_reported_by }}
+                            — {{ \Carbon\Carbon::parse($this->selectedSpace->malfunctioned_at)->diffForHumans() }}
                         </span><br>
-                        @if($selectedSpace->malfunction_reason)
-                            <em style="color: #555;">{{ $selectedSpace->malfunction_reason }}</em>
+                        @if($this->selectedSpace->malfunction_reason)
+                            <em style="color: #555;">{{ $this->selectedSpace->malfunction_reason }}</em>
                         @endif
                     </div>
                     <div style="display: flex; gap: 10px;">
