@@ -44,11 +44,11 @@ class UserManager extends Component
     public $employee_id = '';
     public $department = '';
     public $is_active = true;
-    
+
     // Edit mode
     public $editingId = null;
     public $showModal = false;
-    
+
     // Filters
     public $search = '';
     public $roleFilter = 'all';
@@ -65,10 +65,10 @@ class UserManager extends Component
             'is_active' => 'boolean',
         ];
 
-        $passwordRule = $this->editingId 
+        $passwordRule = $this->editingId
             ? ['nullable', 'confirmed', Password::defaults()]
             : ['required', 'confirmed', Password::defaults()];
-            
+
         return array_merge($baseRules, ['password' => $passwordRule]);
     }
 
@@ -182,7 +182,7 @@ class UserManager extends Component
         try {
             $user->tokens()->delete();
             $user->delete();
-            
+
             $this->dispatch('show-alert', type: 'success', message: 'User deleted successfully.');
         } catch (\Exception $e) {
             $this->dispatch('show-alert', type: 'error', message: 'Failed to delete user.');
@@ -227,7 +227,6 @@ class UserManager extends Component
             SysUser::create($data);
             $this->dispatch('show-alert', type: 'success', message: 'User created successfully.');
         } else {
-            // SSD users create pending accounts
             PendingAccount::create(array_merge($data, [
                 'created_by' => auth()->id(),
                 'status' => 'pending',
