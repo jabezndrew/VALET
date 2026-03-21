@@ -25,7 +25,7 @@ class PublicParkingDisplay extends Component
 
     // Guard action properties (only used by security roles)
     public $showActionModal = false;
-    public $selectedSpace = null;
+    public $selectedSpaceId = null;
     public $guardActionView = 'choice'; // 'choice' or 'malfunction'
     public $malfunctionReason = '';
     public $malfunctionCustomReason = '';
@@ -158,6 +158,12 @@ class PublicParkingDisplay extends Component
         $this->openIncidentsCount = GuardIncident::where('status', 'open')->count();
     }
 
+    public function getSelectedSpaceProperty()
+    {
+        if (!$this->selectedSpaceId) return null;
+        return ParkingSpace::with('sensorAssignment')->find($this->selectedSpaceId);
+    }
+
     public function openActionModal($spaceId)
     {
         if (!$this->isGuardUser()) {
@@ -165,15 +171,18 @@ class PublicParkingDisplay extends Component
         }
 
         $this->clearRoute();
-        $this->selectedSpace = ParkingSpace::with('sensorAssignment')->find($spaceId);
+        $this->selectedSpaceId = $spaceId;
         $this->malfunctionReason = '';
         $this->malfunctionCustomReason = '';
         $this->malfunctionError = '';
 
+        $space = $this->selectedSpace;
+        if (!$space) return;
+
         // Security sees choice screen for available spots, goes straight to malfunction for others
         $role = auth()->user()->role;
-        $effectiveStatus = $this->selectedSpace->getEffectiveStatus();
-        if ($role === 'security' && $effectiveStatus === 'available' && !$this->selectedSpace->malfunctioned) {
+        $effectiveStatus = $space->getEffectiveStatus();
+        if ($role === 'security' && $effectiveStatus === 'available' && !$space->malfunctioned) {
             $this->guardActionView = 'choice';
         } else {
             $this->guardActionView = 'malfunction';
@@ -225,7 +234,7 @@ class PublicParkingDisplay extends Component
     public function closeActionModal()
     {
         $this->showActionModal = false;
-        $this->selectedSpace = null;
+        $this->selectedSpaceId = null;
         $this->guardActionView = 'choice';
         $this->malfunctionReason = '';
         $this->malfunctionCustomReason = '';
