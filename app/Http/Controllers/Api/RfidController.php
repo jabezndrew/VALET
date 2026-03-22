@@ -172,7 +172,7 @@ class RfidController extends Controller
 
             // Check if vehicle is already inside
             $activeEntry = ParkingEntry::where('rfid_tag_id', $rfidTag->id)
-                ->where('status', 'parked')
+                ->whereIn('status', ['entered', 'parked'])
                 ->exists();
 
             if ($activeEntry) {
@@ -208,7 +208,7 @@ class RfidController extends Controller
                 'user_id' => $rfidTag->user_id,
                 'vehicle_plate' => $rfidTag->vehicle->plate_number ?? null,
                 'entry_time' => Carbon::now(),
-                'status' => 'parked',
+                'status' => 'entered',
                 'entry_gate_mac' => $gateMac
             ]);
 
@@ -279,7 +279,7 @@ class RfidController extends Controller
 
             // Find latest entry for this user that hasn't exited
             $entry = ParkingEntry::where('rfid_tag_id', $rfidTag->id)
-                ->where('status', 'parked')
+                ->whereIn('status', ['entered', 'parked'])
                 ->orderBy('entry_time', 'desc')
                 ->first();
 
@@ -437,6 +437,37 @@ class RfidController extends Controller
                 'duration' => 10
             ], 500);
         }
+    }
+
+    /**
+     * Mark entry as parked - called when user taps "I've Parked"
+     */
+    public function markParked(Request $request)
+    {
+        $request->validate([
+            'uid' => 'required|string',
+        ]);
+
+        $uid = strtoupper($request->uid);
+
+        $rfidTag = RfidTag::where('uid', $uid)->first();
+
+        if (!$rfidTag) {
+            return response()->json(['success' => false, 'message' => 'RFID tag not found.'], 404);
+        }
+
+        $entry = ParkingEntry::where('rfid_tag_id', $rfidTag->id)
+            ->where('status', 'entered')
+            ->orderBy('entry_time', 'desc')
+            ->first();
+
+        if (!$entry) {
+            return response()->json(['success' => false, 'message' => 'No active entry found for this RFID.'], 404);
+        }
+
+        $entry->update(['status' => 'parked']);
+
+        return response()->json(['success' => true, 'message' => 'Status updated to parked.']);
     }
 
     /**
