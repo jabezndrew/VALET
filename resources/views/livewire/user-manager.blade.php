@@ -129,8 +129,16 @@
                                             {{ $user->is_active ? 'Active' : 'Inactive' }}
                                         </span>
                                         @if(in_array($user->id, $parkedUserIds))
-                                            <span class="badge bg-info ms-1" title="Currently parked on campus">
+                                            <span class="badge bg-warning text-dark ms-1" title="Currently parked on campus">
                                                 <i class="fas fa-car"></i> Parked
+                                            </span>
+                                        @elseif(in_array($user->id, $enteredUserIds))
+                                            <span class="badge bg-success ms-1" title="Entered campus, not yet parked">
+                                                <i class="fas fa-sign-in-alt"></i> Entered
+                                            </span>
+                                        @elseif(in_array($user->id, $exitedUserIds))
+                                            <span class="badge bg-danger ms-1" title="Exited today">
+                                                <i class="fas fa-sign-out-alt"></i> Exited
                                             </span>
                                         @endif
                                     </td>

@@ -86,6 +86,8 @@ class UserManager extends Component
             'stats' => $this->getUserStats(),
             'pendingCount' => $this->getPendingAccountsCount(),
             'parkedUserIds' => ParkingEntry::where('status', 'parked')->pluck('user_id')->toArray(),
+            'enteredUserIds' => ParkingEntry::where('status', 'entered')->pluck('user_id')->toArray(),
+            'exitedUserIds' => ParkingEntry::where('status', 'exited')->whereDate('exit_time', today())->pluck('user_id')->toArray(),
             'departments' => self::DEPARTMENTS,
         ])->layout('layouts.app');
     }

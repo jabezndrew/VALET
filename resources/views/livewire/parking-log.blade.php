@@ -10,7 +10,7 @@
         <!-- Stats Cards -->
         <div class="row mb-4">
             <div class="col-md-3">
-                <div class="card bg-primary text-white">
+                <div class="card bg-success text-white">
                     <div class="card-body">
                         <h6 class="card-title">Today's Entries</h6>
                         <h3>{{ $stats['total_today'] }}</h3>
@@ -26,7 +26,7 @@
                 </div>
             </div>
             <div class="col-md-3">
-                <div class="card bg-success text-white">
+                <div class="card bg-danger text-white">
                     <div class="card-body">
                         <h6 class="card-title">Exited Today</h6>
                         <h3>{{ $stats['exited_today'] }}</h3>
@@ -124,7 +124,7 @@
                                         @endif
                                     </td>
                                     <td>
-                                        <span class="badge bg-{{ $entry->status === 'parked' ? 'warning' : 'success' }}">
+                                        <span class="badge bg-{{ $entry->status === 'parked' ? 'warning' : ($entry->status === 'exited' ? 'danger' : 'secondary') }}">
                                             {{ ucfirst($entry->status) }}
                                         </span>
                                     </td>
