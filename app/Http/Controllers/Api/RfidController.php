@@ -440,6 +440,30 @@ class RfidController extends Controller
     }
 
     /**
+     * Get all RFID tags with linked user and vehicle
+     */
+    public function tags(Request $request)
+    {
+        $tags = RfidTag::with(['user', 'vehicle'])
+            ->orderBy('created_at', 'desc')
+            ->get()
+            ->map(fn($tag) => [
+                'id'            => $tag->id,
+                'uid'           => $tag->uid,
+                'status'        => $tag->status,
+                'expiry_date'   => $tag->expiry_date,
+                'user_name'     => $tag->user->name ?? null,
+                'user_role'     => $tag->user->role ?? null,
+                'vehicle_plate' => $tag->vehicle->plate_number ?? null,
+                'vehicle_make'  => $tag->vehicle->vehicle_make ?? null,
+                'vehicle_model' => $tag->vehicle->vehicle_model ?? null,
+                'created_at'    => $tag->created_at->toISOString(),
+            ]);
+
+        return response()->json(['tags' => $tags, 'count' => $tags->count()]);
+    }
+
+    /**
      * Get recent RFID scan events (for mobile polling)
      */
     public function recentScans(Request $request)
