@@ -17,15 +17,37 @@
 
                 <!-- Route Control Buttons / Open Issues Alert / Legend -->
                 <div style="position: absolute; top: 30px; left: 30px; z-index: 1000; display: flex; flex-direction: column; gap: 12px;">
-                    @auth
-                        @if($hasActiveEntry)
-                            <button wire:click="markAsParked" style="background: #28a745; color: white; border: none; border-radius: 12px; padding: 12px 20px; font-size: 14px; font-weight: 600; cursor: pointer; display: flex; align-items: center; gap: 8px; box-shadow: 0 4px 12px rgba(40,167,69,0.4);">
-                                <i class="fas fa-parking"></i>
-                                I've Parked
-                            </button>
-                        @endif
-                    @endauth
                     @if($selectedSpot)
+                        <div style="display: flex; flex-direction: column; gap: 10px;">
+                        @auth
+                            @if(auth()->user()->role === 'user')
+                                <button
+                                    @if($hasActiveEntry) wire:click="markAsParked" @endif
+                                    style="
+                                        position: absolute;
+                                        top: 25px;
+                                        left: 160px;
+                                        width: 130px;
+                                        background: {{ $hasActiveEntry ? '#FFD700' : '#aaa' }};
+                                        color: white;
+                                        border: none;
+                                        border-radius: 12px;
+                                        padding: 12px 25px;
+                                        font-size: 14px;
+                                        font-weight: 600;
+                                        cursor: {{ $hasActiveEntry ? 'pointer' : 'not-allowed' }};
+                                        display: flex;
+                                        align-items: center;
+                                        gap: 8px;
+                                        box-shadow: {{ $hasActiveEntry ? '0 4px 12px rgba(40,167,69,0.4)' : 'none' }};
+                                        opacity: {{ $hasActiveEntry ? '1' : '0.6' }};
+                                    "
+                                    title="{{ $hasActiveEntry ? 'Mark yourself as parked' : 'Only available after your RFID is scanned at the entrance' }}"
+                                >
+                                    I've Parked
+                                </button>
+                            @endif
+                        @endauth
                         <!-- Clear Route Button -->
                         <button wire:click="clearRoute" class="route-toggle-btn active" style="padding: 12px 20px; font-size: 14px;">
                             <svg class="icon" width="16" height="16" fill="currentColor" viewBox="0 0 16 16">
@@ -33,6 +55,7 @@
                             </svg>
                             <span style="width:80px">Clear Route</span>
                         </button>
+                        </div>
                     @endif
 
                     @auth
