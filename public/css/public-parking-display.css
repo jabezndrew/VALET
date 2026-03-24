@@ -421,7 +421,7 @@ body {
 .route-toggle-btn {
     position: absolute;
     top: 30px;
-    left: 30px;
+    left: 150px;
     z-index: 1000;
     background: linear-gradient(135deg, #2ed573 0%, #28a745 100%);
     color: white;

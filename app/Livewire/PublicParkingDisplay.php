@@ -4,6 +4,7 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\ParkingSpace;
+use App\Models\ParkingEntry;
 use App\Models\SensorAssignment;
 use App\Models\GuardIncident;
 use App\Models\Feedback;
@@ -33,6 +34,7 @@ class PublicParkingDisplay extends Component
     public $openIncidentsCount = 0;
     public $openIncidents = [];
     public $showIncidentsModal = false;
+    public $hasActiveEntry = false;
 
     public function mount()
     {
@@ -51,6 +53,28 @@ class PublicParkingDisplay extends Component
 
         if (auth()->check() && $this->isGuardUser()) {
             $this->loadOpenIncidentsCount();
+        }
+
+        if (auth()->check()) {
+            $this->hasActiveEntry = ParkingEntry::where('user_id', auth()->id())
+                ->where('status', 'entered')
+                ->exists();
+        }
+    }
+
+    public function markAsParked()
+    {
+        if (!auth()->check()) return;
+
+        $entry = ParkingEntry::where('user_id', auth()->id())
+            ->where('status', 'entered')
+            ->latest()
+            ->first();
+
+        if ($entry) {
+            $entry->update(['status' => 'parked']);
+            $this->hasActiveEntry = false;
+            session()->flash('success', "You're now marked as parked.");
         }
     }
 
