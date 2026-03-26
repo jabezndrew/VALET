@@ -12,6 +12,7 @@ use App\Livewire\SensorManager;
 use App\Livewire\PublicParkingDisplay;
 use App\Livewire\RfidManagement;
 use App\Livewire\ParkingLog;
+use App\Livewire\GuestAccessManager;
 
 // Public routes - no authentication required
 Route::get('/parking-display', PublicParkingDisplay::class)->name('parking.display.public');
@@ -95,7 +96,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('role:security')->group(function () {
-        Route::get('/guest-access', App\Livewire\GuestAccessManager::class)->name('guest-access');
+        Route::get('/guest-access', GuestAccessManager::class)->name('guest-access');
     });
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {

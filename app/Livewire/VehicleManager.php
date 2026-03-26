@@ -113,16 +113,12 @@ class VehicleManager extends Component
         $vehicle = $rfidTag->vehicle;
         $isActive = $vehicle->isValid() && $rfidTag->status === 'active';
 
-        $vehicleData = $vehicle->toArray();
-        $vehicleData['owner_name'] = $vehicle->owner->name;
-        $vehicleData['owner_role'] = $vehicle->owner->role;
-
         $this->verifyResult = [
             'status' => $isActive ? 'Active' : 'Inactive',
             'message' => $isActive
                 ? 'Vehicle is active and authorized for parking.'
                 : $this->getInactiveReason($vehicle),
-            'vehicle' => (object) $vehicleData,
+            'vehicle' => $this->transformVehicleData($vehicle),
             'color' => $isActive ? 'success' : 'danger',
             'type' => 'rfid'
         ];
@@ -136,24 +132,18 @@ class VehicleManager extends Component
         $vehicle = Vehicle::with('owner')->where('plate_number', $plateNumber)->first();
 
         if ($vehicle) {
-            // Vehicle found in system - it's a registered vehicle, not a guest
             $isActive = $vehicle->isValid();
-
-            $vehicleData = $vehicle->toArray();
-            $vehicleData['owner_name'] = $vehicle->owner->name;
-            $vehicleData['owner_role'] = $vehicle->owner->role;
 
             $this->verifyResult = [
                 'status' => 'REGISTERED',
                 'message' => $isActive
                     ? 'This vehicle is registered in the system. Owner should use RFID.'
                     : 'This vehicle is registered but ' . $this->getInactiveReason($vehicle),
-                'vehicle' => (object) $vehicleData,
+                'vehicle' => $this->transformVehicleData($vehicle),
                 'color' => 'warning',
                 'type' => 'guest'
             ];
         } else {
-            // Vehicle not in system - valid guest
             $this->verifyResult = [
                 'status' => 'GUEST_OK',
                 'message' => 'Vehicle not registered. Guest access can be granted.',
@@ -265,7 +255,7 @@ class VehicleManager extends Component
                 'is_active' => !$vehicle->is_active,
             ]);
 
-            $status = $vehicle->is_active ? 'deactivated' : 'activated';
+            $status = $vehicle->is_active ? 'activated' : 'deactivated';
             $this->dispatch('show-alert', type: 'success', message: "Vehicle {$status} successfully.");
         }
     }
@@ -291,35 +281,38 @@ class VehicleManager extends Component
     // Helper methods
     public function getVehicleStatus($vehicle)
     {
-        // Handle both stdClass (from query) and Vehicle model instances
-        if ($vehicle instanceof Vehicle) {
-            return $vehicle->isValid() ? 'Active' : 'Inactive';
-        }
-        return $this->isVehicleActive($vehicle) ? 'Active' : 'Inactive';
+        return $this->isVehicleValid($vehicle) ? 'Active' : 'Inactive';
     }
 
     public function getStatusBadgeClass($vehicle)
     {
-        if ($vehicle instanceof Vehicle) {
-            return $vehicle->isValid() ? 'badge bg-success' : 'badge bg-danger';
-        }
-        return $this->isVehicleActive($vehicle) ? 'badge bg-success' : 'badge bg-danger';
+        return $this->isVehicleValid($vehicle) ? 'badge bg-success' : 'badge bg-danger';
     }
 
     public function getRowClass($vehicle)
     {
-        if ($vehicle instanceof Vehicle) {
-            return $vehicle->isValid() ? '' : 'table-danger';
-        }
-        return $this->isVehicleActive($vehicle) ? '' : 'table-danger';
+        return $this->isVehicleValid($vehicle) ? '' : 'table-danger';
     }
 
     public function getStatusIcon($vehicle)
     {
+        return $this->isVehicleValid($vehicle) ? 'fas fa-check-circle' : 'fas fa-times-circle';
+    }
+
+    private function isVehicleValid($vehicle): bool
+    {
         if ($vehicle instanceof Vehicle) {
-            return $vehicle->isValid() ? 'fas fa-check-circle' : 'fas fa-times-circle';
+            return $vehicle->isValid();
         }
-        return $this->isVehicleActive($vehicle) ? 'fas fa-check-circle' : 'fas fa-times-circle';
+        return $this->isVehicleActive($vehicle);
+    }
+
+    private function transformVehicleData(Vehicle $vehicle): object
+    {
+        $data = $vehicle->toArray();
+        $data['owner_name'] = $vehicle->owner->name;
+        $data['owner_role'] = $vehicle->owner->role;
+        return (object) $data;
     }
 
     public function getExpiryText($expiresAt)

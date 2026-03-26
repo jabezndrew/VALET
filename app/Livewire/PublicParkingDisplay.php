@@ -338,16 +338,7 @@ class PublicParkingDisplay extends Component
             'reported_by' => auth()->user()->name ?? 'Guard',
         ]);
 
-        $categoryLabels = [
-            'debris' => 'Debris / Obstruction',
-            'damaged' => 'Damaged Spot',
-            'blocked' => 'Blocked Area',
-            'light_issue' => 'Light Issue',
-            'sensor_issue' => 'Sensor Issue',
-            'other' => 'Other Issue',
-        ];
-
-        $categoryLabel = $categoryLabels[$this->incidentCategory] ?? $this->incidentCategory;
+        $categoryLabel = GuardIncident::getCategoryLabel($this->incidentCategory);
         $spaceCode = $this->selectedSpace?->space_code ?? 'N/A';
 
         Feedback::create([
@@ -436,11 +427,6 @@ class PublicParkingDisplay extends Component
 
     public function render()
     {
-        $this->parkingSpaces = ParkingSpace::where('floor_level', $this->selectedFloor)
-            ->with('sensorAssignment')
-            ->orderBy('slot_name')
-            ->get();
-
         return view('livewire.public-parking-display')
             ->layout('layouts.app');
     }

@@ -60,11 +60,6 @@ class FeedbackManager extends Component
         return auth()->user()->isAdmin();
     }
 
-    public function getIsOwnFeedbackOnlyProperty()
-    {
-        return !auth()->user()->isAdmin();
-    }
-
     // Form handlers
     public function updatedType($value)
     {
@@ -282,7 +277,7 @@ class FeedbackManager extends Component
         $query = Feedback::with('user:id,name,role');
 
         // Permission-based filtering
-        if ($this->isOwnFeedbackOnly) {
+        if (!$this->canManageFeedback) {
             $query->where('user_id', auth()->id());
         }
 
@@ -310,7 +305,7 @@ class FeedbackManager extends Component
     {
         $baseQuery = Feedback::query();
 
-        if ($this->isOwnFeedbackOnly) {
+        if (!$this->canManageFeedback) {
             $baseQuery->where('user_id', auth()->id());
         }
 
