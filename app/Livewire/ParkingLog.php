@@ -31,22 +31,7 @@ class ParkingLog extends Component
         $this->dateTo = now()->format('Y-m-d');
     }
 
-    public function updatingSearch()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingStatusFilter()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingDateFrom()
-    {
-        $this->resetPage();
-    }
-
-    public function updatingDateTo()
+    public function updating()
     {
         $this->resetPage();
     }

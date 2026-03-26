@@ -195,7 +195,7 @@ class GuestAccessManager extends Component
 
     private function getGuests()
     {
-        $query = GuestAccess::with('creator');
+        $query = GuestAccess::query();
 
         // Auto-update expired guests
         GuestAccess::where('status', 'active')

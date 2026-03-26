@@ -57,10 +57,7 @@ class PendingAccountManager extends Component
 
         $this->validate(['adminNotes' => 'nullable|string|max:1000']);
 
-        if (!$pendingAccount || $pendingAccount->status !== 'pending') {
-            $this->dispatch('show-alert', type: 'error', message: 'Account not found or already processed.');
-            return;
-        }
+        if (!$this->isValidPendingAccount($pendingAccount)) return;
 
         // Check for email conflicts
         if (SysUser::where('email', $pendingAccount->email)->exists()) {
@@ -90,10 +87,7 @@ class PendingAccountManager extends Component
 
         $this->validate(['adminNotes' => 'nullable|string|max:1000']);
 
-        if (!$pendingAccount || $pendingAccount->status !== 'pending') {
-            $this->dispatch('show-alert', type: 'error', message: 'Account not found or already processed.');
-            return;
-        }
+        if (!$this->isValidPendingAccount($pendingAccount)) return;
 
         try {
             // Use model's built-in reject method
@@ -131,6 +125,15 @@ class PendingAccountManager extends Component
     public function closeModal()
     {
         $this->reset(['showModal', 'selectedAccount', 'adminNotes']);
+    }
+
+    private function isValidPendingAccount($pendingAccount): bool
+    {
+        if (!$pendingAccount || $pendingAccount->status !== 'pending') {
+            $this->dispatch('show-alert', type: 'error', message: 'Account not found or already processed.');
+            return false;
+        }
+        return true;
     }
 
     // Helper methods
