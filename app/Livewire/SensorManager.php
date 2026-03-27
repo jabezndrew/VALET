@@ -74,13 +74,7 @@ class SensorManager extends Component
 
     public function loadAvailableSpaces()
     {
-        // Get all parking spaces that are not assigned to any sensor
-        $assignedSpaceCodes = SensorAssignment::whereNotNull('space_code')
-            ->where('status', 'active')
-            ->pluck('space_code')
-            ->toArray();
-
-        $this->availableSpaces = ParkingSpace::whereNotIn('space_code', $assignedSpaceCodes)
+        $this->availableSpaces = ParkingSpace::whereNotIn('space_code', $this->getAssignedSpaceCodes())
             ->orderBy('space_code')
             ->get();
     }
