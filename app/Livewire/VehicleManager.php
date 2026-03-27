@@ -377,7 +377,7 @@ class VehicleManager extends Component
                 $q->where('plate_number', 'like', "%{$this->search}%")
                   ->orWhere('vehicle_make', 'like', "%{$this->search}%")
                   ->orWhere('vehicle_model', 'like', "%{$this->search}%")
-                  ->orWhere('rfid_tag', 'like', "%{$this->search}%")
+                  ->orWhereHas('rfidTag', function ($q) { $q->where('uid', 'like', "%{$this->search}%"); })
                   ->orWhereHas('owner', function ($ownerQuery) {
                       $ownerQuery->where('name', 'like', "%{$this->search}%");
                   });
