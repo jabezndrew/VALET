@@ -6,36 +6,12 @@ use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Relations\BelongsTo;
 
-/**
- * PendingAccount Model
- *
- * @property int $id
- * @property string $name
- * @property string $email
- * @property string $password
- * @property string $role
- * @property string|null $employee_id
- * @property string|null $department
- * @property bool $is_active
- * @property int $created_by
- * @property string $status
- * @property string|null $admin_notes
- * @property int|null $reviewed_by
- * @property \Illuminate\Support\Carbon|null $reviewed_at
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- * @property-read SysUser $creator
- * @property-read SysUser|null $reviewer
- */
 class PendingAccount extends Model
 {
     use HasFactory;
 
     protected $table = 'pending_accounts';
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'name',
         'email',
@@ -51,9 +27,6 @@ class PendingAccount extends Model
         'reviewed_at',
     ];
 
-    /**
-     * The attributes that should be cast.
-     */
     protected $casts = [
         'is_active' => 'boolean',
         'created_by' => 'integer',
@@ -63,98 +36,67 @@ class PendingAccount extends Model
         'updated_at' => 'datetime',
     ];
 
-    /**
-     * The attributes that should be hidden for arrays.
-     */
     protected $hidden = [
         'password',
     ];
 
-    /**
-     * Valid account statuses
-     */
+    // Status constants
     const STATUS_PENDING = 'pending';
     const STATUS_APPROVED = 'approved';
     const STATUS_REJECTED = 'rejected';
 
-    /**
-     * Valid roles
-     */
+    // Role constants
     const ROLE_USER = 'user';
     const ROLE_SECURITY = 'security';
     const ROLE_SSD = 'ssd';
     const ROLE_ADMIN = 'admin';
 
-    /**
-     * Get the user who created this pending account
-     */
+    // Relationships
     public function creator(): BelongsTo
     {
         return $this->belongsTo(SysUser::class, 'created_by');
     }
 
-    /**
-     * Get the admin who reviewed this pending account
-     */
     public function reviewer(): BelongsTo
     {
         return $this->belongsTo(SysUser::class, 'reviewed_by');
     }
 
-    /**
-     * Scope for pending accounts
-     */
+    // Scopes
     public function scopePending($query)
     {
         return $query->where('status', self::STATUS_PENDING);
     }
 
-    /**
-     * Scope for approved accounts
-     */
     public function scopeApproved($query)
     {
         return $query->where('status', self::STATUS_APPROVED);
     }
 
-    /**
-     * Scope for rejected accounts
-     */
     public function scopeRejected($query)
     {
         return $query->where('status', self::STATUS_REJECTED);
     }
 
-    /**
-     * Check if account is pending
-     */
+    // Status checks
     public function isPending(): bool
     {
         return $this->status === self::STATUS_PENDING;
     }
 
-    /**
-     * Check if account is approved
-     */
     public function isApproved(): bool
     {
         return $this->status === self::STATUS_APPROVED;
     }
 
-    /**
-     * Check if account is rejected
-     */
     public function isRejected(): bool
     {
         return $this->status === self::STATUS_REJECTED;
     }
 
-    /**
-     * Approve the pending account and create actual user
-     */
+    // Approve and create the actual user account
     public function approve(int $reviewerId, ?string $notes = null): ?SysUser
     {
-        // Update pending account status
         $this->update([
             'status' => self::STATUS_APPROVED,
             'reviewed_by' => $reviewerId,
@@ -162,23 +104,17 @@ class PendingAccount extends Model
             'admin_notes' => $notes,
         ]);
 
-        // Create the actual user account
-        $user = SysUser::create([
+        return SysUser::create([
             'name' => $this->name,
             'email' => $this->email,
-            'password' => $this->password, // Already hashed
+            'password' => $this->password, // already hashed
             'role' => $this->role,
             'employee_id' => $this->employee_id,
             'department' => $this->department,
             'is_active' => $this->is_active,
         ]);
-
-        return $user;
     }
 
-    /**
-     * Reject the pending account
-     */
     public function reject(int $reviewerId, ?string $notes = null): bool
     {
         return $this->update([
@@ -189,9 +125,7 @@ class PendingAccount extends Model
         ]);
     }
 
-    /**
-     * Get the role display name
-     */
+    // Display helpers
     public function getRoleDisplayName(): string
     {
         return match($this->role) {
@@ -203,9 +137,6 @@ class PendingAccount extends Model
         };
     }
 
-    /**
-     * Get the status display name
-     */
     public function getStatusDisplayName(): string
     {
         return match($this->status) {
@@ -216,9 +147,6 @@ class PendingAccount extends Model
         };
     }
 
-    /**
-     * Get status badge color
-     */
     public function getStatusBadgeColor(): string
     {
         return match($this->status) {

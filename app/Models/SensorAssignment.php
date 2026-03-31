@@ -25,76 +25,47 @@ class SensorAssignment extends Model
         'identify_mode' => 'boolean',
     ];
 
-    /**
-     * Get the parking space assigned to this sensor
-     */
+    // Relationships
     public function parkingSpace()
     {
         return $this->belongsTo(ParkingSpace::class, 'space_code', 'space_code');
     }
 
-    /**
-     * Check if sensor is assigned to a space
-     */
+    // Status checks
     public function isAssigned(): bool
     {
         return !is_null($this->space_code) && $this->status === 'active';
     }
 
-    /**
-     * Mark sensor as active and update last seen
-     */
     public function markActive()
     {
-        $this->update([
-            'status' => 'active',
-            'last_seen' => now()
-        ]);
+        $this->update(['status' => 'active', 'last_seen' => now()]);
     }
 
-    /**
-     * Update last seen timestamp
-     */
     public function updateLastSeen()
     {
         $this->update(['last_seen' => now()]);
     }
 
-    /**
-     * Get formatted sensor identifier (MAC:INDEX format)
-     */
+    // Display helpers
     public function getIdentifier(): string
     {
         return "{$this->mac_address}:{$this->sensor_index}";
     }
 
-    /**
-     * Get display name for sensor
-     */
     public function getDisplayName(): string
     {
         return $this->device_name ?? "Sensor {$this->sensor_index} ({$this->mac_address})";
     }
 
-    /**
-     * Start identify mode (blue LED blinking)
-     */
+    // Identify mode (LED blinks to locate sensor physically)
     public function startIdentify(): void
     {
-        $this->update([
-            'identify_mode' => true,
-            'identify_started_at' => now()
-        ]);
+        $this->update(['identify_mode' => true, 'identify_started_at' => now()]);
     }
 
-    /**
-     * Stop identify mode
-     */
     public function stopIdentify(): void
     {
-        $this->update([
-            'identify_mode' => false,
-            'identify_started_at' => null
-        ]);
+        $this->update(['identify_mode' => false, 'identify_started_at' => null]);
     }
 }
