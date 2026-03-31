@@ -115,7 +115,6 @@ body {
     justify-content: center;
     cursor: pointer;
     box-sizing: border-box;
-    /* Only transition visual properties, NOT position */
     transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
     background: #242627;
 }
@@ -145,7 +144,6 @@ body {
     font-size: 22px;
     font-weight: 700;
     box-shadow: 0 4px 12px rgba(46, 213, 115, 0.4);
-    /* Only transition visual properties, NOT position */
     transition: box-shadow 0.3s ease, border-color 0.3s ease, background 0.3s ease;
 }
 

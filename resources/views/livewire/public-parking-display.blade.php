@@ -187,8 +187,6 @@
                     @else
                         <div class="parking-map-wrapper">
                             <div wire:key="map-{{ $selectedFloor }}" class="parking-map-container">
-
-                                <!-- Traffic Flow Arrows - Individual Directional Indicators -->
                                 @php
                                     // Format: [x, y, rotation] - rotation in degrees (0=right, 90=down, 180=left, 270=up)
                                     $flowArrows = [
@@ -337,12 +335,6 @@
                                     </div>
                                 @endforeach
 
-                                {{-- ============================================
-                                    ROUTE - ENTRANCE TO EXACT PARKING SPOT
-                                    You can define routes for:
-                                    1. Individual spots (e.g., '1D1', '1D2')
-                                    2. Sections as fallback (e.g., 'D')
-                                ============================================ --}}
                                 @php
                                     // ENTRANCE position
                                     $entranceX = 1050;
