@@ -170,21 +170,26 @@ class PublicParkingDisplay extends Component
         $this->showRoute = false;
     }
 
-    // Security role functions
-    public function isGuardUser(){
+    // Guard action methods (security roles only)
+
+    public function isGuardUser()
+    {
         return auth()->check() && in_array(auth()->user()->role, ['security', 'admin', 'ssd']);
     }
 
-    public function loadOpenIncidentsCount(){
+    public function loadOpenIncidentsCount()
+    {
         $this->openIncidentsCount = GuardIncident::where('status', 'open')->count();
     }
 
-    public function getSelectedSpaceProperty(){
+    public function getSelectedSpaceProperty()
+    {
         if (!$this->selectedSpaceId) return null;
         return ParkingSpace::with('sensorAssignment')->find($this->selectedSpaceId);
     }
 
-    public function openActionModal($spaceId){
+    public function openActionModal($spaceId)
+    {
         if (!$this->isGuardUser()) {
             return;
         }
@@ -210,7 +215,8 @@ class PublicParkingDisplay extends Component
         $this->showActionModal = true;
     }
 
-    public function showRouteFromModal(){
+    public function showRouteFromModal()
+    {
         if (!$this->selectedSpace) return;
 
         $this->selectParkingSpot(
@@ -222,7 +228,8 @@ class PublicParkingDisplay extends Component
         $this->closeActionModal();
     }
 
-    public function clearMalfunctionFromModal(){
+    public function clearMalfunctionFromModal()
+    {
         if (!$this->selectedSpace || !$this->isGuardUser()) {
             return;
         }
@@ -248,7 +255,8 @@ class PublicParkingDisplay extends Component
         $this->loadParkingData();
     }
 
-    public function closeActionModal(){
+    public function closeActionModal()
+    {
         $this->showActionModal = false;
         $this->selectedSpaceId = null;
         $this->guardActionView = 'choice';
@@ -257,7 +265,8 @@ class PublicParkingDisplay extends Component
         $this->malfunctionError = '';
     }
 
-    public function reportMalfunction(){
+    public function reportMalfunction()
+    {
         if (!$this->selectedSpace || !$this->isGuardUser()) {
             return;
         }
@@ -266,6 +275,7 @@ class PublicParkingDisplay extends Component
             $this->malfunctionError = 'This spot is already flagged as malfunctioned.';
             return;
         }
+
         if (empty($this->malfunctionReason)) {
             $this->malfunctionError = 'Please select an issue type.';
             return;
@@ -277,9 +287,10 @@ class PublicParkingDisplay extends Component
         }
 
         $finalReason = $this->malfunctionReason === 'Other' ? $this->malfunctionCustomReason : $this->malfunctionReason;
+
         $this->selectedSpace->reportMalfunction(auth()->user()->name, $finalReason);
 
-        // Notify admin/SSD
+        // Notify admin/SSD via cache
         $notifications = Cache::get('admin_override_notifications', []);
         $notifications[] = [
             'id' => uniqid(),
@@ -300,7 +311,8 @@ class PublicParkingDisplay extends Component
         $this->loadParkingData();
     }
 
-    public function submitIncident(){
+    public function submitIncident()
+    {
         if (!$this->isGuardUser()) {
             return;
         }
@@ -326,16 +338,7 @@ class PublicParkingDisplay extends Component
             'reported_by' => auth()->user()->name ?? 'Guard',
         ]);
 
-        $categoryLabels = [
-            'debris' => 'Debris / Obstruction',
-            'damaged' => 'Damaged Spot',
-            'blocked' => 'Blocked Area',
-            'light_issue' => 'Light Issue',
-            'sensor_issue' => 'Sensor Issue',
-            'other' => 'Other Issue',
-        ];
-
-        $categoryLabel = $categoryLabels[$this->incidentCategory] ?? $this->incidentCategory;
+        $categoryLabel = GuardIncident::getCategoryLabel($this->incidentCategory);
         $spaceCode = $this->selectedSpace?->space_code ?? 'N/A';
 
         Feedback::create([
@@ -366,7 +369,8 @@ class PublicParkingDisplay extends Component
         $this->loadOpenIncidentsCount();
     }
 
-    public function openIncidentsModal(){
+    public function openIncidentsModal()
+    {
         if (!$this->isGuardUser()) {
             return;
         }
@@ -378,12 +382,14 @@ class PublicParkingDisplay extends Component
         $this->showIncidentsModal = true;
     }
 
-    public function closeIncidentsModal(){
+    public function closeIncidentsModal()
+    {
         $this->showIncidentsModal = false;
         $this->openIncidents = [];
     }
 
-    public function resolveIncident($incidentId){
+    public function resolveIncident($incidentId)
+    {
         if (!$this->isGuardUser()) {
             return;
         }
@@ -421,11 +427,6 @@ class PublicParkingDisplay extends Component
 
     public function render()
     {
-        $this->parkingSpaces = ParkingSpace::where('floor_level', $this->selectedFloor)
-            ->with('sensorAssignment')
-            ->orderBy('slot_name')
-            ->get();
-
         return view('livewire.public-parking-display')
             ->layout('layouts.app');
     }

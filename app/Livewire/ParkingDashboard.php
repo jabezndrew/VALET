@@ -47,15 +47,6 @@ class ParkingDashboard extends Component
     public function mount()
     {
         $this->loadParkingData();
-        
-        // Debug: Log data loading for troubleshooting
-        if (config('app.debug')) {
-            logger('ParkingDashboard loaded', [
-                'total_spaces' => $this->allSpaces->count(),
-                'floors_found' => $this->allSpaces->pluck('floor_level')->unique()->toArray(),
-                'floor_stats_count' => count($this->floorStats)
-            ]);
-        }
     }
 
     public function loadParkingData()
@@ -414,21 +405,6 @@ class ParkingDashboard extends Component
         return auth()->user()->role !== 'user';
     }
 
-    private function findVehicleByRfid($rfid)
-    {
-        // First try the new RFID tags table
-        $rfidTag = \App\Models\RfidTag::where('uid', strtoupper($rfid))
-            ->with(['user', 'vehicle.owner'])
-            ->first();
-
-        if ($rfidTag && $rfidTag->vehicle) {
-            return $rfidTag->vehicle;
-        }
-
-        // Fallback to old rfid_tag column in vehicles table
-        return Vehicle::with('owner')->where('rfid_tag', $rfid)->first();
-    }
-
     private function getVehicleVerificationResult($vehicle)
     {
         $isValid = $vehicle->isValid();
@@ -507,25 +483,6 @@ class ParkingDashboard extends Component
         } catch (\Exception $e) {
             $this->dispatch('show-alert', type: 'error', message: 'Failed to create guest pass: ' . $e->getMessage());
         }
-    }
-
-    // Debug method - can be called from browser console or added as a button
-    public function debugData()
-    {
-        $debug = [
-            'total_spaces_loaded' => $this->allSpaces->count(),
-            'unique_floors' => $this->allSpaces->pluck('floor_level')->unique()->sort()->values()->toArray(),
-            'sample_data' => $this->allSpaces->take(3)->toArray(),
-            'floor_stats' => $this->floorStats,
-            'fourth_floor_count' => $this->allSpaces->where('floor_level', '4th Floor')->count(),
-        ];
-        
-        $this->dispatch('show-alert', type: 'info', message: 'Debug data logged to console');
-        
-        // This will be visible in the browser's developer console
-        $this->dispatch('debug-data', $debug);
-        
-        return $debug;
     }
 
     public function render()

@@ -48,8 +48,6 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::post('/logout', 'logout');
         Route::get('/profile', 'profile');
         Route::get('/validate', 'validate');
-        Route::post('/reset-password', 'resetPassword');
-        Route::post('/set-default-passwords', 'setDefaultPasswords');
         Route::post('/user/push-token', 'updatePushToken');
         Route::delete('/user/push-token', 'removePushToken');
     });
