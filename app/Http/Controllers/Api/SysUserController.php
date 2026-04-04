@@ -9,9 +9,7 @@ use Illuminate\Http\JsonResponse;
 
 class SysUserController extends Controller
 {
-    /**
-     * Get all registered users
-     */
+    // Get all registered users
     public function index(Request $request): JsonResponse
     {
         try {

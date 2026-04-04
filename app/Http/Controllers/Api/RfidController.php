@@ -14,9 +14,7 @@ use Illuminate\Support\Facades\Cache;
 
 class RfidController extends Controller
 {
-    /**
-     * Verify RFID at entrance - Opens servo for 7 seconds if valid
-     */
+    // Verify RFID at entrance - Opens servo for 7 seconds if valid
     public function verify(Request $request)
     {
         $request->validate([
@@ -253,9 +251,7 @@ class RfidController extends Controller
         }
     }
 
-    /**
-     * Log RFID at exit - No servo control, just logging
-     */
+    // Log RFID at exit - No servo control, just logging
     public function exit(Request $request)
     {
         $request->validate([
@@ -327,9 +323,7 @@ class RfidController extends Controller
         }
     }
 
-    /**
-     * Manual servo open - Admin/Security/SSD only
-     */
+    // Manual servo open - Admin/Security/SSD only
     public function manualOpen(Request $request)
     {
         $request->validate([
@@ -360,9 +354,7 @@ class RfidController extends Controller
         }
     }
 
-    /**
-     * Verify guest access ID
-     */
+    // Verify guest access ID
     public function verifyGuest(Request $request)
     {
         $request->validate([
@@ -439,9 +431,7 @@ class RfidController extends Controller
         }
     }
 
-    /**
-     * Mark entry as parked - called when user taps "I've Parked"
-     */
+    // Mark entry as parked - called when user taps "I've Parked"
     public function markParked(Request $request)
     {
         $request->validate([
@@ -470,9 +460,7 @@ class RfidController extends Controller
         return response()->json(['success' => true, 'message' => 'Status updated to parked.']);
     }
 
-    /**
-     * Get all RFID tags with linked user and vehicle
-     */
+    // Get all RFID tags with linked user and vehicle
     public function tags(Request $request)
     {
         $tags = RfidTag::with(['user', 'vehicle'])
@@ -494,9 +482,7 @@ class RfidController extends Controller
         return response()->json(['tags' => $tags, 'count' => $tags->count()]);
     }
 
-    /**
-     * Get recent RFID scan events (for mobile polling)
-     */
+    // Get recent RFID scan events (for mobile polling)
     public function recentScans(Request $request)
     {
         $minutes = (int) $request->query('minutes', 5);
@@ -527,11 +513,9 @@ class RfidController extends Controller
         ]);
     }
 
-    /**
-     * Lookup-only vehicle verification for mobile staff (no side effects)
-     * POST /public/verify-vehicle
-     * Body: { mode: 'rfid'|'plate', value: string }
-     */
+    // Lookup-only vehicle verification for mobile staff (no side effects)
+    // POST /public/verify-vehicle
+    // Body: { mode: 'rfid'|'plate', value: string }
     public function lookupVehicle(Request $request)
     {
         $request->validate([

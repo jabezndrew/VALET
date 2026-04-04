@@ -10,9 +10,7 @@ use Illuminate\Http\JsonResponse;
 
 class SensorAssignmentController extends Controller
 {
-    /**
-     * Get all sensors with their assignments
-     */
+    // Get all sensors with their assignments
     public function index(): JsonResponse
     {
         try {
@@ -30,9 +28,7 @@ class SensorAssignmentController extends Controller
         }
     }
 
-    /**
-     * Get unassigned sensors
-     */
+    // Get unassigned sensors
     public function unassigned(): JsonResponse
     {
         try {
@@ -53,9 +49,7 @@ class SensorAssignmentController extends Controller
         }
     }
 
-    /**
-     * Register single sensor for an ESP32 on boot
-     */
+    // Register single sensor for an ESP32 on boot
      public function register(Request $request): JsonResponse
     {
         try {
@@ -111,10 +105,8 @@ class SensorAssignmentController extends Controller
     }
 
 
-    /**
-     * Get sensor configuration by MAC address (for Arduino to fetch assignment)
-     * Returns all 5 sensors for this ESP32
-     */
+    // Get sensor configuration by MAC address (for Arduino to fetch assignment)
+    // Returns all 5 sensors for this ESP32
     public function getAssignment(Request $request): JsonResponse
     {
         try {
@@ -168,9 +160,7 @@ class SensorAssignmentController extends Controller
         }
     }
 
-    /**
-     * Assign sensor to a parking space
-     */
+    // Assign sensor to a parking space
     public function assign(Request $request): JsonResponse
     {
         try {
@@ -227,9 +217,7 @@ class SensorAssignmentController extends Controller
         }
     }
 
-    /**
-     * Unassign sensor from parking space
-     */
+    // Unassign sensor from parking space
     public function unassign(Request $request): JsonResponse
     {
         try {
@@ -258,9 +246,7 @@ class SensorAssignmentController extends Controller
         }
     }
 
-    /**
-     * Update sensor details
-     */
+    // Update sensor details
     public function update(Request $request, $macAddress): JsonResponse
     {
         try {
@@ -288,9 +274,7 @@ class SensorAssignmentController extends Controller
         }
     }
 
-    /**
-     * Delete sensor registration
-     */
+    // Delete sensor registration
     public function destroy($macAddress): JsonResponse
     {
         try {
@@ -310,9 +294,7 @@ class SensorAssignmentController extends Controller
         }
     }
 
-    /**
-     * Start identify mode for a sensor (blue LED blinking)
-     */
+    // Start identify mode for a sensor (blue LED blinking)
     public function startIdentify(Request $request): JsonResponse
     {
         try {
@@ -341,9 +323,7 @@ class SensorAssignmentController extends Controller
         }
     }
 
-    /**
-     * Stop identify mode for a sensor
-     */
+    // Stop identify mode for a sensor
     public function stopIdentify(Request $request): JsonResponse
     {
         try {
