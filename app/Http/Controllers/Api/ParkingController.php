@@ -334,9 +334,7 @@ class ParkingController extends Controller
         }
     }
 
-    /**
-     * Get overall parking statistics (mobile dashboard)
-     */
+    // Get overall parking statistics (mobile dashboard)
     public function getDashboardStats(): JsonResponse
     {
         try {
@@ -414,9 +412,7 @@ class ParkingController extends Controller
         }
     }
 
-    /**
-     * Report a parking space as malfunctioned (security/admin)
-     */
+    // Report a parking space as malfunctioned (security/admin)
     public function reportMalfunction(Request $request, $spaceId): JsonResponse
     {
         try {
@@ -464,9 +460,7 @@ class ParkingController extends Controller
         }
     }
 
-    /**
-     * Clear malfunction on a parking space (security/admin)
-     */
+    // Clear malfunction on a parking space (security/admin)
     public function clearMalfunction($spaceId): JsonResponse
     {
         try {

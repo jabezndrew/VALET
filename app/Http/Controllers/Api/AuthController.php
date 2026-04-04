@@ -11,9 +11,9 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-    /**
-     * Login and get API token (ALL ROLES)
-     */
+
+     //Login and get API token (ALL ROLES)
+
     public function login(Request $request): JsonResponse
     {
         try {
@@ -77,9 +77,7 @@ class AuthController extends Controller
         }
     }
 
-    /**
-     * Validate token
-     */
+    // Validate token
     public function validate(Request $request): JsonResponse
     {
         return response()->json([
@@ -93,9 +91,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Logout
-     */
+    // Logout
     public function logout(Request $request): JsonResponse
     {
         $request->user()->currentAccessToken()->delete();
@@ -105,9 +101,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Get profile
-     */
+    // Get profile
     public function profile(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -126,9 +120,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Store/Update user's Expo push token for notifications
-     */
+    // Store/Update user's Expo push token for notifications
     public function updatePushToken(Request $request): JsonResponse
     {
         $request->validate([
@@ -146,9 +138,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Remove user's push token (on logout or disable notifications)
-     */
+    // Remove user's push token (on logout or disable notifications)
     public function removePushToken(Request $request): JsonResponse
     {
         $user = $request->user();
@@ -162,9 +152,7 @@ class AuthController extends Controller
         ]);
     }
 
-    /**
-     * Get abilities based on user role
-     */
+    // Get abilities based on user role
     private function getAbilitiesForRole(string $role): array
     {
         return match($role) {

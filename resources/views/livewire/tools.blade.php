@@ -90,7 +90,23 @@
                 </a>
             </div>
             @endif
-
+            <!-- RFID Log - Security, SSD, Admin -->
+            @if($isSecurity || $isSsd || $isAdmin)
+            <div class="col-md-4 col-lg-3">
+                <a href="{{ route('rfid-log') }}" class="text-decoration-none" wire:navigate>
+                    <div class="card tool-card h-100">
+                        <div class="card-body text-center py-4">
+                            <div class="tool-icon bg-warning bg-opacity-10 text-warning mx-auto mb-3">
+                                <i class="fas fa-wave-square fa-2x"></i>
+                            </div>
+                            <h5 class="card-title mb-2">RFID Logs</h5>
+                            <p class="card-text text-muted small mb-2">All RFID scan events</p>
+                            <span class="badge bg-warning text-dark">Logs</span>
+                        </div>
+                    </div>
+                </a>
+            </div>
+            @endif
             <!-- Guest Access - Security, SSD, Admin -->
             @if($isSecurity || $isSsd || $isAdmin)
             <div class="col-md-4 col-lg-3">
