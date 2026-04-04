@@ -21,7 +21,7 @@ class RfidLog extends Component
     public function mount()
     {
         $allowedRoles=['admin', 'ssd', 'security'];
-        if(!in_array(auth()->user()->$allowedRoles)){
+        if(!in_array(auth()->user()->role, $allowedRoles)){
             abort(403, 'Unauthorized');
         }
         $this->dateFrom = now()->format('Y-m-d');
@@ -57,7 +57,7 @@ class RfidLog extends Component
         }
 
         if($this->typeFilter !== 'all'){
-            $query->where('type', $this->typeFilter);
+            $query->where('scan_type', $this->typeFilter);
         }
         if($this->dateFrom){
             $query->whereDate('created_at', '>=', $this->dateFrom);
