@@ -484,11 +484,14 @@
     @if($this->isGuardUser() && $showActionModal && $selectedSpaceId)
     <div class="guard-action-overlay" wire:click.self="closeActionModal">
         <div class="guard-action-modal">
-            <div class="guard-action-header" style="background: #B22020;">
+            <div class="guard-action-header" style="background: {{ $guardActionView === 'incident' ? '#fd7e14' : '#B22020' }};">
                 <h3 style="color: #fff;">
                     @if($guardActionView === 'choice')
                         <i class="fas fa-map-marker-alt me-2"></i>
                         Spot {{ $this->selectedSpace->space_code }}
+                    @elseif($guardActionView === 'incident')
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        Log Incident — {{ $this->selectedSpace->space_code }}
                     @else
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         Flag as Malfunctioned — {{ $this->selectedSpace->space_code }}
