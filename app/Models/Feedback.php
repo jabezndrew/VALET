@@ -44,8 +44,6 @@ class Feedback extends Model
     const TYPE_BUG = 'bug';
     const TYPE_FEATURE = 'feature';
     const TYPE_PARKING = 'parking';
-    const TYPE_GUARD_REPORT = 'guard_report';
-
     // Status constants
     const STATUS_PENDING = 'pending';
     const STATUS_REVIEWED = 'reviewed';
@@ -119,21 +117,15 @@ class Feedback extends Model
         ]);
     }
 
-    public function isGuardReport(): bool
-    {
-        return $this->type === self::TYPE_GUARD_REPORT;
-    }
-
     // Display helpers
     public function getTypeDisplayName(): string
     {
         return match($this->type) {
-            self::TYPE_GENERAL => 'General Feedback',
-            self::TYPE_BUG => 'Bug Report',
-            self::TYPE_FEATURE => 'Feature Request',
-            self::TYPE_PARKING => 'Parking Issue',
-            self::TYPE_GUARD_REPORT => 'Guard Report',
-            default => ucfirst($this->type),
+            self::TYPE_GENERAL  => 'General Feedback',
+            self::TYPE_BUG      => 'Bug Report',
+            self::TYPE_FEATURE  => 'Feature Request',
+            self::TYPE_PARKING  => 'Parking Issue',
+            default             => ucfirst($this->type),
         };
     }
 

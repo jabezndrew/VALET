@@ -11,6 +11,7 @@ use App\Livewire\PendingAccountManager;
 use App\Livewire\SensorManager;
 use App\Livewire\PublicParkingDisplay;
 use App\Livewire\RfidManagement;
+use App\Livewire\IncidentLog;
 use App\Livewire\ParkingLog;
 use App\Livewire\GuestAccessManager;
 
@@ -57,8 +58,10 @@ Route::middleware('auth')->group(function () {
         Route::get('/pending-accounts', PendingAccountManager::class)->name('pending-accounts');
         Route::get('/sensors', SensorManager::class)->name('sensors');
         Route::get('/rfid', RfidManagement::class)->name('rfid');
-
     });
+
+    // Incident log - security, ssd, admin (role check inside component)
+    Route::get('/incidents', IncidentLog::class)->name('incidents');
 
     // Tools page - accessible by all authenticated users
     Route::get('/tools', App\Livewire\Tools::class)->name('tools');

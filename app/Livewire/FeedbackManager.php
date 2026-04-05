@@ -26,7 +26,7 @@ class FeedbackManager extends Component
     public $newStatus = '';
 
     protected $rules = [
-        'type' => 'required|in:general,bug,feature,parking,guard_report',
+        'type' => 'required|in:general,bug,feature,parking',
         'message' => 'required|string|max:2000',
         'rating' => 'nullable|integer|min:1|max:5',
         'email' => 'nullable|email|max:255',
@@ -218,11 +218,10 @@ class FeedbackManager extends Component
     {
         return match($type) {
             'general' => 'badge bg-secondary',
-            'bug' => 'badge bg-danger',
+            'bug'     => 'badge bg-danger',
             'feature' => 'badge bg-primary',
             'parking' => 'badge bg-success',
-            'guard_report' => 'badge bg-warning text-dark',
-            default => 'badge bg-light text-dark'
+            default   => 'badge bg-light text-dark'
         };
     }
 
@@ -230,17 +229,11 @@ class FeedbackManager extends Component
     {
         return match($type) {
             'general' => 'General Feedback',
-            'bug' => 'Bug Report',
+            'bug'     => 'Bug Report',
             'feature' => 'Feature Request',
             'parking' => 'Parking Issue',
-            'guard_report' => 'Guard Report',
-            default => ucfirst($type)
+            default   => ucfirst($type)
         };
-    }
-
-    public function isGuardReport($feedback)
-    {
-        return $feedback->type === 'guard_report';
     }
 
     public function getRelativeTime($timestamp)
