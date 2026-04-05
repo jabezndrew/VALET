@@ -148,7 +148,7 @@ class FeedbackController extends Controller
         try {
             $validated = $request->validate([
                 'user_id' => 'required|exists:sys_users,id',
-                'type' => 'required|in:general,bug,feature,parking,technical,suggestion,guard_report',
+                'type' => 'required|in:general,bug,feature,parking,technical,suggestion',
                 'message' => 'sometimes|nullable|string|max:2000',
                 'rating' => 'nullable|integer|min:1|max:5',
                 'email' => 'nullable|email|max:255',

@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\SensorAssignmentController;
 use App\Http\Controllers\Api\SysUserController;
 use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FeedbackController;
+use App\Http\Controllers\Api\GuardIncidentController;
 use App\Http\Controllers\Api\RfidController;
 
 Route::get('/health', fn() => response()->json(['status' => 'ok', 'service' => 'VALET API']));
@@ -82,6 +83,15 @@ Route::middleware('auth:sanctum')->group(function () {
     Route::controller(SysUserController::class)->prefix('users')->group(function () {
         Route::get('/', 'index');
         Route::get('/stats', 'stats');
+    });
+
+    // Guard Incident Log (security: create/view, admin/ssd: full manage)
+    Route::controller(GuardIncidentController::class)->prefix('incidents')->group(function () {
+        Route::get('/', 'index');
+        Route::post('/', 'store');
+        Route::get('/{id}', 'show');
+        Route::put('/{id}', 'update');
+        Route::delete('/{id}', 'destroy');
     });
 
     // Sensor Assignment Management Routes (Admin only)

@@ -168,6 +168,8 @@ class AuthController extends Controller
                 'feedbacks:manage',
                 'feedbacks:respond',
                 'accounts:approve',
+                'incidents:view',
+                'incidents:manage',
             ],
             'ssd' => [
                 'parking:view',
@@ -179,12 +181,16 @@ class AuthController extends Controller
                 'users:manage',
                 'feedbacks:view',
                 'feedbacks:manage',
+                'incidents:view',
+                'incidents:manage',
             ],
             'security' => [
                 'parking:view',
                 'vehicles:view',
                 'vehicles:verify',
                 'feedbacks:view',
+                'incidents:create',
+                'incidents:view',
             ],
             'user' => [
                 'parking:view',
