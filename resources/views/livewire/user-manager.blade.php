@@ -230,16 +230,29 @@
                                     <label class="form-label fw-bold">
                                         Password {{ $editingId ? '(Leave blank to keep current)' : '' }}
                                     </label>
-                                    <input wire:model="password" type="password" class="form-control"
-                                           placeholder="Password" {{ !$editingId ? 'required' : '' }}>
+                                    <div class="position-relative">
+                                        <input wire:model="password" type="password" id="userPassword" class="form-control"
+                                               placeholder="Password" {{ !$editingId ? 'required' : '' }}>
+                                        <span onclick="togglePass('userPassword', 'eyePass1')"
+                                              style="position:absolute;top:50%;right:12px;transform:translateY(-50%);cursor:pointer;color:#6c757d;">
+                                            <i id="eyePass1" class="fas fa-eye"></i>
+                                        </span>
+                                    </div>
                                     @error('password') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
+
                             <div class="col-md-6">
                                 <div class="mb-3">
                                     <label class="form-label fw-bold">Confirm Password</label>
-                                    <input wire:model="password_confirmation" type="password" class="form-control"
-                                           placeholder="Confirm Password">
+                                    <div class="position-relative">
+                                        <input wire:model="password_confirmation" type="password" id="userPasswordConfirm" class="form-control"
+                                               placeholder="Confirm Password">
+                                        <span onclick="togglePass('userPasswordConfirm', 'eyePass2')"
+                                              style="position:absolute;top:50%;right:12px;transform:translateY(-50%);cursor:pointer;color:#6c757d;">
+                                            <i id="eyePass2" class="fas fa-eye"></i>
+                                        </span>
+                                    </div>
                                     @error('password_confirmation') <div class="text-danger small">{{ $message }}</div> @enderror
                                 </div>
                             </div>
@@ -354,5 +367,15 @@
                 }, 5000);
             });
         });
+    </script>
+
+    <script>
+        function togglePass(inputId, iconId) {
+            const input = document.getElementById(inputId);
+            const icon  = document.getElementById(iconId);
+            input.type  = input.type === 'password' ? 'text' : 'password';
+            icon.classList.toggle('fa-eye');
+            icon.classList.toggle('fa-eye-slash');
+        }
     </script>
 </div>

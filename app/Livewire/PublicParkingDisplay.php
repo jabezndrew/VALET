@@ -27,7 +27,7 @@ class PublicParkingDisplay extends Component
     // Guard action properties (only used by security roles)
     public $showActionModal = false;
     public $selectedSpaceId = null;
-    public $guardActionView = 'choice'; // 'choice' or 'malfunction'
+    public $guardActionView = 'choice'; // 'choice', 'malfunction', or 'incident'
     public $malfunctionReason = '';
     public $malfunctionCustomReason = '';
     public $malfunctionError = '';
@@ -35,6 +35,15 @@ class PublicParkingDisplay extends Component
     public $openIncidents = [];
     public $showIncidentsModal = false;
     public $hasActiveEntry = false;
+
+    // Incident report form properties
+    public $incidentCategory = '';
+    public $incidentNotes = '';
+    public $incidentAt = '';
+    public $involvedParty = '';
+    public $actionTaken = '';
+    public $pinInput = '';
+    public $pinError = '';
 
     public function mount()
     {
@@ -254,6 +263,13 @@ class PublicParkingDisplay extends Component
         $this->malfunctionReason = '';
         $this->malfunctionCustomReason = '';
         $this->malfunctionError = '';
+        $this->incidentCategory = '';
+        $this->incidentNotes = '';
+        $this->incidentAt = '';
+        $this->involvedParty = '';
+        $this->actionTaken = '';
+        $this->pinInput = '';
+        $this->pinError = '';
     }
 
     public function reportMalfunction(){
@@ -304,25 +320,24 @@ class PublicParkingDisplay extends Component
             return;
         }
 
-        $correctPin = config('app.guard_pin', '1234');
-        if ($this->pinInput !== $correctPin) {
-            $this->pinError = 'Invalid PIN. Please try again.';
-            $this->pinInput = '';
-            return;
-        }
-
         $this->validate([
             'incidentCategory' => 'required|in:debris,damaged,blocked,light_issue,sensor_issue,other',
-            'incidentNotes' => 'nullable|string|max:500',
+            'incidentNotes'    => 'nullable|string|max:1000',
+            'incidentAt'       => 'nullable|date',
+            'involvedParty'    => 'nullable|string|max:255',
+            'actionTaken'      => 'nullable|string|max:500',
         ]);
 
         GuardIncident::create([
-            'space_code' => $this->selectedSpace?->space_code,
-            'floor_level' => $this->selectedFloor,
-            'category' => $this->incidentCategory,
-            'notes' => $this->incidentNotes,
-            'status' => 'open',
-            'reported_by' => auth()->user()->name ?? 'Guard',
+            'space_code'     => $this->selectedSpace?->space_code,
+            'floor_level'    => $this->selectedFloor,
+            'incident_at'    => $this->incidentAt ?: now(),
+            'category'       => $this->incidentCategory,
+            'notes'          => $this->incidentNotes,
+            'involved_party' => $this->involvedParty,
+            'action_taken'   => $this->actionTaken,
+            'status'         => 'open',
+            'reported_by'    => auth()->user()->name,
         ]);
 
         $categoryLabels = [
@@ -397,8 +412,9 @@ class PublicParkingDisplay extends Component
         $incident = GuardIncident::find($incidentId);
         if ($incident) {
             $incident->update([
-                'status' => 'resolved',
+                'status'      => 'resolved',
                 'resolved_at' => now(),
+                'resolved_by' => auth()->user()->name,
             ]);
 
             session()->flash('success', "Issue at {$incident->space_code} has been resolved.");

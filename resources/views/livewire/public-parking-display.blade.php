@@ -476,11 +476,14 @@
     @if($this->isGuardUser() && $showActionModal && $selectedSpaceId)
     <div class="guard-action-overlay" wire:click.self="closeActionModal">
         <div class="guard-action-modal">
-            <div class="guard-action-header" style="background: #B22020;">
+            <div class="guard-action-header" style="background: {{ $guardActionView === 'incident' ? '#fd7e14' : '#B22020' }};">
                 <h3 style="color: #fff;">
                     @if($guardActionView === 'choice')
                         <i class="fas fa-map-marker-alt me-2"></i>
                         Spot {{ $this->selectedSpace->space_code }}
+                    @elseif($guardActionView === 'incident')
+                        <i class="fas fa-clipboard-list me-2"></i>
+                        Log Incident — {{ $this->selectedSpace->space_code }}
                     @else
                         <i class="fas fa-exclamation-triangle me-2"></i>
                         Flag as Malfunctioned — {{ $this->selectedSpace->space_code }}
@@ -502,11 +505,15 @@
                 </p>
 
                 @if($guardActionView === 'choice')
-                    {{-- Choice screen: Show Route or Report Malfunction --}}
+                    {{-- Choice screen --}}
                     <div style="display: flex; flex-direction: column; gap: 12px;">
                         <button class="guard-action-submit" style="background: #28a745; color: #fff; font-size: 1rem; padding: 14px;"
                                 wire:click="showRouteFromModal">
                             <i class="fas fa-route me-2"></i> Show Route to Spot
+                        </button>
+                        <button class="guard-action-submit" style="background: #fd7e14; color: #fff; font-size: 1rem; padding: 14px;"
+                                wire:click="$set('guardActionView', 'incident')">
+                            <i class="fas fa-clipboard-list me-2"></i> Log Incident
                         </button>
                         <button class="guard-action-submit" style="background: #B22020; color: #fff; font-size: 1rem; padding: 14px;"
                                 wire:click="$set('guardActionView', 'malfunction')">
@@ -515,6 +522,54 @@
                         <button class="guard-action-submit" style="background: #6c757d; color: #fff;"
                                 wire:click="closeActionModal">
                             Cancel
+                        </button>
+                    </div>
+
+                @elseif($guardActionView === 'incident')
+                    {{-- Incident logbook form (5W1H) --}}
+                    <div class="guard-form-group">
+                        <label class="guard-form-label" for="inc-category">Category <span style="color:#dc3545">*</span></label>
+                        <select id="inc-category" class="guard-form-select" wire:model="incidentCategory">
+                            <option value="">— Select category —</option>
+                            <option value="debris">Debris / Obstruction</option>
+                            <option value="damaged">Damaged Spot</option>
+                            <option value="blocked">Blocked Area</option>
+                            <option value="light_issue">Light Issue</option>
+                            <option value="sensor_issue">Sensor Issue</option>
+                            <option value="other">Other</option>
+                        </select>
+                        @error('incidentCategory') <div style="color:#dc3545;font-size:0.82rem;margin-top:4px;">{{ $message }}</div> @enderror
+                    </div>
+
+                    <div class="guard-form-group">
+                        <label class="guard-form-label" for="inc-at">When did it happen?</label>
+                        <input id="inc-at" type="datetime-local" class="guard-form-input" wire:model="incidentAt">
+                    </div>
+
+                    <div class="guard-form-group">
+                        <label class="guard-form-label" for="inc-party">Involved party <span style="color:#999;font-size:0.8rem;">(plate no., person, etc.)</span></label>
+                        <input id="inc-party" type="text" class="guard-form-input" wire:model="involvedParty" placeholder="e.g. ABC 1234, unknown pedestrian">
+                    </div>
+
+                    <div class="guard-form-group">
+                        <label class="guard-form-label" for="inc-notes">Description / Notes</label>
+                        <textarea id="inc-notes" class="guard-form-input" wire:model="incidentNotes" rows="2" maxlength="1000"
+                                  placeholder="What happened?"></textarea>
+                    </div>
+
+                    <div class="guard-form-group">
+                        <label class="guard-form-label" for="inc-action">Action taken</label>
+                        <input id="inc-action" type="text" class="guard-form-input" wire:model="actionTaken" placeholder="e.g. Cordoned area, notified admin">
+                    </div>
+
+                    <div style="display:flex;gap:10px;margin-top:8px;">
+                        <button class="guard-action-submit" style="background:#6c757d;color:#fff;flex:1;"
+                                wire:click="$set('guardActionView', 'choice')">
+                            <i class="fas fa-arrow-left me-1"></i> Back
+                        </button>
+                        <button class="guard-action-submit" style="background:#fd7e14;color:#fff;flex:1;"
+                                wire:click="submitIncident">
+                            <i class="fas fa-save me-1"></i> Submit Log
                         </button>
                     </div>
 
@@ -588,13 +643,13 @@
     @endif
 
     {{-- Open Incidents Modal --}}
-    @if(auth()->user()->role === 'security' && $showIncidentsModal)
+    @if($this->isGuardUser() && $showIncidentsModal)
     <div class="guard-action-overlay" wire:click.self="closeIncidentsModal">
-        <div class="guard-action-modal" style="max-width: 550px;">
+        <div class="guard-action-modal" style="max-width: 580px;">
             <div class="guard-action-header" style="background: linear-gradient(135deg, #fd7e14 0%, #e06b00 100%); color: white; border-radius: 20px 20px 0 0;">
                 <h3>
-                    <i class="fas fa-exclamation-triangle me-2"></i>
-                    Open Issues ({{ count($openIncidents) }})
+                    <i class="fas fa-clipboard-list me-2"></i>
+                    Open Incidents ({{ count($openIncidents) }})
                 </h3>
                 <button class="guard-action-close" wire:click="closeIncidentsModal" style="color: white;">
                     <i class="fas fa-times"></i>
@@ -605,57 +660,67 @@
                 @if(count($openIncidents) === 0)
                     <div class="text-center py-4">
                         <i class="fas fa-check-circle" style="font-size: 3rem; color: #28a745; opacity: 0.5;"></i>
-                        <p class="mt-3 text-muted">No open issues at this time.</p>
+                        <p class="mt-3 text-muted">No open incidents at this time.</p>
                     </div>
                 @else
                     <div class="guard-incidents-list">
-                        @php
-                            $categoryLabels = [
-                                'debris' => 'Debris / Obstruction',
-                                'damaged' => 'Damaged Spot',
-                                'blocked' => 'Blocked Area',
-                                'light_issue' => 'Light Issue',
-                                'sensor_issue' => 'Sensor Issue',
-                                'other' => 'Other Issue',
-                            ];
-                            $categoryIcons = [
-                                'debris' => 'fa-trash',
-                                'damaged' => 'fa-car-crash',
-                                'blocked' => 'fa-ban',
-                                'light_issue' => 'fa-lightbulb',
-                                'sensor_issue' => 'fa-wifi',
-                                'other' => 'fa-question-circle',
-                            ];
-                        @endphp
-
                         @foreach($openIncidents as $incident)
+                            @php
+                                $catLabel = \App\Models\GuardIncident::getCategoryLabel($incident['category']);
+                                $catIcon  = \App\Models\GuardIncident::getCategoryIcon($incident['category']);
+                                $incidentTime = $incident['incident_at'] ?? $incident['created_at'];
+                            @endphp
                             <div class="guard-incident-card">
-                                <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
-                                    <div style="font-weight: 700; color: #fd7e14; font-size: 0.95rem;">
-                                        <i class="fas {{ $categoryIcons[$incident['category']] ?? 'fa-exclamation-circle' }} me-2"></i>
-                                        {{ $categoryLabels[$incident['category']] ?? $incident['category'] }}
+                                {{-- Header row --}}
+                                <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;">
+                                    <div style="font-weight:700;color:#fd7e14;font-size:0.95rem;">
+                                        <i class="fas {{ $catIcon }} me-2"></i>{{ $catLabel }}
                                     </div>
-                                    <div style="font-size: 0.8rem; color: #999;">
+                                    <div style="font-size:0.78rem;color:#999;">
                                         {{ \Carbon\Carbon::parse($incident['created_at'])->diffForHumans() }}
                                     </div>
                                 </div>
 
-                                <div style="margin-bottom: 12px;">
-                                    <div style="font-size: 1rem; margin-bottom: 8px;">
-                                        <i class="fas fa-map-marker-alt me-1"></i>
-                                        <strong>{{ $incident['space_code'] ?? 'N/A' }}</strong>
-                                        <span class="text-muted ms-2">{{ $incident['floor_level'] }}</span>
-                                    </div>
-                                    @if($incident['notes'])
-                                        <div style="font-size: 0.9rem; color: #666; background: white; padding: 10px; border-radius: 8px; margin-top: 8px;">
-                                            <i class="fas fa-sticky-note me-1"></i>
-                                            {{ $incident['notes'] }}
-                                        </div>
-                                    @endif
+                                {{-- Where --}}
+                                <div style="font-size:0.9rem;margin-bottom:6px;">
+                                    <i class="fas fa-map-marker-alt me-1 text-danger"></i>
+                                    <strong>{{ $incident['space_code'] ?? 'N/A' }}</strong>
+                                    <span class="text-muted ms-1">— {{ $incident['floor_level'] }}</span>
                                 </div>
 
-                                <div style="display: flex; align-items: center; gap: 10px; justify-content: flex-end;">
-                                    <input type="password" class="guard-form-input" wire:model="pinInput" placeholder="PIN" maxlength="8" inputmode="numeric" style="width: 80px; text-align: center; font-size: 0.9rem; padding: 6px 10px;">
+                                {{-- When (incident time) --}}
+                                <div style="font-size:0.82rem;color:#666;margin-bottom:4px;">
+                                    <i class="fas fa-clock me-1"></i>
+                                    Occurred: {{ \Carbon\Carbon::parse($incidentTime)->format('M d, Y H:i') }}
+                                    &nbsp;&bull;&nbsp; By: {{ $incident['reported_by'] ?? '—' }}
+                                </div>
+
+                                {{-- Who/involved --}}
+                                @if($incident['involved_party'])
+                                    <div style="font-size:0.82rem;color:#555;margin-bottom:4px;">
+                                        <i class="fas fa-user me-1"></i> {{ $incident['involved_party'] }}
+                                    </div>
+                                @endif
+
+                                {{-- Notes --}}
+                                @if($incident['notes'])
+                                    <div style="font-size:0.85rem;color:#444;background:white;padding:8px 10px;border-radius:8px;margin:6px 0;">
+                                        <i class="fas fa-align-left me-1"></i> {{ $incident['notes'] }}
+                                    </div>
+                                @endif
+
+                                {{-- Action taken --}}
+                                @if($incident['action_taken'])
+                                    <div style="font-size:0.82rem;color:#28a745;margin-bottom:6px;">
+                                        <i class="fas fa-shield-alt me-1"></i> {{ $incident['action_taken'] }}
+                                    </div>
+                                @endif
+
+                                {{-- Resolve row --}}
+                                <div style="display:flex;align-items:center;gap:10px;justify-content:flex-end;margin-top:8px;">
+                                    <input type="password" class="guard-form-input" wire:model="pinInput"
+                                           placeholder="PIN" maxlength="8" inputmode="numeric"
+                                           style="width:80px;text-align:center;font-size:0.9rem;padding:6px 10px;">
                                     <button class="guard-btn-resolve" wire:click="resolveIncident({{ $incident['id'] }})">
                                         <i class="fas fa-check me-1"></i> Mark Resolved
                                     </button>
