@@ -17,6 +17,7 @@ class PublicParkingDisplay extends Component
     public $lastUpdate;
     public $availableFloors = [];
     public $allFloorStats = [];
+    public $floorSortBy = 'available_desc';
     public $showRoute = false;
     public $selectedSpot = null;
     public $selectedSection = null;
@@ -110,10 +111,24 @@ class PublicParkingDisplay extends Component
             ];
         }
 
-        // Sort floors by available spots (descending)
-        uasort($this->allFloorStats, function($a, $b) {
-            return $b['available'] - $a['available'];
-        });
+        $this->applyFloorSort();
+    }
+
+    public function applyFloorSort()
+    {
+        match($this->floorSortBy) {
+            'name_asc'      => uksort($this->allFloorStats, fn($a, $b) => strnatcasecmp($a, $b)),
+            'name_desc'     => uksort($this->allFloorStats, fn($a, $b) => strnatcasecmp($b, $a)),
+            'available_asc' => uasort($this->allFloorStats, fn($a, $b) => $a['available'] - $b['available']),
+            'occupied_desc' => uasort($this->allFloorStats, fn($a, $b) => $b['occupied'] - $a['occupied']),
+            'occupied_asc'  => uasort($this->allFloorStats, fn($a, $b) => $a['occupied'] - $b['occupied']),
+            default         => uasort($this->allFloorStats, fn($a, $b) => $b['available'] - $a['available']),
+        };
+    }
+
+    public function updatedFloorSortBy()
+    {
+        $this->applyFloorSort();
     }
 
     public function updatedSelectedFloor()
