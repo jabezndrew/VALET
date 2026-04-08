@@ -216,7 +216,7 @@
             
             @endif
             
-            <!-- Clear Parking Logs - Admin only -->
+            <!-- Clear Parking & RFID Logs - Admin only -->
             @if($isAdmin)
             <div class="col-md-4 col-lg-3">
                 <div class="card tool-card h-100" wire:click="openClearLogsModal" style="cursor:pointer;">
@@ -224,7 +224,7 @@
                         <div class="tool-icon bg-danger bg-opacity-10 text-danger mx-auto mb-3">
                             <i class="fas fa-trash fa-2x"></i>
                         </div>
-                        <h5 class="card-title mb-2">Clear Parking Logs</h5>
+                        <h5 class="card-title mb-2">Clear Logs</h5>
                         <p class="card-text text-muted small mb-2">Delete all parking entries &amp; scan logs</p>
                         <span class="badge bg-danger">Danger</span>
                     </div>
