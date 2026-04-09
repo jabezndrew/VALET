@@ -5,30 +5,12 @@ namespace App\Models;
 use Illuminate\Database\Eloquent\Model;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 
-/**
- * ParkingSpace Model
- *
- * @property int $id
- * @property int $sensor_id
- * @property string|null $space_code
- * @property int|null $floor_number
- * @property string|null $column_code
- * @property int|null $slot_number
- * @property bool $is_occupied
- * @property int|null $distance_cm
- * @property string $floor_level
- * @property \Illuminate\Support\Carbon $created_at
- * @property \Illuminate\Support\Carbon $updated_at
- */
 class ParkingSpace extends Model
 {
     use HasFactory;
 
     protected $table = 'parking_spaces';
 
-    /**
-     * The attributes that are mass assignable.
-     */
     protected $fillable = [
         'sensor_id',
         'space_code',
@@ -55,9 +37,6 @@ class ParkingSpace extends Model
         'malfunctioned_at',
     ];
 
-    /**
-     * The attributes that should be cast.
-     */
     protected $casts = [
         'is_occupied' => 'boolean',
         'distance_cm' => 'integer',
@@ -73,55 +52,9 @@ class ParkingSpace extends Model
         'malfunctioned_at' => 'datetime',
     ];
 
-    /**
-     * The attributes that should be hidden for arrays.
-     */
     protected $hidden = [];
 
-    /**
-     * Get all parking spaces for a specific floor (legacy)
-     */
-    public static function forFloor(string $floorLevel)
-    {
-        return static::where('floor_level', $floorLevel)->orderBy('sensor_id');
-    }
-
-    /**
-     * Get all parking spaces for a specific floor number
-     */
-    public static function forFloorNumber(int $floorNumber)
-    {
-        return static::where('floor_number', $floorNumber)
-            ->orderBy('column_code')
-            ->orderBy('slot_number');
-    }
-
-    /**
-     * Build space code from floor, column, and slot
-     */
-    public static function buildSpaceCode(int $floor, string $column, int $slot): string
-    {
-        return "{$floor}{$column}{$slot}";
-    }
-
-    /**
-     * Parse space code into components
-     */
-    public static function parseSpaceCode(string $spaceCode): ?array
-    {
-        if (preg_match('/^(\d+)([A-Z]+)(\d+)$/', $spaceCode, $matches)) {
-            return [
-                'floor_number' => (int) $matches[1],
-                'column_code' => $matches[2],
-                'slot_number' => (int) $matches[3],
-            ];
-        }
-        return null;
-    }
-
-    /**
-     * Generate space code before saving
-     */
+    // Auto-generate space_code before saving
     protected static function boot()
     {
         parent::boot();
@@ -137,65 +70,89 @@ class ParkingSpace extends Model
         });
     }
 
-    /**
-     * Scope for occupied spaces
-     */
+    // Static helpers
+    public static function forFloor(string $floorLevel)
+    {
+        return static::where('floor_level', $floorLevel)->orderBy('sensor_id');
+    }
+
+    public static function forFloorNumber(int $floorNumber)
+    {
+        return static::where('floor_number', $floorNumber)
+            ->orderBy('column_code')
+            ->orderBy('slot_number');
+    }
+
+    public static function buildSpaceCode(int $floor, string $column, int $slot): string
+    {
+        return "{$floor}{$column}{$slot}";
+    }
+
+    // Parses e.g. "2A1" into [floor_number, column_code, slot_number]
+    public static function parseSpaceCode(string $spaceCode): ?array
+    {
+        if (preg_match('/^(\d+)([A-Z]+)(\d+)$/', $spaceCode, $matches)) {
+            return [
+                'floor_number' => (int) $matches[1],
+                'column_code' => $matches[2],
+                'slot_number' => (int) $matches[3],
+            ];
+        }
+        return null;
+    }
+
+    // Scopes
     public function scopeOccupied($query)
     {
         return $query->where('is_occupied', true);
     }
 
-    /**
-     * Scope for available spaces
-     */
     public function scopeAvailable($query)
     {
         return $query->where('is_occupied', false);
     }
 
-    /**
-     * Check if the space is available
-     */
+    // Status checks
     public function isAvailable(): bool
     {
         return !$this->is_occupied;
     }
 
-    /**
-     * Mark space as occupied
-     */
     public function markAsOccupied(): bool
     {
         return $this->update(['is_occupied' => true]);
     }
 
-    /**
-     * Mark space as available
-     */
     public function markAsAvailable(): bool
     {
         return $this->update(['is_occupied' => false]);
     }
 
-    /**
-     * Get the sensor assignment for this parking space
-     */
+    public function isManualOverrideActive(): bool
+    {
+        return (bool) $this->manual_override;
+    }
+
+    // Returns effective status factoring in malfunction and manual override
+    public function getEffectiveStatus(): string
+    {
+        if ($this->malfunctioned) return 'malfunctioned';
+        if ($this->isManualOverrideActive()) return $this->manual_status;
+        return $this->is_occupied ? 'occupied' : 'available';
+    }
+
+    // Relationships
     public function sensorAssignment()
     {
         return $this->hasOne(SensorAssignment::class, 'space_code', 'space_code');
     }
 
-    /**
-     * Get incidents for this parking space
-     */
     public function incidents()
     {
         return $this->hasMany(GuardIncident::class, 'space_code', 'space_code');
     }
 
-    /**
-     * Set manual override status
-     */
+    // Manual override
     public function setManualOverride(string $status, string $overrideBy = 'Guard', ?string $reason = null): bool
     {
         return $this->update([
@@ -209,9 +166,6 @@ class ParkingSpace extends Model
         ]);
     }
 
-    /**
-     * Clear manual override
-     */
     public function clearManualOverride(): bool
     {
         return $this->update([
@@ -225,33 +179,7 @@ class ParkingSpace extends Model
         ]);
     }
 
-    /**
-     * Check if manual override is active (stays until manually cleared)
-     */
-    public function isManualOverrideActive(): bool
-    {
-        return (bool) $this->manual_override;
-    }
-
-    /**
-     * Get effective status (considering malfunction and manual override)
-     */
-    public function getEffectiveStatus(): string
-    {
-        if ($this->malfunctioned) {
-            return 'malfunctioned';
-        }
-
-        if ($this->isManualOverrideActive()) {
-            return $this->manual_status;
-        }
-
-        return $this->is_occupied ? 'occupied' : 'available';
-    }
-
-    /**
-     * Report sensor malfunction (security role)
-     */
+    // Malfunction reporting
     public function reportMalfunction(string $reportedBy, ?string $reason = null): bool
     {
         return $this->update([
@@ -262,9 +190,6 @@ class ParkingSpace extends Model
         ]);
     }
 
-    /**
-     * Clear malfunction report (admin)
-     */
     public function clearMalfunction(): bool
     {
         return $this->update([

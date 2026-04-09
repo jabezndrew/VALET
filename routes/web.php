@@ -11,47 +11,14 @@ use App\Livewire\PendingAccountManager;
 use App\Livewire\SensorManager;
 use App\Livewire\PublicParkingDisplay;
 use App\Livewire\RfidManagement;
+use App\Livewire\IncidentLog;
 use App\Livewire\ParkingLog;
+use App\Livewire\GuestAccessManager;
 
 // Public routes - no authentication required
 Route::get('/parking-display', PublicParkingDisplay::class)->name('parking.display.public');
 
 Route::get('/', fn() => auth()->check() ? redirect('/dashboard') : redirect('/login'));
-
-// Public route to seed parking spaces (protected by secret key)
-Route::get('/seed-parking-spaces/{secret}', function ($secret) {
-    if ($secret !== 'valet2025secret') {
-        abort(403, 'Unauthorized');
-    }
-
-    \Artisan::call('parking:seed');
-    $output = \Artisan::output();
-
-    return response('<pre>' . $output . '</pre><br><a href="/parking-display">Go to Parking Display</a>');
-})->name('public.seed-parking');
-
-// Public route to clear all caches (protected by secret key)
-Route::get('/clear-cache/{secret}', function ($secret) {
-    if ($secret !== 'valet2025secret') {
-        abort(403, 'Unauthorized');
-    }
-
-    $output = '';
-
-    \Artisan::call('cache:clear');
-    $output .= "Cache cleared\n";
-
-    \Artisan::call('config:clear');
-    $output .= "Config cleared\n";
-
-    \Artisan::call('view:clear');
-    $output .= "Views cleared\n";
-
-    \Artisan::call('route:clear');
-    $output .= "Routes cleared\n";
-
-    return response('<pre>' . $output . '</pre><br><strong>All caches cleared!</strong><br><a href="/parking-display">Go to Parking Display</a>');
-})->name('public.clear-cache');
 
 Route::middleware('guest')->group(function () {
     Route::get('/login', Login::class)->name('login');
@@ -66,18 +33,6 @@ Route::middleware('auth')->group(function () {
         return redirect('/login');
     })->name('logout');
 
-    // Admin-only route to seed parking spaces
-    Route::get('/admin/seed-parking', function () {
-        if (!auth()->user() || auth()->user()->role !== 'admin') {
-            abort(403, 'Unauthorized');
-        }
-
-        \Artisan::call('parking:seed');
-        $output = \Artisan::output();
-
-        return response('<pre>' . $output . '</pre><br><a href="/parking-display">Go to Parking Display</a>');
-    })->name('admin.seed-parking');
-    
     Route::middleware('role:user')->group(function () {
         Route::get('/dashboard', ParkingDashboard::class)->name('dashboard');
         Route::get('/parking-display', PublicParkingDisplay::class)->name('parking-display');
@@ -88,6 +43,7 @@ Route::middleware('auth')->group(function () {
     Route::middleware('role:security')->group(function () {
         Route::get('/cars', VehicleManager::class)->name('cars.index');
         Route::get('/parking-log', ParkingLog::class)->name('parking-log');
+        Route::get('/rfid-log', App\Livewire\RfidLog::class)->name('rfid-log');
     });
 
     Route::middleware('role:ssd')->group(function () {
@@ -95,7 +51,7 @@ Route::middleware('auth')->group(function () {
     });
 
     Route::middleware('role:security')->group(function () {
-        Route::get('/guest-access', App\Livewire\GuestAccessManager::class)->name('guest-access');
+        Route::get('/guest-access', GuestAccessManager::class)->name('guest-access');
     });
 
     Route::middleware('role:admin')->prefix('admin')->name('admin.')->group(function () {
@@ -103,6 +59,9 @@ Route::middleware('auth')->group(function () {
         Route::get('/sensors', SensorManager::class)->name('sensors');
         Route::get('/rfid', RfidManagement::class)->name('rfid');
     });
+
+    // Incident log - security, ssd, admin (role check inside component)
+    Route::get('/incidents', IncidentLog::class)->name('incidents');
 
     // Tools page - accessible by all authenticated users
     Route::get('/tools', App\Livewire\Tools::class)->name('tools');

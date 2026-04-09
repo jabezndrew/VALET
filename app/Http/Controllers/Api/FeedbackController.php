@@ -10,9 +10,7 @@ use Illuminate\Validation\ValidationException;
 
 class FeedbackController extends Controller
 {
-    /**
-     * Get all feedbacks (with filters)
-     */
+    // Get all feedbacks (with filters)
     public function index(Request $request): JsonResponse
     {
         try {
@@ -96,9 +94,7 @@ class FeedbackController extends Controller
         }
     }
 
-    /**
-     * Get single feedback by ID
-     */
+    // Get single feedback by ID
     public function show(int $id): JsonResponse
     {
         try {
@@ -146,15 +142,13 @@ class FeedbackController extends Controller
         }
     }
 
-    /**
-     * Create new feedback
-     */
+    // Create new feedback
     public function store(Request $request): JsonResponse
     {
         try {
             $validated = $request->validate([
                 'user_id' => 'required|exists:sys_users,id',
-                'type' => 'required|in:general,bug,feature,parking,technical,suggestion,guard_report',
+                'type' => 'required|in:general,bug,feature,parking,technical,suggestion',
                 'message' => 'sometimes|nullable|string|max:2000',
                 'rating' => 'nullable|integer|min:1|max:5',
                 'email' => 'nullable|email|max:255',
@@ -201,9 +195,7 @@ class FeedbackController extends Controller
         }
     }
 
-    /**
-     * Update feedback (admin response)
-     */
+    // Update feedback (admin response)
     public function update(Request $request, int $id): JsonResponse
     {
         try {
@@ -265,9 +257,7 @@ class FeedbackController extends Controller
         }
     }
 
-    /**
-     * Delete feedback
-     */
+    // Delete feedback
     public function destroy(int $id): JsonResponse
     {
         try {
@@ -296,9 +286,7 @@ class FeedbackController extends Controller
         }
     }
 
-    /**
-     * Get feedback statistics
-     */
+    // Get feedback statistics
     public function stats(): JsonResponse
     {
         try {
@@ -330,9 +318,7 @@ class FeedbackController extends Controller
         }
     }
 
-    /**
-     * Bulk update status
-     */
+    // Bulk update status
     public function bulkUpdateStatus(Request $request): JsonResponse
     {
         try {

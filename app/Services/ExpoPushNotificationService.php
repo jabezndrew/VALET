@@ -10,9 +10,7 @@ class ExpoPushNotificationService
 {
     private const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
-    /**
-     * Send RFID alert to all security/SSD users
-     */
+    // Send RFID alert to all security/SSD users
     public static function sendRfidAlert(string $alertType, array $data): void
     {
         // Get all security and SSD users with push tokens
@@ -75,9 +73,7 @@ class ExpoPushNotificationService
         ]);
     }
 
-    /**
-     * Send malfunction report alert to admin/ssd users
-     */
+    // Send malfunction report alert to admin/ssd users
     public static function sendMalfunctionAlert(string $spaceCode, string $reportedBy, string $reporterRole, ?string $reason): void
     {
         $users = SysUser::whereIn('role', ['admin', 'ssd'])
@@ -128,9 +124,7 @@ class ExpoPushNotificationService
         Log::info('Malfunction alert sent', ['space_code' => $spaceCode, 'recipients' => $users->count()]);
     }
 
-    /**
-     * Get alert title based on type
-     */
+    // Get alert title based on type
     private static function getAlertTitle(string $alertType): string
     {
         return match ($alertType) {
@@ -143,9 +137,7 @@ class ExpoPushNotificationService
         };
     }
 
-    /**
-     * Get alert body based on type and data
-     */
+    // Get alert body based on type and data
     private static function getAlertBody(string $alertType, array $data): string
     {
         $uid = $data['uid'] ?? 'Unknown';

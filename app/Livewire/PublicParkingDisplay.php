@@ -7,7 +7,6 @@ use App\Models\ParkingSpace;
 use App\Models\ParkingEntry;
 use App\Models\SensorAssignment;
 use App\Models\GuardIncident;
-use App\Models\Feedback;
 use Illuminate\Support\Facades\Cache;
 
 class PublicParkingDisplay extends Component
@@ -18,6 +17,7 @@ class PublicParkingDisplay extends Component
     public $lastUpdate;
     public $availableFloors = [];
     public $allFloorStats = [];
+    public $floorSortBy = 'available_desc';
     public $showRoute = false;
     public $selectedSpot = null;
     public $selectedSection = null;
@@ -27,7 +27,7 @@ class PublicParkingDisplay extends Component
     // Guard action properties (only used by security roles)
     public $showActionModal = false;
     public $selectedSpaceId = null;
-    public $guardActionView = 'choice'; // 'choice' or 'malfunction'
+    public $guardActionView = 'choice'; // 'choice', 'malfunction', or 'incident'
     public $malfunctionReason = '';
     public $malfunctionCustomReason = '';
     public $malfunctionError = '';
@@ -35,6 +35,15 @@ class PublicParkingDisplay extends Component
     public $openIncidents = [];
     public $showIncidentsModal = false;
     public $hasActiveEntry = false;
+
+    // Incident report form properties
+    public $incidentCategory = '';
+    public $incidentNotes = '';
+    public $incidentAt = '';
+    public $involvedParty = '';
+    public $actionTaken = '';
+    public $pinInput = '';
+    public $pinError = '';
 
     public function mount()
     {
@@ -102,10 +111,24 @@ class PublicParkingDisplay extends Component
             ];
         }
 
-        // Sort floors by available spots (descending)
-        uasort($this->allFloorStats, function($a, $b) {
-            return $b['available'] - $a['available'];
-        });
+        $this->applyFloorSort();
+    }
+
+    public function applyFloorSort()
+    {
+        match($this->floorSortBy) {
+            'name_asc'      => uksort($this->allFloorStats, fn($a, $b) => strnatcasecmp($a, $b)),
+            'name_desc'     => uksort($this->allFloorStats, fn($a, $b) => strnatcasecmp($b, $a)),
+            'available_asc' => uasort($this->allFloorStats, fn($a, $b) => $a['available'] - $b['available']),
+            'occupied_desc' => uasort($this->allFloorStats, fn($a, $b) => $b['occupied'] - $a['occupied']),
+            'occupied_asc'  => uasort($this->allFloorStats, fn($a, $b) => $a['occupied'] - $b['occupied']),
+            default         => uasort($this->allFloorStats, fn($a, $b) => $b['available'] - $a['available']),
+        };
+    }
+
+    public function updatedFloorSortBy()
+    {
+        $this->applyFloorSort();
     }
 
     public function updatedSelectedFloor()
@@ -263,6 +286,13 @@ class PublicParkingDisplay extends Component
         $this->malfunctionReason = '';
         $this->malfunctionCustomReason = '';
         $this->malfunctionError = '';
+        $this->incidentCategory = '';
+        $this->incidentNotes = '';
+        $this->incidentAt = '';
+        $this->involvedParty = '';
+        $this->actionTaken = '';
+        $this->pinInput = '';
+        $this->pinError = '';
     }
 
     public function reportMalfunction()
@@ -317,63 +347,27 @@ class PublicParkingDisplay extends Component
             return;
         }
 
-        $correctPin = config('app.guard_pin', '1234');
-        if ($this->pinInput !== $correctPin) {
-            $this->pinError = 'Invalid PIN. Please try again.';
-            $this->pinInput = '';
-            return;
-        }
-
         $this->validate([
             'incidentCategory' => 'required|in:debris,damaged,blocked,light_issue,sensor_issue,other',
-            'incidentNotes' => 'nullable|string|max:500',
+            'incidentNotes'    => 'nullable|string|max:1000',
+            'incidentAt'       => 'nullable|date',
+            'involvedParty'    => 'nullable|string|max:255',
+            'actionTaken'      => 'nullable|string|max:500',
         ]);
 
         GuardIncident::create([
-            'space_code' => $this->selectedSpace?->space_code,
-            'floor_level' => $this->selectedFloor,
-            'category' => $this->incidentCategory,
-            'notes' => $this->incidentNotes,
-            'status' => 'open',
-            'reported_by' => auth()->user()->name ?? 'Guard',
+            'space_code'     => $this->selectedSpace?->space_code,
+            'floor_level'    => $this->selectedFloor,
+            'incident_at'    => $this->incidentAt ?: now(),
+            'category'       => $this->incidentCategory,
+            'notes'          => $this->incidentNotes,
+            'involved_party' => $this->involvedParty,
+            'action_taken'   => $this->actionTaken,
+            'status'         => 'open',
+            'reported_by'    => auth()->user()->name,
         ]);
 
-        $categoryLabels = [
-            'debris' => 'Debris / Obstruction',
-            'damaged' => 'Damaged Spot',
-            'blocked' => 'Blocked Area',
-            'light_issue' => 'Light Issue',
-            'sensor_issue' => 'Sensor Issue',
-            'other' => 'Other Issue',
-        ];
-
-        $categoryLabel = $categoryLabels[$this->incidentCategory] ?? $this->incidentCategory;
-        $spaceCode = $this->selectedSpace?->space_code ?? 'N/A';
-
-        Feedback::create([
-            'user_id' => auth()->id(),
-            'type' => 'guard_report',
-            'message' => "[Guard Report] {$categoryLabel} at Spot {$spaceCode} ({$this->selectedFloor})" .
-                        ($this->incidentNotes ? "\n\nNotes: {$this->incidentNotes}" : ''),
-            'rating' => null,
-            'email' => null,
-            'issues' => [
-                'category' => $this->incidentCategory,
-                'space_code' => $spaceCode,
-                'floor_level' => $this->selectedFloor,
-            ],
-            'device_info' => [
-                'platform' => 'Web',
-                'reported_by' => auth()->user()->name ?? 'Guard',
-                'submitted_at' => now()->toISOString(),
-            ],
-            'status' => 'pending',
-        ]);
-
-        session()->flash('success', 'Incident reported successfully.');
-
-        $this->pinInput = '';
-        $this->pinError = '';
+        session()->flash('success', 'Incident logged successfully.');
         $this->closeActionModal();
         $this->loadOpenIncidentsCount();
     }
@@ -413,8 +407,9 @@ class PublicParkingDisplay extends Component
         $incident = GuardIncident::find($incidentId);
         if ($incident) {
             $incident->update([
-                'status' => 'resolved',
+                'status'      => 'resolved',
                 'resolved_at' => now(),
+                'resolved_by' => auth()->user()->name,
             ]);
 
             session()->flash('success', "Issue at {$incident->space_code} has been resolved.");
@@ -436,11 +431,6 @@ class PublicParkingDisplay extends Component
 
     public function render()
     {
-        $this->parkingSpaces = ParkingSpace::where('floor_level', $this->selectedFloor)
-            ->with('sensorAssignment')
-            ->orderBy('slot_name')
-            ->get();
-
         return view('livewire.public-parking-display')
             ->layout('layouts.app');
     }

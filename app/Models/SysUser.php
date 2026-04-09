@@ -39,7 +39,7 @@ class SysUser extends Authenticatable
         ];
     }
 
-    // Query Scopes
+    // Scopes
     public function scopeActive($query)
     {
         return $query->where('is_active', true);
@@ -55,7 +55,7 @@ class SysUser extends Authenticatable
         return $query->where('role', $role);
     }
 
-    // Role checking methods
+    // Role checks
     public function isAdmin(): bool
     {
         return $this->role === 'admin';
@@ -114,42 +114,26 @@ class SysUser extends Authenticatable
     }
 
     // Relationships
-
-    /**
-     * Get the vehicles owned by this user
-     */
     public function vehicles(): HasMany
     {
         return $this->hasMany(Vehicle::class, 'owner_id');
     }
 
-    /**
-     * Get the feedbacks created by this user
-     */
     public function feedbacks(): HasMany
     {
         return $this->hasMany(Feedback::class, 'user_id');
     }
 
-    /**
-     * Get the feedbacks responded to by this admin
-     */
     public function respondedFeedbacks(): HasMany
     {
         return $this->hasMany(Feedback::class, 'admin_id');
     }
 
-    /**
-     * Get the pending accounts created by this user
-     */
     public function createdPendingAccounts(): HasMany
     {
         return $this->hasMany(PendingAccount::class, 'created_by');
     }
 
-    /**
-     * Get the pending accounts reviewed by this admin
-     */
     public function reviewedPendingAccounts(): HasMany
     {
         return $this->hasMany(PendingAccount::class, 'reviewed_by');
