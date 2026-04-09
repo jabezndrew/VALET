@@ -238,7 +238,7 @@
                     </h5>
                     <button type="button" class="btn-close" wire:click="closeModal"></button>
                 </div>
-                <form wire:submit="save">
+                <form wire:submit="save" novalidate>
                     <div class="modal-body">
                         <div class="row">
                             <div class="col-md-6">
