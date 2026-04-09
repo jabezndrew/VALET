@@ -205,22 +205,24 @@
                             @endif
 
                             <!-- Admin Actions -->
-                            @if($this->canManageFeedback && $this->canQuickUpdate($feedback))
+                            @if($this->canManageFeedback)
                                 <div class="btn-group btn-group-sm">
-                                    @if($feedback->status !== 'reviewed')
-                                    <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'reviewed')"
-                                            class="btn btn-outline-warning btn-sm"
-                                            title="Mark as reviewed">
-                                        <i class="fas fa-eye"></i>
-                                    </button>
-                                    @endif
+                                    @if($this->canQuickUpdate($feedback))
+                                        @if($feedback->status !== 'reviewed')
+                                        <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'reviewed')"
+                                                class="btn btn-outline-warning btn-sm"
+                                                title="Mark as reviewed">
+                                            <i class="fas fa-eye"></i>
+                                        </button>
+                                        @endif
 
-                                    @if($feedback->status !== 'resolved')
-                                    <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'resolved')"
-                                            class="btn btn-outline-success btn-sm"
-                                            title="Mark as resolved">
-                                        <i class="fas fa-check"></i>
-                                    </button>
+                                        @if($feedback->status !== 'resolved')
+                                        <button wire:click="quickUpdateStatus({{ $feedback->id }}, 'resolved')"
+                                                class="btn btn-outline-success btn-sm"
+                                                title="Mark as resolved">
+                                            <i class="fas fa-check"></i>
+                                        </button>
+                                        @endif
                                     @endif
 
                                     <button wire:click="openResponseModal({{ $feedback->id }})"
