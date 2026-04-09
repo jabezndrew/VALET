@@ -31,10 +31,22 @@ class RfidManagement extends Component
     protected $rules = [
         'uid' => 'required|string|unique:rfid_tags,uid',
         'user_id' => 'required|exists:sys_users,id',
-        'vehicle_id' => 'nullable|exists:vehicles,id',
+        'vehicle_id' => 'required|exists:vehicles,id',
         'status' => 'required|in:active,expired,suspended,lost',
         'notes' => 'nullable|string|max:500'
     ];
+
+    public function updatedVehicleId($value)
+    {
+        if ($value) {
+            $vehicle = Vehicle::with('owner')->find($value);
+            if ($vehicle && $vehicle->owner_id) {
+                $this->user_id = $vehicle->owner_id;
+            }
+        } else {
+            $this->user_id = '';
+        }
+    }
 
     public function openCreateModal()
     {
