@@ -958,16 +958,20 @@ main, .container, .valet-header + * {
        });
 
        // Logout function
-       function logout() {
-           fetch('/logout', {
-               method: 'POST',
-               headers: {
-                   'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                   'Content-Type': 'application/json',
-               },
-           }).then(() => {
-               Livewire.navigate('/login');
-           });
+       async function logout() {
+           try {
+               const response = await fetch('/logout', {
+                   method: 'POST',
+                   headers: {
+                       'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
+                   },
+               });
+               if (response.ok || response.redirected) {
+                   window.location.href = '/login';
+               }
+           } catch (error) {
+               window.location.href = '/login';
+           }
        }
    </script>
    @stack('scripts')
