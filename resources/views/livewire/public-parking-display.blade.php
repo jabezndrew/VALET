@@ -95,9 +95,33 @@
                 <!-- Floor Selector - Top Right Cards -->
                 <div style="position: absolute; top: 30px; right: 30px; z-index: 999; width: 320px;">
                     <div style="background: rgba(255,255,255,0.95); border-radius: 20px; padding: 25px; box-shadow: 0 8px 30px rgba(0,0,0,0.2);">
-                        <h6 style="font-size: 1.3rem; font-weight: 700; color: #3A3A3C; margin-bottom: 20px;">
-                            Select Floor
-                        </h6>
+                        <div style="display: flex; align-items: center; justify-content: space-between; margin-bottom: 20px; gap: 10px;">
+                            <h6 style="font-size: 1.3rem; font-weight: 700; color: #3A3A3C; margin: 0;">
+                                Select Floor
+                            </h6>
+                            <select
+                                wire:model.live="floorSortBy"
+                                style="
+                                    font-size: 0.72rem;
+                                    font-weight: 600;
+                                    color: #3A3A3C;
+                                    background: #f5f5f5;
+                                    border: 1.5px solid #e0e0e0;
+                                    border-radius: 8px;
+                                    padding: 5px 8px;
+                                    cursor: pointer;
+                                    outline: none;
+                                    flex-shrink: 0;
+                                "
+                            >
+                                <option value="available_desc">Most Available</option>
+                                <option value="available_asc">Least Available</option>
+                                <option value="occupied_desc">Most Occupied</option>
+                                <option value="occupied_asc">Least Occupied</option>
+                                <option value="name_asc">Floor Name (A–Z)</option>
+                                <option value="name_desc">Floor Name (Z–A)</option>
+                            </select>
+                        </div>
 
                         <div style="display: flex; flex-direction: column; gap: 15px;">
                             @foreach($allFloorStats as $floor => $stats)
