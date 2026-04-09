@@ -24,6 +24,12 @@ class PublicParkingDisplay extends Component
     public $selectedSpotX = 0;
     public $selectedSpotY = 0;
 
+    // Sensor pairing modal (admin only)
+    public $showSensorModal = false;
+    public $sensorModalSpaceId = null;
+    public $selectedSensorKey = '';
+    public $unassignedSensors = [];
+
     // Guard action properties (only used by security roles)
     public $showActionModal = false;
     public $selectedSpaceId = null;
@@ -427,6 +433,64 @@ class PublicParkingDisplay extends Component
                 $this->showIncidentsModal = false;
             }
         }
+    }
+
+    public function openSensorSetup($spaceId)
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            return;
+        }
+
+        $this->sensorModalSpaceId = $spaceId;
+        $this->selectedSensorKey = '';
+        $this->unassignedSensors = SensorAssignment::where(function ($q) {
+            $q->where('status', 'unassigned')->orWhereNull('space_code');
+        })->orderBy('mac_address')->orderBy('sensor_index')->get()->toArray();
+        $this->showSensorModal = true;
+    }
+
+    public function pairSensor()
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            return;
+        }
+
+        $this->validate(['selectedSensorKey' => 'required']);
+
+        $space = ParkingSpace::find($this->sensorModalSpaceId);
+        if (!$space) return;
+
+        [$mac, $index] = explode('|', $this->selectedSensorKey);
+
+        $sensor = SensorAssignment::where('mac_address', $mac)
+            ->where('sensor_index', $index)
+            ->first();
+
+        if (!$sensor) return;
+
+        // Unlink from any previous space
+        if ($sensor->space_code) {
+            ParkingSpace::where('space_code', $sensor->space_code)->update(['sensor_id' => null]);
+        }
+
+        $sensor->update(['space_code' => $space->space_code, 'status' => 'active']);
+        $space->update([
+            'is_occupied'     => false,
+            'manual_override' => false,
+            'malfunctioned'   => false,
+        ]);
+
+        session()->flash('success', "Sensor paired to spot {$space->space_code}.");
+        $this->closeSensorModal();
+        $this->loadParkingData();
+    }
+
+    public function closeSensorModal()
+    {
+        $this->showSensorModal = false;
+        $this->sensorModalSpaceId = null;
+        $this->selectedSensorKey = '';
+        $this->unassignedSensors = [];
     }
 
     public function render()

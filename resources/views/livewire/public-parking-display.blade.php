@@ -317,6 +317,7 @@
                                 @php
                                     $isSecurityUser = auth()->check() && auth()->user()->role === 'security';
                                     $isActionUser = auth()->check() && in_array(auth()->user()->role, ['security', 'admin', 'ssd']);
+                                    $canPairSensor = auth()->check() && in_array(auth()->user()->role, ['admin', 'ssd']);
                                 @endphp
 
                                 @foreach($parkingSpaces as $space)
@@ -332,11 +333,17 @@
                                         $isClickableForUser = !$isActionUser && $hasAssignedSensor && $effectiveStatus === 'available';
                                     @endphp
 
+                                    @php
+                                        $isPairableNoSensor = $canPairSensor && !$hasAssignedSensor;
+                                    @endphp
                                     <div wire:key="spot-{{ $space->id }}"
-                                         class="parking-spot-box {{ $effectiveStatus }} {{ !$isActionUser && $isSelected ? 'selected-spot' : '' }} {{ $isActionUser && $hasAssignedSensor ? 'security-clickable' : '' }}"
+                                         class="parking-spot-box {{ $effectiveStatus }} {{ !$isActionUser && $isSelected ? 'selected-spot' : '' }} {{ $isActionUser && $hasAssignedSensor ? 'security-clickable' : '' }} {{ $isPairableNoSensor ? 'sensor-pairable' : '' }}"
                                          @if($isActionUser && $hasAssignedSensor)
                                              wire:click="openActionModal({{ $space->id }})"
                                              title="{{ $space->space_code }} - {{ ucfirst($effectiveStatus) }}"
+                                         @elseif($isPairableNoSensor)
+                                             wire:click="openSensorSetup({{ $space->id }})"
+                                             title="No sensor — click to pair a sensor to {{ $slotName }}"
                                          @elseif($isClickableForUser)
                                              wire:click="selectParkingSpot('{{ $slotName }}', '{{ $columnCode }}', {{ $x }}, {{ $y }})"
                                              title="Click to show route to {{ $slotName }}"
@@ -351,8 +358,8 @@
                                             font-size: 22px;
                                             transform: rotate({{ $rotation }}deg);
                                             transform-origin: center center;
-                                            pointer-events: {{ ($isActionUser && $hasAssignedSensor) || $isClickableForUser ? 'auto' : 'none' }};
-                                            cursor: {{ $isClickableForUser || ($isActionUser && $hasAssignedSensor) ? 'pointer' : 'default' }};
+                                            pointer-events: {{ ($isActionUser && $hasAssignedSensor) || $isClickableForUser || $isPairableNoSensor ? 'auto' : 'none' }};
+                                            cursor: {{ $isClickableForUser || ($isActionUser && $hasAssignedSensor) || $isPairableNoSensor ? 'pointer' : 'default' }};
                                             box-sizing: border-box !important;
                                             {{ $isSelected ? 'box-shadow: 0 0 20px 5px #FFD700; border: 3px solid #FFD700 !important; z-index: 600;' : '' }}
                                          "
@@ -772,6 +779,66 @@
     </div>
     @endif
     @endauth
+
+    {{-- Sensor Pairing Modal --}}
+    @if($showSensorModal)
+    <div class="modal fade show" style="display:block;z-index:1060;" tabindex="-1">
+        <div class="modal-dialog modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header" style="background:#212529;color:#fff;">
+                    <h5 class="modal-title">
+                        <i class="fas fa-wifi me-2"></i>Pair Sensor to Spot
+                        @php $modalSpace = \App\Models\ParkingSpace::find($sensorModalSpaceId); @endphp
+                        @if($modalSpace) — <strong>{{ $modalSpace->slot_name }}</strong> @endif
+                    </h5>
+                    <button type="button" class="btn-close btn-close-white" wire:click="closeSensorModal"></button>
+                </div>
+                <div class="modal-body">
+                    @if(session('success'))
+                        <div class="alert alert-success">{{ session('success') }}</div>
+                    @endif
+
+                    @if(count($unassignedSensors) === 0)
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle me-2"></i>
+                            No unassigned sensors available. Add sensors via the Sensor Manager first.
+                        </div>
+                    @else
+                        <p class="text-muted mb-3">Select an unassigned sensor to pair with this parking spot.</p>
+                        <div class="mb-3">
+                            <label class="form-label fw-bold">Available Sensors</label>
+                            <select wire:model="selectedSensorKey" class="form-select">
+                                <option value="">— Select a sensor —</option>
+                                @foreach($unassignedSensors as $sensor)
+                                    <option value="{{ $sensor['mac_address'] }}|{{ $sensor['sensor_index'] }}">
+                                        {{ $sensor['mac_address'] }} · Sensor #{{ $sensor['sensor_index'] }}
+                                        @if($sensor['firmware_version']) · FW {{ $sensor['firmware_version'] }} @endif
+                                    </option>
+                                @endforeach
+                            </select>
+                            @error('selectedSensorKey') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
+                        </div>
+                    @endif
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="closeSensorModal">Cancel</button>
+                    @if(count($unassignedSensors) > 0)
+                    <button type="button" class="btn btn-dark" wire:click="pairSensor"
+                            wire:loading.attr="disabled" wire:target="pairSensor">
+                        <span wire:loading.remove wire:target="pairSensor">
+                            <i class="fas fa-link me-1"></i>Pair Sensor
+                        </span>
+                        <span wire:loading wire:target="pairSensor">
+                            <i class="fas fa-spinner fa-spin me-1"></i>Pairing...
+                        </span>
+                    </button>
+                    @endif
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show" style="z-index:1055;"></div>
+    @endif
 </div>
 
 @push('styles')
