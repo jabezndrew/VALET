@@ -240,6 +240,11 @@
                 </div>
                 <form wire:submit="save" novalidate>
                     <div class="modal-body">
+                        @if($modalError)
+                            <div class="alert alert-danger py-2">
+                                <i class="fas fa-exclamation-circle me-2"></i>{{ $modalError }}
+                            </div>
+                        @endif
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">

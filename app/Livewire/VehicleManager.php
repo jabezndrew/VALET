@@ -22,6 +22,8 @@ class VehicleManager extends Component
     // Edit mode
     public $editingId = null;
     public $showModal = false;
+    public $modalError = '';
+    public $modalSuccess = '';
     
     // Verify vehicle modal
     public $showVerifyModal = false;
@@ -179,17 +181,22 @@ class VehicleManager extends Component
     public function closeModal()
     {
         $this->showModal = false;
+        $this->modalError = '';
+        $this->modalSuccess = '';
         $this->resetForm();
     }
 
     public function save()
     {
+        $this->modalError = '';
+        $this->modalSuccess = '';
+
         $this->validate();
 
         try {
             // Check for duplicates
             if ($this->isDuplicate('plate_number', $this->plate_number)) {
-                $this->dispatch('show-alert', type: 'error', message: 'This plate number is already registered.');
+                $this->modalError = 'This plate number is already registered.';
                 return;
             }
 
@@ -206,7 +213,6 @@ class VehicleManager extends Component
             if ($this->editingId) {
                 $vehicle = Vehicle::find($this->editingId);
                 $vehicle->update($data);
-                // Sync linked RFID tag's expiry date when vehicle expiry changes
                 if ($vehicle->rfidTag && $this->expires_at) {
                     $vehicle->rfidTag->update(['expiry_date' => $this->expires_at ?: null]);
                 }
@@ -220,7 +226,7 @@ class VehicleManager extends Component
             $this->dispatch('show-alert', type: 'success', message: $message);
             $this->closeModal();
         } catch (\Exception $e) {
-            $this->dispatch('show-alert', type: 'error', message: 'Failed to save vehicle: ' . $e->getMessage());
+            $this->modalError = 'Failed to save vehicle: ' . $e->getMessage();
         }
     }
 
