@@ -449,6 +449,30 @@ class PublicParkingDisplay extends Component
         $this->showSensorModal = true;
     }
 
+    public function pingSensor()
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            return;
+        }
+
+        if (!$this->selectedSensorKey) return;
+
+        [$mac, $index] = explode('|', $this->selectedSensorKey);
+
+        $sensor = SensorAssignment::where('mac_address', $mac)
+            ->where('sensor_index', $index)
+            ->first();
+
+        if (!$sensor) return;
+
+        try {
+            $sensor->startIdentify();
+            session()->flash('ping_success', 'Sensor is blinking! Check the physical sensor.');
+        } catch (\Exception $e) {
+            session()->flash('ping_error', 'Failed to ping sensor: ' . $e->getMessage());
+        }
+    }
+
     public function pairSensor()
     {
         if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {

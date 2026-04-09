@@ -798,6 +798,13 @@
                         <div class="alert alert-success">{{ session('success') }}</div>
                     @endif
 
+                    @if(session('ping_success'))
+                        <div class="alert alert-success py-2"><i class="fas fa-satellite-dish me-2"></i>{{ session('ping_success') }}</div>
+                    @endif
+                    @if(session('ping_error'))
+                        <div class="alert alert-danger py-2">{{ session('ping_error') }}</div>
+                    @endif
+
                     @if(count($unassignedSensors) === 0)
                         <div class="alert alert-warning">
                             <i class="fas fa-exclamation-triangle me-2"></i>
@@ -807,7 +814,7 @@
                         <p class="text-muted mb-3">Select an unassigned sensor to pair with this parking spot.</p>
                         <div class="mb-3">
                             <label class="form-label fw-bold">Available Sensors</label>
-                            <select wire:model="selectedSensorKey" class="form-select">
+                            <select wire:model.live="selectedSensorKey" class="form-select">
                                 <option value="">— Select a sensor —</option>
                                 @foreach($unassignedSensors as $sensor)
                                     <option value="{{ $sensor['mac_address'] }}|{{ $sensor['sensor_index'] }}">
@@ -823,8 +830,19 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" wire:click="closeSensorModal">Cancel</button>
                     @if(count($unassignedSensors) > 0)
+                    <button type="button" class="btn btn-outline-primary" wire:click="pingSensor"
+                            wire:loading.attr="disabled" wire:target="pingSensor"
+                            {{ empty($selectedSensorKey) ? 'disabled' : '' }}>
+                        <span wire:loading.remove wire:target="pingSensor">
+                            <i class="fas fa-satellite-dish me-1"></i>Ping Sensor
+                        </span>
+                        <span wire:loading wire:target="pingSensor">
+                            <i class="fas fa-spinner fa-spin me-1"></i>Pinging...
+                        </span>
+                    </button>
                     <button type="button" class="btn btn-dark" wire:click="pairSensor"
-                            wire:loading.attr="disabled" wire:target="pairSensor">
+                            wire:loading.attr="disabled" wire:target="pairSensor"
+                            {{ empty($selectedSensorKey) ? 'disabled' : '' }}>
                         <span wire:loading.remove wire:target="pairSensor">
                             <i class="fas fa-link me-1"></i>Pair Sensor
                         </span>
