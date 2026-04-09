@@ -16,6 +16,7 @@ class ParkingLog extends Component
     public $dateFrom = '';
     public $dateTo = '';
     public $entryTypeFilter = 'all';
+    public $showAnalytics = false;
 
     protected $queryString = ['search', 'statusFilter', 'dateFrom', 'dateTo', 'entryTypeFilter'];
 
@@ -34,6 +35,17 @@ class ParkingLog extends Component
     public function updating()
     {
         $this->resetPage();
+    }
+
+    public function openAnalytics()
+    {
+        $this->showAnalytics = true;
+        $this->dispatch('updateCharts', chartData: $this->getChartData());
+    }
+
+    public function closeAnalytics()
+    {
+        $this->showAnalytics = false;
     }
 
     public function clearFilters()
@@ -176,13 +188,10 @@ class ParkingLog extends Component
 
     public function render()
     {
-        $chartData = $this->getChartData();
-        $this->dispatch('updateCharts', chartData: $chartData);
-
         return view('livewire.parking-log', [
             'entries'   => $this->getEntriesQuery()->paginate(20),
             'stats'     => $this->getStats(),
-            'chartData' => $chartData,
+            'chartData' => $this->showAnalytics ? $this->getChartData() : [],
         ])->layout('layouts.app');
     }
 }

@@ -2,9 +2,14 @@
     <div class="container mt-4">
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Parking Log</h2>
-            <button class="btn btn-success" wire:click="export">
-                <i class="fas fa-download me-1"></i> Export CSV
-            </button>
+            <div class="d-flex gap-2">
+                <button class="btn btn-outline-primary" wire:click="openAnalytics">
+                    <i class="fas fa-chart-bar me-1"></i> Analytics
+                </button>
+                <button class="btn btn-success" wire:click="export">
+                    <i class="fas fa-download me-1"></i> Export CSV
+                </button>
+            </div>
         </div>
 
         <!-- Stats Cards -->
@@ -38,46 +43,6 @@
                     <div class="card-body">
                         <h6 class="card-title">Avg Duration (min)</h6>
                         <h3>{{ number_format($stats['avg_duration'], 0) }}</h3>
-                    </div>
-                </div>
-            </div>
-        </div>
-
-        <!-- Analytics Charts -->
-        <div class="row mb-4">
-            <div class="col-md-5">
-                <div class="card h-100">
-                    <div class="card-header fw-semibold">
-                        <i class="fas fa-chart-bar me-1"></i> Entries — Last 7 Days
-                    </div>
-                    <div class="card-body">
-                        <canvas id="dailyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-5">
-                <div class="card h-100">
-                    <div class="card-header fw-semibold">
-                        <i class="fas fa-clock me-1"></i> Peak Hours
-                        <small class="text-muted ms-1">(selected range)</small>
-                    </div>
-                    <div class="card-body">
-                        <canvas id="hourlyChart"></canvas>
-                    </div>
-                </div>
-            </div>
-            <div class="col-md-2">
-                <div class="card h-100">
-                    <div class="card-header fw-semibold">
-                        <i class="fas fa-chart-pie me-1"></i> Entry Type
-                        <small class="text-muted ms-1">(selected range)</small>
-                    </div>
-                    <div class="card-body d-flex flex-column align-items-center justify-content-center">
-                        <canvas id="typeChart"></canvas>
-                        <div class="mt-2 text-center" style="font-size:.8rem;">
-                            <span class="badge" style="background:#3b82f6;">RFID</span>
-                            <span class="ms-1 badge" style="background:#6b7280;">Guest</span>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -186,6 +151,64 @@
             </div>
         </div>
     </div>
+
+    {{-- Analytics Modal --}}
+    @if($showAnalytics)
+    <div class="modal fade show" style="display:block;z-index:1055;" tabindex="-1">
+        <div class="modal-dialog modal-xl modal-dialog-centered">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title"><i class="fas fa-chart-bar me-2"></i>Analytics</h5>
+                    <button type="button" class="btn-close" wire:click="closeAnalytics"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="row">
+                        <div class="col-md-5">
+                            <div class="card h-100">
+                                <div class="card-header fw-semibold">
+                                    <i class="fas fa-chart-bar me-1"></i> Entries — Last 7 Days
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="dailyChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-5">
+                            <div class="card h-100">
+                                <div class="card-header fw-semibold">
+                                    <i class="fas fa-clock me-1"></i> Peak Hours
+                                    <small class="text-muted ms-1">(selected range)</small>
+                                </div>
+                                <div class="card-body">
+                                    <canvas id="hourlyChart"></canvas>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-2">
+                            <div class="card h-100">
+                                <div class="card-header fw-semibold">
+                                    <i class="fas fa-chart-pie me-1"></i> Entry Type
+                                    <small class="text-muted ms-1">(selected range)</small>
+                                </div>
+                                <div class="card-body d-flex flex-column align-items-center justify-content-center">
+                                    <canvas id="typeChart"></canvas>
+                                    <div class="mt-2 text-center" style="font-size:.8rem;">
+                                        <span class="badge" style="background:#3b82f6;">RFID</span>
+                                        <span class="ms-1 badge" style="background:#6b7280;">Guest</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" wire:click="closeAnalytics">Close</button>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show" style="z-index:1050;"></div>
+    @endif
 </div>
 
 @push('scripts')
@@ -283,14 +306,10 @@
         }
     }
 
-    // Initial render from server-side data
-    document.addEventListener('DOMContentLoaded', () => {
-        initCharts(@json($chartData));
-    });
-
-    // Re-render on every Livewire update (poll + filter changes)
+    // Render charts when analytics modal opens
     window.addEventListener('updateCharts', event => {
-        initCharts(event.detail.chartData);
+        // Wait a tick for the modal DOM to render
+        setTimeout(() => initCharts(event.detail.chartData), 50);
     });
 </script>
 @endpush
