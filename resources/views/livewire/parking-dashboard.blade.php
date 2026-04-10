@@ -3,8 +3,9 @@
 
     <div class="container mt-4">
         <!-- Header -->
-        <div class="text-center mb-2">
-            <h2 class="fw-bold text-muted" style="font-size: 1.5rem; letter-spacing: 1px;">TOTAL AVAILABLE PARKING SPACE</h2>
+        <div class="text-center mb-1">
+            <h3 class="fw-bold" style="font-size: 1.7rem;">USJ-R Quadricentennial Campus</h3>
+            <h2 class="fw-bold text-muted" style="font-size: 1.3rem; letter-spacing: 1px;">TOTAL AVAILABLE PARKING SPACE</h2>
         </div>
 
         <div class="campus-section">
@@ -14,10 +15,8 @@
                     <!-- Empty space to balance the right button -->
                 </div>
 
-                <!-- Centered title column -->
-                <div class="col text-center">
-                    <h4 class="mb-0 fw-bold">USJ-R Quadricentennial Campus</h4>
-                </div>
+                <!-- Centered title column (now empty, heading moved above) -->
+                <div class="col text-center"></div>
 
                 <!-- Right button column -->
                 <div class="col-auto">
@@ -66,7 +65,7 @@
             <div class="text-center mb-4">
                 <span class="text-muted">Overall Occupancy</span>
                 <div class="h5 fw-bold">{{ $occupancyRate }}% Full</div>
-                @if($lastUpdate)
+                @if($lastUpdate && auth()->user()->role === 'admin')
                 <small class="text-muted">
                     <i class="fas fa-clock me-1"></i>Last updated: {{ $lastUpdate }}
                 </small>
