@@ -149,7 +149,7 @@ class GuestAccessManager extends Component
 
     public function delete($guestId)
     {
-        if (!auth()->user()->canManageCars()) {
+        if (!$this->canManageGuests()) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
@@ -244,7 +244,7 @@ class GuestAccessManager extends Component
 
     private function canManageGuests()
     {
-        return in_array(auth()->user()->role, ['admin', 'ssd']);
+        return in_array(auth()->user()->role, ['admin', 'ssd', 'security']);
     }
 
     public function getStatusBadge($guest)
