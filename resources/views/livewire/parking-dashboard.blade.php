@@ -375,29 +375,49 @@
                             <div class="d-flex align-items-center">
                                 @php
                                     $icon = match($verifyResult['status']) {
-                                        'ACTIVE', 'Active' => 'check-circle',
+                                        'ACTIVE', 'Active', 'REGISTERED', 'GUEST_OK' => 'check-circle',
                                         'NOT_FOUND', 'NOT_REGISTERED' => 'times-circle',
-                                        'REGISTERED' => 'check-circle',
+                                        'GUEST_EXPIRED', 'INVALID', 'EXPIRED' => 'exclamation-circle',
                                         default => 'info-circle'
+                                    };
+                                    $label = match($verifyResult['status']) {
+                                        'GUEST_OK'       => 'Guest Pass Valid',
+                                        'GUEST_EXPIRED'  => 'Guest Pass Expired',
+                                        'NOT_REGISTERED' => 'Not Registered',
+                                        'REGISTERED'     => 'Registered Vehicle',
+                                        'NOT_FOUND'      => 'Not Found',
+                                        default          => $verifyResult['status']
                                     };
                                 @endphp
                                 <i class="fas fa-{{ $icon }} fa-2x me-3"></i>
                                 <div>
-                                    <strong>
-                                        @if($verifyResult['status'] === 'NOT_REGISTERED')
-                                            Not Registered
-                                        @elseif($verifyResult['status'] === 'REGISTERED')
-                                            Registered
-                                        @elseif($verifyResult['status'] === 'NOT_FOUND')
-                                            Not Found
-                                        @else
-                                            {{ $verifyResult['status'] }}
-                                        @endif
-                                    </strong>
+                                    <strong>{{ $label }}</strong>
                                     <div>{{ $verifyResult['message'] }}</div>
                                 </div>
                             </div>
 
+                            {{-- Guest Pass Details --}}
+                            @if(isset($verifyResult['guestPass']))
+                                <hr class="my-2">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small>
+                                            <strong>Guest ID:</strong> {{ $verifyResult['guestPass']->guest_id }}<br>
+                                            <strong>Name:</strong> {{ $verifyResult['guestPass']->name }}<br>
+                                            <strong>Plate:</strong> {{ $verifyResult['guestPass']->vehicle_plate }}
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small>
+                                            <strong>Valid From:</strong> {{ $verifyResult['guestPass']->valid_from->format('M j, Y h:i A') }}<br>
+                                            <strong>Valid Until:</strong> {{ $verifyResult['guestPass']->valid_until->format('M j, Y h:i A') }}<br>
+                                            <strong>Status:</strong> <span class="badge bg-{{ $verifyResult['guestPass']->status === 'active' ? 'success' : 'secondary' }}">{{ ucfirst($verifyResult['guestPass']->status) }}</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- RFID Tag Details --}}
                             @if(isset($verifyResult['rfidTag']))
                                 <hr class="my-2">
                                 <div class="mb-2">
@@ -411,6 +431,7 @@
                                 </div>
                             @endif
 
+                            {{-- Registered Vehicle Details --}}
                             @if(isset($verifyResult['vehicle']))
                                 <hr class="my-2">
                                 <div class="row">
@@ -439,6 +460,7 @@
                                 </div>
                             @endif
 
+                            {{-- Plate display for not-found --}}
                             @if($verifyResult['status'] === 'NOT_REGISTERED' && isset($verifyResult['plate']))
                                 <hr class="my-2">
                                 <div class="text-center">

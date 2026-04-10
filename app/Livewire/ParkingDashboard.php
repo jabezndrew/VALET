@@ -206,35 +206,73 @@ class ParkingDashboard extends Component
         $this->validate(['verifyPlate' => 'required|string']);
 
         $plateNumber = strtoupper(trim($this->verifyPlate));
+
+        // Check GuestAccess first
+        $guestPass = \App\Models\GuestAccess::where('vehicle_plate', $plateNumber)
+            ->where('status', 'active')
+            ->where('valid_from', '<=', now())
+            ->where('valid_until', '>=', now())
+            ->latest()
+            ->first();
+
+        if ($guestPass) {
+            $this->verifyResult = [
+                'status'      => 'GUEST_OK',
+                'message'     => 'Valid guest pass found. Access is permitted.',
+                'color'       => 'success',
+                'type'        => 'guest',
+                'plate'       => $plateNumber,
+                'guestPass'   => $guestPass,
+            ];
+            return;
+        }
+
+        // Check for expired/inactive guest pass
+        $expiredPass = \App\Models\GuestAccess::where('vehicle_plate', $plateNumber)
+            ->latest()
+            ->first();
+
+        if ($expiredPass) {
+            $this->verifyResult = [
+                'status'    => 'GUEST_EXPIRED',
+                'message'   => 'Guest pass expired or inactive (valid until ' . $expiredPass->valid_until->format('M j, Y h:i A') . ').',
+                'color'     => 'warning',
+                'type'      => 'guest',
+                'plate'     => $plateNumber,
+                'guestPass' => $expiredPass,
+            ];
+            return;
+        }
+
+        // Check registered vehicle
         $vehicle = Vehicle::with('owner')->where('plate_number', $plateNumber)->first();
 
         if ($vehicle) {
-            // Vehicle found in system - it's a registered vehicle
             $isActive = $vehicle->isValid();
-
             $vehicleData = $vehicle->toArray();
             $vehicleData['owner_name'] = $vehicle->owner->name;
             $vehicleData['owner_role'] = $vehicle->owner->role;
 
             $this->verifyResult = [
-                'status' => 'REGISTERED',
+                'status'  => 'REGISTERED',
                 'message' => $isActive
                     ? 'Vehicle is registered and active. Owner should use RFID.'
                     : 'Vehicle is registered but inactive/expired.',
                 'vehicle' => (object) $vehicleData,
-                'color' => $isActive ? 'success' : 'warning',
-                'type' => 'guest'
+                'color'   => $isActive ? 'success' : 'warning',
+                'type'    => 'guest',
             ];
-        } else {
-            // Vehicle not in system - not registered (show as warning/red)
-            $this->verifyResult = [
-                'status' => 'NOT_REGISTERED',
-                'message' => 'Vehicle not registered in the system.',
-                'plate' => $plateNumber,
-                'color' => 'danger',
-                'type' => 'guest'
-            ];
+            return;
         }
+
+        // Not found anywhere
+        $this->verifyResult = [
+            'status'  => 'NOT_REGISTERED',
+            'message' => 'No guest pass or registered vehicle found for this plate.',
+            'plate'   => $plateNumber,
+            'color'   => 'danger',
+            'type'    => 'guest',
+        ];
     }
 
     // Auto-refresh methods
