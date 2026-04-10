@@ -205,7 +205,7 @@ class ParkingDashboard extends Component
     {
         $this->validate(['verifyPlate' => 'required|string']);
 
-        $plateNumber = strtoupper(trim($this->verifyPlate));
+        $plateNumber = strtoupper(str_replace(' ', '', trim($this->verifyPlate)));
 
         // Check GuestAccess first
         $guestPass = \App\Models\GuestAccess::where('vehicle_plate', $plateNumber)

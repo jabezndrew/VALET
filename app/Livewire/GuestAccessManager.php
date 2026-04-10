@@ -92,7 +92,7 @@ class GuestAccessManager extends Component
                 $guest = GuestAccess::find($this->editingId);
                 $guest->update([
                     'name' => $this->name,
-                    'vehicle_plate' => strtoupper($this->vehicle_plate),
+                    'vehicle_plate' => strtoupper(str_replace(' ', '', $this->vehicle_plate)),
                     'phone' => $this->phone,
                     'purpose' => $finalPurpose,
                     'valid_until' => $validUntil,
@@ -106,7 +106,7 @@ class GuestAccessManager extends Component
                 GuestAccess::create([
                     'guest_id' => $guestId,
                     'name' => $this->name,
-                    'vehicle_plate' => strtoupper($this->vehicle_plate),
+                    'vehicle_plate' => strtoupper(str_replace(' ', '', $this->vehicle_plate)),
                     'phone' => $this->phone,
                     'purpose' => $finalPurpose,
                     'valid_from' => $validFrom,
@@ -172,7 +172,7 @@ class GuestAccessManager extends Component
         GuestAccess::create([
             'guest_id' => $guestId,
             'name' => $name,
-            'vehicle_plate' => strtoupper($plateNumber),
+            'vehicle_plate' => strtoupper(str_replace(' ', '', $plateNumber)),
             'valid_from' => $validFrom,
             'valid_until' => $validUntil,
             'status' => 'active',
