@@ -173,13 +173,13 @@
                                     <td>
                                         @if($sensor->identify_mode)
                                             <button wire:click="stopIdentify({{ $sensor->id }})"
-                                                    class="btn btn-sm btn-info"
+                                                    class="btn btn-sm btn-warning"
                                                     title="Stop Identify (Yellow LED Blinking)">
                                                 <i class="fas fa-stop-circle"></i>
                                             </button>
                                         @else
                                             <button wire:click="startIdentify({{ $sensor->id }})"
-                                                    class="btn btn-sm btn-outline-info"
+                                                    class="btn btn-sm btn-outline-warning"
                                                     title="Identify (Blink Yellow LED)">
                                                 <i class="fas fa-lightbulb"></i>
                                             </button>
