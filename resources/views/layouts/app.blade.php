@@ -939,8 +939,30 @@ main, .container, .valet-header + * {
        // Global Livewire configuration
        document.addEventListener('livewire:init', () => {
            setInterval(() => {
-               Livewire.dispatch('refresh-parking-data');
+               if (!window._loggingOut) {
+                   Livewire.dispatch('refresh-parking-data');
+               }
            }, 3000);
+
+           // Intercept all Livewire 419 responses — redirect to login instead of showing error dialog
+           Livewire.hook('request', ({ fail }) => {
+               fail(({ status, preventDefault }) => {
+                   if (status === 419) {
+                       preventDefault();
+                       window.location.href = '/login';
+                   }
+               });
+           });
+       });
+
+       // Set logout flag before form submits so in-flight polls don't trigger error dialog
+       document.addEventListener('DOMContentLoaded', function () {
+           const logoutForm = document.getElementById('logout-form');
+           if (logoutForm) {
+               logoutForm.addEventListener('submit', function () {
+                   window._loggingOut = true;
+               });
+           }
        });
 
        // Livewire navigation events for smooth transitions
