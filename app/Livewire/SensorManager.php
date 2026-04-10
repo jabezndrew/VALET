@@ -230,7 +230,7 @@ class SensorManager extends Component
             $sensor = SensorAssignment::find($sensorId);
             $sensor->startIdentify();
 
-            session()->flash('success', 'Identify mode started! Blue LED should be blinking.');
+            session()->flash('success', 'Identify mode started! Yellow LED should be blinking.');
             $this->loadSensors();
 
         } catch (\Exception $e) {
