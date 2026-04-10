@@ -5,7 +5,9 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use Illuminate\Http\Request;
 use App\Models\GuestAccess;
+use App\Services\ExpoPushNotificationService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class GuestAccessController extends Controller
 {
@@ -75,6 +77,20 @@ class GuestAccessController extends Controller
             'status'        => 'active',
             'created_by'    => auth()->id(),
         ]);
+
+        ExpoPushNotificationService::sendGuestRequest($validated['name'], $plate, $validated['purpose']);
+
+        // Web bell notification
+        $webNotifs = Cache::get('admin_override_notifications', []);
+        $webNotifs[] = [
+            'id'            => uniqid(),
+            'type'          => 'guest_request',
+            'guest_name'    => $validated['name'],
+            'vehicle_plate' => $plate,
+            'purpose'       => $validated['purpose'],
+            'created_at'    => now()->toISOString(),
+        ];
+        Cache::put('admin_override_notifications', array_slice($webNotifs, -50), now()->addDays(7));
 
         return response()->json([
             'success' => true,

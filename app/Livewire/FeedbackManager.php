@@ -4,6 +4,8 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\Feedback;
+use App\Services\ExpoPushNotificationService;
+use Illuminate\Support\Facades\Cache;
 
 class FeedbackManager extends Component
 {
@@ -184,6 +186,26 @@ class FeedbackManager extends Component
                     'admin_id' => auth()->id(),
                     'responded_at' => now(),
                 ]);
+            }
+
+            // Push notification + web bell for feedback owner
+            if ($feedback && $feedback->user_id && $this->adminResponse) {
+                ExpoPushNotificationService::sendFeedbackReply(
+                    $feedback->user_id,
+                    \Str::limit($feedback->message, 80),
+                    $this->adminResponse
+                );
+
+                $cacheKey = "user_notifications_{$feedback->user_id}";
+                $userNotifs = Cache::get($cacheKey, []);
+                $userNotifs[] = [
+                    'id'               => uniqid(),
+                    'type'             => 'feedback_reply',
+                    'feedback_preview' => \Str::limit($feedback->message, 80),
+                    'admin_reply'      => $this->adminResponse,
+                    'created_at'       => now()->toISOString(),
+                ];
+                Cache::put($cacheKey, array_slice($userNotifs, -20), now()->addDays(30));
             }
 
             $this->closeResponseModal();

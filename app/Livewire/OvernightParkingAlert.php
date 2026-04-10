@@ -10,15 +10,14 @@ use Illuminate\Support\Facades\Cache;
 
 class OvernightParkingAlert extends Component
 {
-    public $showModal = false;
+    public $showModal        = false;
     public $overnightVehicles = [];
-    public $overnightCount = 0;
-    public $hasUnseenAlerts = false;
-    public $overrideNotifications = [];
-    public $unseenOverrideCount = 0;
+    public $overnightCount   = 0;
+    public $hasUnseenAlerts  = false;
+    public $notifications    = [];   // unified: malfunction, override, rfid, guest, feedback
+    public $unseenCount      = 0;
 
-    // Configure overnight threshold (hours parked to be considered overnight)
-    public const OVERNIGHT_HOURS = 12; // 12 hours threshold
+    public const OVERNIGHT_HOURS = 12;
 
     protected $listeners = ['refreshOvernightAlerts' => 'loadOvernightVehicles'];
 
@@ -29,73 +28,77 @@ class OvernightParkingAlert extends Component
 
     public function loadOvernightVehicles()
     {
-        // Only load for security, ssd, and admin
-        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd', 'security'])) {
-            $this->overnightCount = 0;
-            $this->overnightVehicles = [];
+        if (!auth()->check()) return;
+
+        $role   = auth()->user()->role;
+        $userId = auth()->id();
+
+        // ── User role: only feedback replies ─────────────────────────────────
+        if ($role === 'user') {
+            $all    = Cache::get("user_notifications_{$userId}", []);
+            $seen   = Cache::get("user_notifications_seen_{$userId}", []);
+            $unseen = array_filter($all, fn($n) => !in_array($n['id'], $seen));
+
+            $this->notifications  = array_reverse($all);
+            $this->unseenCount    = count($unseen);
+            $this->hasUnseenAlerts = $this->unseenCount > 0;
             return;
         }
 
-        // Load override notifications
-        $allOverrides = Cache::get('admin_override_notifications', []);
+        // ── Staff roles ───────────────────────────────────────────────────────
+        if (!in_array($role, ['security', 'ssd', 'admin'])) return;
 
-        if (in_array(auth()->user()->role, ['admin', 'ssd'])) {
-            // Admin/SSD see only security-reported notifications (not their own)
-            $filtered = array_values(array_filter($allOverrides, fn($n) =>
-                ($n['reporter_role'] ?? 'security') === 'security' &&
-                ($n['guard_name'] ?? '') !== auth()->user()->name
-            ));
-        } elseif (auth()->user()->role === 'security') {
-            // Security sees only admin-reported notifications
-            $filtered = array_values(array_filter($allOverrides, fn($n) =>
-                ($n['reporter_role'] ?? 'security') === 'admin'
-            ));
-        } else {
-            $filtered = [];
-        }
+        $all = Cache::get('admin_override_notifications', []);
 
-        $seenOverrideIds = Cache::get('seen_overrides_' . auth()->id(), []);
-        $this->overrideNotifications = array_reverse($filtered);
-        $unseenOverrides = array_filter($filtered, fn($n) => !in_array($n['id'], $seenOverrideIds));
-        $this->unseenOverrideCount = count($unseenOverrides);
+        // Filter by what each role should see
+        $filtered = array_values(array_filter($all, function ($n) use ($role) {
+            $type = $n['type'] ?? '';
+            return match ($role) {
+                'admin'    => true,  // admin sees everything
+                'ssd'      => in_array($type, ['malfunction_report', 'malfunction_cleared', 'rfid_alert', 'guest_request']),
+                'security' => in_array($type, ['malfunction_cleared', 'rfid_alert', 'guest_request']),
+                default    => false,
+            };
+        }));
 
-        // Check if the table exists first to prevent errors
+        $seenIds = Cache::get("seen_overrides_{$userId}", []);
+        $unseen  = array_filter($filtered, fn($n) => !in_array($n['id'], $seenIds));
+
+        $this->notifications   = array_reverse($filtered);
+        $this->unseenCount     = count($unseen);
+
+        // Overnight vehicles
+        $this->overnightCount    = 0;
+        $this->overnightVehicles = [];
+
         try {
-            if (!Schema::hasTable('parking_entries')) {
-                $this->overnightCount = 0;
-                $this->overnightVehicles = [];
-                return;
+            if (Schema::hasTable('parking_entries')) {
+                $threshold = Carbon::now()->subHours(self::OVERNIGHT_HOURS);
+
+                $this->overnightVehicles = ParkingEntry::where('status', 'parked')
+                    ->where('entry_time', '<', $threshold)
+                    ->with(['user', 'rfidTag'])
+                    ->orderBy('entry_time', 'asc')
+                    ->get()
+                    ->map(function ($entry) {
+                        $entry->hours_parked  = Carbon::parse($entry->entry_time)->diffInHours(now());
+                        $entry->parked_since  = Carbon::parse($entry->entry_time)->format('M j, g:i A');
+                        return $entry;
+                    })->toArray();
+
+                $this->overnightCount = count($this->overnightVehicles);
+
+                $seenOvernightIds = Cache::get("overnight_seen_{$userId}", []);
+                $currentIds       = collect($this->overnightVehicles)->pluck('id')->sort()->values()->toArray();
+                $newOvernightIds  = array_diff($currentIds, $seenOvernightIds);
+
+                $this->unseenCount += count($newOvernightIds);
             }
-
-            $thresholdTime = Carbon::now()->subHours(self::OVERNIGHT_HOURS);
-
-            // Get vehicles that are still parked and have been parked for more than threshold hours
-            $this->overnightVehicles = ParkingEntry::where('status', 'parked')
-                ->where('entry_time', '<', $thresholdTime)
-                ->with(['user', 'rfidTag'])
-                ->orderBy('entry_time', 'asc')
-                ->get()
-                ->map(function ($entry) {
-                    $hoursParked = Carbon::parse($entry->entry_time)->diffInHours(Carbon::now());
-                    $entry->hours_parked = $hoursParked;
-                    $entry->parked_since = Carbon::parse($entry->entry_time)->format('M j, g:i A');
-                    return $entry;
-                })
-                ->toArray();
-
-            $this->overnightCount = count($this->overnightVehicles);
-
-            // Check if there are unseen alerts
-            $currentIds = collect($this->overnightVehicles)->pluck('id')->sort()->values()->toArray();
-            $seenIds = Cache::get('overnight_seen_' . auth()->id(), []);
-            $newIds = array_diff($currentIds, $seenIds);
-            $this->hasUnseenAlerts = count($newIds) > 0 || $this->unseenOverrideCount > 0;
         } catch (\Exception $e) {
-            // Silently fail if table doesn't exist or other DB issues
-            $this->overnightCount = 0;
-            $this->overnightVehicles = [];
-            $this->hasUnseenAlerts = $this->unseenOverrideCount > 0;
+            // silently fail
         }
+
+        $this->hasUnseenAlerts = $this->unseenCount > 0;
     }
 
     public function openModal()
@@ -103,16 +106,24 @@ class OvernightParkingAlert extends Component
         $this->loadOvernightVehicles();
         $this->showModal = true;
 
-        $seenIds = collect($this->overnightVehicles)->pluck('id')->sort()->values()->toArray();
-        Cache::put('overnight_seen_' . auth()->id(), $seenIds, now()->addDays(7));
+        $userId = auth()->id();
+        $role   = auth()->user()->role;
 
-        // Mark all override notifications as seen
-        if (!empty($this->overrideNotifications)) {
-            $allOverrideIds = array_column($this->overrideNotifications, 'id');
-            Cache::put('seen_overrides_' . auth()->id(), $allOverrideIds, now()->addDays(7));
-            $this->unseenOverrideCount = 0;
+        if ($role === 'user') {
+            $all = Cache::get("user_notifications_{$userId}", []);
+            $allIds = array_column($all, 'id');
+            Cache::put("user_notifications_seen_{$userId}", $allIds, now()->addDays(7));
+        } else {
+            // Mark staff notifications seen
+            $allIds = array_column($this->notifications, 'id');
+            Cache::put("seen_overrides_{$userId}", $allIds, now()->addDays(7));
+
+            // Mark overnight seen
+            $overnightIds = collect($this->overnightVehicles)->pluck('id')->sort()->values()->toArray();
+            Cache::put("overnight_seen_{$userId}", $overnightIds, now()->addDays(7));
         }
 
+        $this->unseenCount    = 0;
         $this->hasUnseenAlerts = false;
     }
 

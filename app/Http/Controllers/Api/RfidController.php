@@ -60,6 +60,20 @@ class RfidController extends Controller
                     'gate_mac' => $gateMac
                 ]);
 
+                // Web bell notification
+                $webNotifs = Cache::get('admin_override_notifications', []);
+                $webNotifs[] = [
+                    'id'          => uniqid(),
+                    'type'        => 'rfid_alert',
+                    'alert_type'  => 'invalid',
+                    'uid'         => $uid,
+                    'user_name'   => 'N/A',
+                    'vehicle_plate' => 'N/A',
+                    'message'     => 'RFID not registered',
+                    'created_at'  => now()->toISOString(),
+                ];
+                Cache::put('admin_override_notifications', array_slice($webNotifs, -50), now()->addDays(7));
+
                 return response()->json($scanData);
             }
 
@@ -97,6 +111,20 @@ class RfidController extends Controller
                     'gate_mac' => $gateMac
                 ]);
 
+                // Web bell notification
+                $webNotifs = Cache::get('admin_override_notifications', []);
+                $webNotifs[] = [
+                    'id'            => uniqid(),
+                    'type'          => 'rfid_alert',
+                    'alert_type'    => 'expired',
+                    'uid'           => $uid,
+                    'user_name'     => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'message'       => 'RFID expired',
+                    'created_at'    => now()->toISOString(),
+                ];
+                Cache::put('admin_override_notifications', array_slice($webNotifs, -50), now()->addDays(7));
+
                 return response()->json($scanData);
             }
 
@@ -132,6 +160,20 @@ class RfidController extends Controller
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                     'gate_mac' => $gateMac
                 ]);
+
+                // Web bell notification
+                $webNotifs = Cache::get('admin_override_notifications', []);
+                $webNotifs[] = [
+                    'id'            => uniqid(),
+                    'type'          => 'rfid_alert',
+                    'alert_type'    => $rfidTag->status,
+                    'uid'           => $uid,
+                    'user_name'     => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'message'       => 'RFID ' . $rfidTag->status,
+                    'created_at'    => now()->toISOString(),
+                ];
+                Cache::put('admin_override_notifications', array_slice($webNotifs, -50), now()->addDays(7));
 
                 return response()->json($scanData);
             }

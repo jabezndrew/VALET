@@ -4,7 +4,9 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\GuestAccess;
+use App\Services\ExpoPushNotificationService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class GuestAccessManager extends Component
 {
@@ -116,6 +118,24 @@ class GuestAccessManager extends Component
                     'notes' => $this->notes,
                 ]);
                 $message = "Guest access created. Pass ID: {$guestId}";
+
+                ExpoPushNotificationService::sendGuestRequest(
+                    $this->name,
+                    strtoupper(str_replace(' ', '', $this->vehicle_plate)),
+                    $finalPurpose
+                );
+
+                // Web bell notification
+                $webNotifs = Cache::get('admin_override_notifications', []);
+                $webNotifs[] = [
+                    'id'            => uniqid(),
+                    'type'          => 'guest_request',
+                    'guest_name'    => $this->name,
+                    'vehicle_plate' => strtoupper(str_replace(' ', '', $this->vehicle_plate)),
+                    'purpose'       => $finalPurpose,
+                    'created_at'    => now()->toISOString(),
+                ];
+                Cache::put('admin_override_notifications', array_slice($webNotifs, -50), now()->addDays(7));
             }
 
             $this->dispatch('show-alert', type: 'success', message: $message);

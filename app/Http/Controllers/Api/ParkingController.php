@@ -152,7 +152,29 @@ class ParkingController extends Controller
                 ], 422);
             }
 
+            // Detect occupied → available transition before saving
+            $previousSpace = ParkingSpace::where($uniqueField)->first();
+            $wasOccupied   = $previousSpace?->is_occupied ?? null;
+
             $space = ParkingSpace::updateOrCreate($uniqueField, $validated);
+
+            // Fire spot available + floor update notifications when a spot opens up
+            $isNowAvailable = isset($validated['is_occupied']) && !$validated['is_occupied'];
+            if ($wasOccupied === true && $isNowAvailable && $space->space_code && !str_starts_with($space->space_code, 'T')) {
+                ExpoPushNotificationService::sendSpotAvailable($space->space_code, $space->floor_level ?? '');
+
+                // Floor update stats
+                $floorLevel = $space->floor_level ?? '';
+                if ($floorLevel) {
+                    $floorSpaces = ParkingSpace::where('floor_level', $floorLevel)
+                        ->whereHas('sensorAssignment')
+                        ->where('malfunctioned', false)
+                        ->get();
+                    $total     = $floorSpaces->count();
+                    $available = $floorSpaces->where('is_occupied', false)->count();
+                    ExpoPushNotificationService::sendFloorUpdate($floorLevel, $available, $total);
+                }
+            }
 
             // Determine if this is an assigned sensor or temporary tracking
             $isAssigned = isset($sensor) && $sensor->isAssigned();
