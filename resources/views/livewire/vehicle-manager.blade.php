@@ -238,8 +238,13 @@
                     </h5>
                     <button type="button" class="btn-close" wire:click="closeModal"></button>
                 </div>
-                <form wire:submit="save">
+                <form wire:submit="save" novalidate>
                     <div class="modal-body">
+                        @if($modalError)
+                            <div class="alert alert-danger py-2">
+                                <i class="fas fa-exclamation-circle me-2"></i>{{ $modalError }}
+                            </div>
+                        @endif
                         <div class="row">
                             <div class="col-md-6">
                                 <div class="mb-3">
@@ -317,11 +322,11 @@
                     </div>
                     <div class="modal-footer">
                         <button type="button" class="btn btn-secondary" wire:click="closeModal">Cancel</button>
-                        <button type="submit" class="btn btn-success" wire:loading.attr="disabled">
-                            <span wire:loading.remove>
+                        <button type="submit" class="btn btn-success" wire:loading.attr="disabled" wire:target="save">
+                            <span wire:loading.remove wire:target="save">
                                 {{ $editingId ? 'Update Vehicle' : 'Register Vehicle' }}
                             </span>
-                            <span wire:loading>
+                            <span wire:loading wire:target="save">
                                 <i class="fas fa-spinner fa-spin me-2"></i>Saving...
                             </span>
                         </button>

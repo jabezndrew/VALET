@@ -24,6 +24,12 @@ class PublicParkingDisplay extends Component
     public $selectedSpotX = 0;
     public $selectedSpotY = 0;
 
+    // Sensor pairing modal (admin only)
+    public $showSensorModal = false;
+    public $sensorModalSpaceId = null;
+    public $selectedSensorKey = '';
+    public $unassignedSensors = [];
+
     // Guard action properties (only used by security roles)
     public $showActionModal = false;
     public $selectedSpaceId = null;
@@ -194,6 +200,7 @@ class PublicParkingDisplay extends Component
     }
 
     // Guard action methods (security roles only)
+
     public function isGuardUser()
     {
         return auth()->check() && in_array(auth()->user()->role, ['security', 'admin', 'ssd']);
@@ -228,7 +235,7 @@ class PublicParkingDisplay extends Component
         // Security sees choice screen for available spots, goes straight to malfunction for others
         $role = auth()->user()->role;
         $effectiveStatus = $space->getEffectiveStatus();
-        if (in_array($role, ['security', 'admin', 'ssd']) && $effectiveStatus === 'available' && !$space->malfunctioned) {
+        if ($role === 'security' && $effectiveStatus === 'available' && !$space->malfunctioned) {
             $this->guardActionView = 'choice';
         } else {
             $this->guardActionView = 'malfunction';
@@ -426,6 +433,88 @@ class PublicParkingDisplay extends Component
                 $this->showIncidentsModal = false;
             }
         }
+    }
+
+    public function openSensorSetup($spaceId)
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            return;
+        }
+
+        $this->sensorModalSpaceId = $spaceId;
+        $this->selectedSensorKey = '';
+        $this->unassignedSensors = SensorAssignment::where(function ($q) {
+            $q->where('status', 'unassigned')->orWhereNull('space_code');
+        })->orderBy('mac_address')->orderBy('sensor_index')->get()->toArray();
+        $this->showSensorModal = true;
+    }
+
+    public function pingSensor()
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            return;
+        }
+
+        if (!$this->selectedSensorKey) return;
+
+        [$mac, $index] = explode('|', $this->selectedSensorKey);
+
+        $sensor = SensorAssignment::where('mac_address', $mac)
+            ->where('sensor_index', $index)
+            ->first();
+
+        if (!$sensor) return;
+
+        try {
+            $sensor->startIdentify();
+            session()->flash('ping_success', 'Sensor is blinking! Check the physical sensor.');
+        } catch (\Exception $e) {
+            session()->flash('ping_error', 'Failed to ping sensor: ' . $e->getMessage());
+        }
+    }
+
+    public function pairSensor()
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            return;
+        }
+
+        $this->validate(['selectedSensorKey' => 'required']);
+
+        $space = ParkingSpace::find($this->sensorModalSpaceId);
+        if (!$space) return;
+
+        [$mac, $index] = explode('|', $this->selectedSensorKey);
+
+        $sensor = SensorAssignment::where('mac_address', $mac)
+            ->where('sensor_index', $index)
+            ->first();
+
+        if (!$sensor) return;
+
+        // Unlink from any previous space
+        if ($sensor->space_code) {
+            ParkingSpace::where('space_code', $sensor->space_code)->update(['sensor_id' => null]);
+        }
+
+        $sensor->update(['space_code' => $space->space_code, 'status' => 'active']);
+        $space->update([
+            'is_occupied'     => false,
+            'manual_override' => false,
+            'malfunctioned'   => false,
+        ]);
+
+        session()->flash('success', "Sensor paired to spot {$space->space_code}.");
+        $this->closeSensorModal();
+        $this->loadParkingData();
+    }
+
+    public function closeSensorModal()
+    {
+        $this->showSensorModal = false;
+        $this->sensorModalSpaceId = null;
+        $this->selectedSensorKey = '';
+        $this->unassignedSensors = [];
     }
 
     public function render()

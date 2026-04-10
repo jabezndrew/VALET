@@ -89,25 +89,26 @@
                         </div>
 
                         <div class="mb-3">
-                            <label class="form-label">User <span class="text-danger">*</span></label>
-                            <select class="form-select @error('user_id') is-invalid @enderror" wire:model="user_id">
-                                <option value="">Select User</option>
-                                @foreach($users as $user)
-                                    <option value="{{ $user->id }}">{{ $user->name }} ({{ $user->email }})</option>
-                                @endforeach
-                            </select>
-                            @error('user_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
-                        </div>
-
-                        <div class="mb-3">
-                            <label class="form-label">Vehicle</label>
-                            <select class="form-select @error('vehicle_id') is-invalid @enderror" wire:model="vehicle_id">
-                                <option value="">Select Vehicle (Optional)</option>
+                            <label class="form-label">Vehicle <span class="text-danger">*</span></label>
+                            <select class="form-select @error('vehicle_id') is-invalid @enderror" wire:model.live="vehicle_id">
+                                <option value="">Select Vehicle</option>
                                 @foreach($vehicles as $vehicle)
-                                    <option value="{{ $vehicle->id }}">{{ $vehicle->plate_number }} - {{ $vehicle->user->name ?? 'No owner' }}</option>
+                                    <option value="{{ $vehicle->id }}">{{ $vehicle->plate_number }} - {{ $vehicle->vehicle_make }} {{ $vehicle->vehicle_model }}</option>
                                 @endforeach
                             </select>
                             @error('vehicle_id') <div class="invalid-feedback">{{ $message }}</div> @enderror
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">User <span class="text-danger">*</span></label>
+                            @php
+                                $linkedUser = $user_id ? $users->firstWhere('id', $user_id) : null;
+                            @endphp
+                            <input type="text"
+                                   class="form-control bg-light"
+                                   value="{{ $linkedUser ? $linkedUser->name . ' (' . $linkedUser->email . ')' : 'Select a vehicle first' }}"
+                                   readonly disabled>
+                            @error('user_id') <div class="text-danger small mt-1">{{ $message }}</div> @enderror
                         </div>
 
                         <div class="mb-3">
