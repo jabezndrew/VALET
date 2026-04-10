@@ -833,9 +833,12 @@ main, .container, .valet-header + * {
                               <i class="fas fa-toolbox me-2"></i> Tools
                            </a>
                            <div class="dropdown-divider"></div>
-                           <button onclick="logout()" class="dropdown-item logout-btn">
-                               Logout
-                           </button>
+                           <form id="logout-form" method="POST" action="{{ route('logout') }}">
+                               @csrf
+                               <button type="submit" class="dropdown-item logout-btn">
+                                   Logout
+                               </button>
+                           </form>
                        </div>
                    </div>
                </div>
@@ -957,18 +960,6 @@ main, .container, .valet-header + * {
            }
        });
 
-       // Logout function
-       function logout() {
-           fetch('/logout', {
-               method: 'POST',
-               headers: {
-                   'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content'),
-                   'Content-Type': 'application/json',
-               },
-           }).then(() => {
-               Livewire.navigate('/login');
-           });
-       }
    </script>
    @stack('scripts')
 </body>

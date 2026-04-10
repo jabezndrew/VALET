@@ -7,7 +7,6 @@ use App\Models\ParkingSpace;
 use App\Models\ParkingEntry;
 use App\Models\SensorAssignment;
 use App\Models\GuardIncident;
-use App\Models\Feedback;
 use Illuminate\Support\Facades\Cache;
 
 class PublicParkingDisplay extends Component
@@ -24,6 +23,12 @@ class PublicParkingDisplay extends Component
     public $selectedSection = null;
     public $selectedSpotX = 0;
     public $selectedSpotY = 0;
+
+    // Sensor pairing modal (admin only)
+    public $showSensorModal = false;
+    public $sensorModalSpaceId = null;
+    public $selectedSensorKey = '';
+    public $unassignedSensors = [];
 
     // Guard action properties (only used by security roles)
     public $showActionModal = false;
@@ -194,20 +199,26 @@ class PublicParkingDisplay extends Component
         $this->showRoute = false;
     }
 
-    public function isGuardUser(){
+    // Guard action methods (security roles only)
+
+    public function isGuardUser()
+    {
         return auth()->check() && in_array(auth()->user()->role, ['security', 'admin', 'ssd']);
     }
 
-    public function loadOpenIncidentsCount(){
+    public function loadOpenIncidentsCount()
+    {
         $this->openIncidentsCount = GuardIncident::where('status', 'open')->count();
     }
 
-    public function getSelectedSpaceProperty(){
+    public function getSelectedSpaceProperty()
+    {
         if (!$this->selectedSpaceId) return null;
         return ParkingSpace::with('sensorAssignment')->find($this->selectedSpaceId);
     }
 
-    public function openActionModal($spaceId){
+    public function openActionModal($spaceId)
+    {
         if (!$this->isGuardUser()) {
             return;
         }
@@ -233,7 +244,8 @@ class PublicParkingDisplay extends Component
         $this->showActionModal = true;
     }
 
-    public function showRouteFromModal(){
+    public function showRouteFromModal()
+    {
         if (!$this->selectedSpace) return;
 
         $this->selectParkingSpot(
@@ -245,7 +257,8 @@ class PublicParkingDisplay extends Component
         $this->closeActionModal();
     }
 
-    public function clearMalfunctionFromModal(){
+    public function clearMalfunctionFromModal()
+    {
         if (!$this->selectedSpace || !$this->isGuardUser()) {
             return;
         }
@@ -271,7 +284,8 @@ class PublicParkingDisplay extends Component
         $this->loadParkingData();
     }
 
-    public function closeActionModal(){
+    public function closeActionModal()
+    {
         $this->showActionModal = false;
         $this->selectedSpaceId = null;
         $this->guardActionView = 'choice';
@@ -287,7 +301,8 @@ class PublicParkingDisplay extends Component
         $this->pinError = '';
     }
 
-    public function reportMalfunction(){
+    public function reportMalfunction()
+    {
         if (!$this->selectedSpace || !$this->isGuardUser()) {
             return;
         }
@@ -296,6 +311,7 @@ class PublicParkingDisplay extends Component
             $this->malfunctionError = 'This spot is already flagged as malfunctioned.';
             return;
         }
+
         if (empty($this->malfunctionReason)) {
             $this->malfunctionError = 'Please select an issue type.';
             return;
@@ -307,9 +323,10 @@ class PublicParkingDisplay extends Component
         }
 
         $finalReason = $this->malfunctionReason === 'Other' ? $this->malfunctionCustomReason : $this->malfunctionReason;
+
         $this->selectedSpace->reportMalfunction(auth()->user()->name, $finalReason);
 
-        // Notify admin/SSD
+        // Notify admin/SSD via cache
         $notifications = Cache::get('admin_override_notifications', []);
         $notifications[] = [
             'id' => uniqid(),
@@ -330,7 +347,8 @@ class PublicParkingDisplay extends Component
         $this->loadParkingData();
     }
 
-    public function submitIncident(){
+    public function submitIncident()
+    {
         if (!$this->isGuardUser()) {
             return;
         }
@@ -355,47 +373,13 @@ class PublicParkingDisplay extends Component
             'reported_by'    => auth()->user()->name,
         ]);
 
-        $categoryLabels = [
-            'debris' => 'Debris / Obstruction',
-            'damaged' => 'Damaged Spot',
-            'blocked' => 'Blocked Area',
-            'light_issue' => 'Light Issue',
-            'sensor_issue' => 'Sensor Issue',
-            'other' => 'Other Issue',
-        ];
-
-        $categoryLabel = $categoryLabels[$this->incidentCategory] ?? $this->incidentCategory;
-        $spaceCode = $this->selectedSpace?->space_code ?? 'N/A';
-
-        Feedback::create([
-            'user_id' => auth()->id(),
-            'type' => 'guard_report',
-            'message' => "[Guard Report] {$categoryLabel} at Spot {$spaceCode} ({$this->selectedFloor})" .
-                        ($this->incidentNotes ? "\n\nNotes: {$this->incidentNotes}" : ''),
-            'rating' => null,
-            'email' => null,
-            'issues' => [
-                'category' => $this->incidentCategory,
-                'space_code' => $spaceCode,
-                'floor_level' => $this->selectedFloor,
-            ],
-            'device_info' => [
-                'platform' => 'Web',
-                'reported_by' => auth()->user()->name ?? 'Guard',
-                'submitted_at' => now()->toISOString(),
-            ],
-            'status' => 'pending',
-        ]);
-
-        session()->flash('success', 'Incident reported successfully.');
-
-        $this->pinInput = '';
-        $this->pinError = '';
+        session()->flash('success', 'Incident logged successfully.');
         $this->closeActionModal();
         $this->loadOpenIncidentsCount();
     }
 
-    public function openIncidentsModal(){
+    public function openIncidentsModal()
+    {
         if (!$this->isGuardUser()) {
             return;
         }
@@ -407,12 +391,14 @@ class PublicParkingDisplay extends Component
         $this->showIncidentsModal = true;
     }
 
-    public function closeIncidentsModal(){
+    public function closeIncidentsModal()
+    {
         $this->showIncidentsModal = false;
         $this->openIncidents = [];
     }
 
-    public function resolveIncident($incidentId){
+    public function resolveIncident($incidentId)
+    {
         if (!$this->isGuardUser()) {
             return;
         }
@@ -449,13 +435,90 @@ class PublicParkingDisplay extends Component
         }
     }
 
+    public function openSensorSetup($spaceId)
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            return;
+        }
+
+        $this->sensorModalSpaceId = $spaceId;
+        $this->selectedSensorKey = '';
+        $this->unassignedSensors = SensorAssignment::where(function ($q) {
+            $q->where('status', 'unassigned')->orWhereNull('space_code');
+        })->orderBy('mac_address')->orderBy('sensor_index')->get()->toArray();
+        $this->showSensorModal = true;
+    }
+
+    public function pingSensor()
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            return;
+        }
+
+        if (!$this->selectedSensorKey) return;
+
+        [$mac, $index] = explode('|', $this->selectedSensorKey);
+
+        $sensor = SensorAssignment::where('mac_address', $mac)
+            ->where('sensor_index', $index)
+            ->first();
+
+        if (!$sensor) return;
+
+        try {
+            $sensor->startIdentify();
+            session()->flash('ping_success', 'Sensor is blinking! Check the physical sensor.');
+        } catch (\Exception $e) {
+            session()->flash('ping_error', 'Failed to ping sensor: ' . $e->getMessage());
+        }
+    }
+
+    public function pairSensor()
+    {
+        if (!auth()->check() || !in_array(auth()->user()->role, ['admin', 'ssd'])) {
+            return;
+        }
+
+        $this->validate(['selectedSensorKey' => 'required']);
+
+        $space = ParkingSpace::find($this->sensorModalSpaceId);
+        if (!$space) return;
+
+        [$mac, $index] = explode('|', $this->selectedSensorKey);
+
+        $sensor = SensorAssignment::where('mac_address', $mac)
+            ->where('sensor_index', $index)
+            ->first();
+
+        if (!$sensor) return;
+
+        // Unlink from any previous space
+        if ($sensor->space_code) {
+            ParkingSpace::where('space_code', $sensor->space_code)->update(['sensor_id' => null]);
+        }
+
+        $sensor->update(['space_code' => $space->space_code, 'status' => 'active']);
+        $space->update([
+            'is_occupied'     => false,
+            'manual_override' => false,
+            'malfunctioned'   => false,
+        ]);
+
+        session()->flash('success', "Sensor paired to spot {$space->space_code}.");
+        $this->closeSensorModal();
+        $this->loadParkingData();
+    }
+
+    public function closeSensorModal()
+    {
+        $this->showSensorModal = false;
+        $this->sensorModalSpaceId = null;
+        $this->selectedSensorKey = '';
+        $this->unassignedSensors = [];
+    }
+
     public function render()
     {
-        $this->parkingSpaces = ParkingSpace::where('floor_level', $this->selectedFloor)
-            ->with('sensorAssignment')
-            ->orderBy('slot_name')
-            ->get();
-
         return view('livewire.public-parking-display')
             ->layout('layouts.app');
     }
