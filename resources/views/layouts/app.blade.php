@@ -948,12 +948,21 @@ main, .container, .valet-header + * {
            };
        })();
 
-       // Set logout flag before form submits
+       // Intercept logout — block all Livewire polls and cover page before form navigates
        document.addEventListener('DOMContentLoaded', function () {
            const logoutForm = document.getElementById('logout-form');
            if (logoutForm) {
                logoutForm.addEventListener('submit', function () {
                    window._loggingOut = true;
+
+                   // Block all fetch requests (Livewire polls use fetch internally)
+                   const _origFetch = window.fetch;
+                   window.fetch = function () { return new Promise(() => {}); };
+
+                   // Cover the entire page so no 419 flash is visible
+                   const overlay = document.createElement('div');
+                   overlay.style.cssText = 'position:fixed;inset:0;background:#f8f9fa;z-index:99999;';
+                   document.body.appendChild(overlay);
                });
            }
        });
