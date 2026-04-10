@@ -258,7 +258,7 @@
                                     <input class="form-check-input remember-check"
                                            type="checkbox"
                                            id="remember"
-                                           wire:model="remember">
+                                           wire:model.live="remember">
                                     <label class="form-check-label" for="remember">
                                         Remember me
                                     </label>
