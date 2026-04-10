@@ -294,7 +294,7 @@ class SensorAssignmentController extends Controller
         }
     }
 
-    // Start identify mode for a sensor (blue LED blinking)
+    // Start identify mode for a sensor (Yellow LED blinking)
     public function startIdentify(Request $request): JsonResponse
     {
         try {
@@ -311,7 +311,7 @@ class SensorAssignmentController extends Controller
 
             return response()->json([
                 'success' => true,
-                'message' => 'Identify mode started - blue LED should be blinking',
+                'message' => 'Identify mode started - Yellow LED should be blinking',
                 'sensor' => $sensor
             ]);
 
