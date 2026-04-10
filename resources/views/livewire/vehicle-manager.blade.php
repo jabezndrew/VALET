@@ -8,11 +8,7 @@
                 <p class="text-muted mb-0">Manage registered vehicles and RFID tags</p>
             </div>
             <div class="d-flex gap-2">
-                @if(auth()->user()->role !== 'user')
-                <button wire:click="openVerifyModal" class="btn btn-outline-success">
-                    <i class="fas fa-search me-1"></i> Verify Vehicle
-                </button>
-                @endif
+
                 @if(auth()->user()->canManageCars())
                 <button wire:click="openModal" class="btn btn-success">
                     <i class="fas fa-plus me-1"></i> Register Vehicle

@@ -136,6 +136,33 @@ class RfidController extends Controller
                 return response()->json($scanData);
             }
 
+            // Check if linked user is active
+            if ($rfidTag->user && !$rfidTag->user->is_active) {
+                $scanData = [
+                    'uid' => $uid,
+                    'valid' => false,
+                    'message' => 'Account is disabled. Please go to office.',
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
+                ];
+
+                Cache::put('rfid_scan_latest', $scanData, 15);
+
+                RfidScanLog::create([
+                    'uid' => $uid,
+                    'status' => 'invalid',
+                    'message' => 'Account disabled',
+                    'scan_type' => 'entry',
+                    'gate_mac' => $gateMac,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                ]);
+
+                return response()->json($scanData);
+            }
+
             // Check if linked vehicle is valid (active, not expired, not disabled)
             if ($rfidTag->vehicle && !$rfidTag->vehicle->isValid()) {
                 $vehicle = $rfidTag->vehicle;
