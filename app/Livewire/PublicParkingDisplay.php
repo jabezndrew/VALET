@@ -235,7 +235,7 @@ class PublicParkingDisplay extends Component
         // Security sees choice screen for available spots, goes straight to malfunction for others
         $role = auth()->user()->role;
         $effectiveStatus = $space->getEffectiveStatus();
-        if ($role === 'security' && $effectiveStatus === 'available' && !$space->malfunctioned) {
+        if (in_array($role, ['security', 'admin', 'ssd']) && $effectiveStatus === 'available' && !$space->malfunctioned) {
             $this->guardActionView = 'choice';
         } else {
             $this->guardActionView = 'malfunction';

@@ -8,14 +8,8 @@ use App\Models\ParkingSpace;
 
 class ParkingSpacesSeeder extends Seeder
 {
-    /**
-     * Run the database seeds.
-     */
-    public function run(): void
-    {
-        // Seed initial parking spaces with real sensor data
+    public function run(): void{
         $parkingSpaces = [
-            // 2nd Floor parking spaces (201-2xx)
             [
                 'sensor_id' => 201,
                 'slot_name' => '2B1',
@@ -24,8 +18,8 @@ class ParkingSpacesSeeder extends Seeder
                 'is_active' => true,
                 'distance_cm' => null,
                 'floor_level' => '2nd Floor',
-                'x_position' => 100.00, // TODO: Adjust based on your floor plan
-                'y_position' => 100.00, // TODO: Adjust based on your floor plan
+                'x_position' => 100.00,
+                'y_position' => 100.00,
                 'rotation' => 0,
                 'width' => 80.00,
                 'height' => 120.00,
@@ -38,8 +32,8 @@ class ParkingSpacesSeeder extends Seeder
                 'is_active' => true,
                 'distance_cm' => null,
                 'floor_level' => '2nd Floor',
-                'x_position' => 180.00, // TODO: Adjust based on your floor plan
-                'y_position' => 100.00, // TODO: Adjust based on your floor plan
+                'x_position' => 180.00,
+                'y_position' => 100.00,
                 'rotation' => 0,
                 'width' => 80.00,
                 'height' => 120.00,
@@ -58,8 +52,6 @@ class ParkingSpacesSeeder extends Seeder
                 'width' => 80.00,
                 'height' => 120.00,
             ],
-
-            // 4th Floor parking spaces (401-405)
             [
                 'sensor_id' => 401,
                 'slot_name' => '4B4',
