@@ -497,6 +497,7 @@ class PublicParkingDisplay extends Component
             ParkingSpace::where('space_code', $sensor->space_code)->update(['sensor_id' => null]);
         }
 
+        $sensor->stopIdentify();
         $sensor->update(['space_code' => $space->space_code, 'status' => 'active']);
         $space->update([
             'is_occupied'     => false,
