@@ -936,6 +936,28 @@ main, .container, .valet-header + * {
            }, 5000);
        });
 
+       // Suppress Livewire's native "page has expired" confirm dialog — redirect to login instead
+       (function () {
+           const _originalConfirm = window.confirm;
+           window.confirm = function (message) {
+               if (typeof message === 'string' && message.toLowerCase().includes('expired')) {
+                   window.location.href = '/login';
+                   return false;
+               }
+               return _originalConfirm.apply(this, arguments);
+           };
+       })();
+
+       // Set logout flag before form submits
+       document.addEventListener('DOMContentLoaded', function () {
+           const logoutForm = document.getElementById('logout-form');
+           if (logoutForm) {
+               logoutForm.addEventListener('submit', function () {
+                   window._loggingOut = true;
+               });
+           }
+       });
+
        // Global Livewire configuration
        document.addEventListener('livewire:init', () => {
            setInterval(() => {
@@ -944,7 +966,7 @@ main, .container, .valet-header + * {
                }
            }, 3000);
 
-           // Intercept all Livewire 419 responses — redirect to login instead of showing error dialog
+           // Livewire v3 request hook — catch 419 and redirect cleanly
            Livewire.hook('request', ({ fail }) => {
                fail(({ status, preventDefault }) => {
                    if (status === 419) {
@@ -953,16 +975,6 @@ main, .container, .valet-header + * {
                    }
                });
            });
-       });
-
-       // Set logout flag before form submits so in-flight polls don't trigger error dialog
-       document.addEventListener('DOMContentLoaded', function () {
-           const logoutForm = document.getElementById('logout-form');
-           if (logoutForm) {
-               logoutForm.addEventListener('submit', function () {
-                   window._loggingOut = true;
-               });
-           }
        });
 
        // Livewire navigation events for smooth transitions
