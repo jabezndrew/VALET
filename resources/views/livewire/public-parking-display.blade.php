@@ -130,8 +130,9 @@
                                     $noAvailable = $stats['available'] === 0;
                                     $isSelected = $selectedFloor === $floor;
                                     $isActionUserFloor = auth()->check() && in_array(auth()->user()->role, ['security', 'admin', 'ssd']);
-                                    // Regular users cannot click a floor with no available spots
-                                    $isClickable = $hasData && ($isActionUserFloor || !$noAvailable);
+                                    $isAdminRole = auth()->check() && auth()->user()->role === 'admin';
+                                    // Admins can click any floor (even with no sensors); regular users cannot click floors with no available spots
+                                    $isClickable = $isAdminRole ? true : ($hasData && ($isActionUserFloor || !$noAvailable));
 
                                     if ($isSelected) {
                                         $cardBg = 'linear-gradient(135deg, #B22020 0%, #8B0000 100%)';
@@ -139,18 +140,36 @@
                                         $cardShadow = '0 6px 18px rgba(178, 32, 32, 0.4)';
                                         $titleColor = 'white';
                                         $subtitleColor = 'rgba(255,255,255,0.85)';
+                                        $cardOpacity = '1';
+                                    } elseif (!$hasData && $isAdminRole) {
+                                        // No sensors assigned — gray but clickable for admin
+                                        $cardBg = '#f0f0f0';
+                                        $cardBorder = '#c8c8c8';
+                                        $cardShadow = '0 3px 10px rgba(0,0,0,0.08)';
+                                        $titleColor = '#888';
+                                        $subtitleColor = '#aaa';
+                                        $cardOpacity = '1';
+                                    } elseif (!$hasData) {
+                                        $cardBg = '#f0f0f0';
+                                        $cardBorder = '#c8c8c8';
+                                        $cardShadow = '0 3px 10px rgba(0,0,0,0.08)';
+                                        $titleColor = '#888';
+                                        $subtitleColor = '#aaa';
+                                        $cardOpacity = '0.4';
                                     } elseif ($noAvailable) {
                                         $cardBg = '#e0e0e0';
                                         $cardBorder = '#bdbdbd';
                                         $cardShadow = '0 3px 10px rgba(0,0,0,0.08)';
                                         $titleColor = '#999';
                                         $subtitleColor = '#bbb';
+                                        $cardOpacity = '1';
                                     } else {
                                         $cardBg = 'white';
                                         $cardBorder = '#e0e0e0';
                                         $cardShadow = '0 3px 10px rgba(0,0,0,0.15)';
                                         $titleColor = '#3A3A3C';
                                         $subtitleColor = '#999';
+                                        $cardOpacity = '1';
                                     }
                                 @endphp
 
@@ -162,13 +181,13 @@
                                         border: 3px solid {{ $cardBorder }};
                                         border-radius: 12px;
                                         padding: 20px;
-                                        opacity: {{ $hasData ? '1' : '0.4' }};
+                                        opacity: {{ $cardOpacity }};
                                         transition: all 0.3s ease;
                                         box-shadow: {{ $cardShadow }};
                                         cursor: {{ $isClickable ? 'pointer' : 'not-allowed' }};
                                         {{ !$isClickable ? 'pointer-events: none;' : '' }}
                                     "
-                                    title="{{ !$hasData ? 'No data available for this floor' : ($noAvailable && !$isSelected ? 'No available spots on this floor' : 'View ' . $floor) }}"
+                                    title="{{ !$hasData && $isAdminRole ? 'No sensors assigned — click to view floor map' : (!$hasData ? 'No data available for this floor' : ($noAvailable && !$isSelected ? 'No available spots on this floor' : 'View ' . $floor)) }}"
                                 >
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div style="flex: 1;">
@@ -182,13 +201,13 @@
 
                                         <div class="d-flex gap-4">
                                             <div class="text-center">
-                                                <div style="font-size:2rem;font-weight:700;color:{{ $noAvailable && !$isSelected ? '#aaa' : '#28a745' }};">
+                                                <div style="font-size:2rem;font-weight:700;color:{{ (!$hasData || $noAvailable) && !$isSelected ? '#aaa' : '#28a745' }};">
                                                     {{ $stats['available'] }}
                                                 </div>
                                                 <small style="color: {{ $subtitleColor }};">Available</small>
                                             </div>
                                             <div class="text-center">
-                                                <div style="font-size:2rem;font-weight:700;color:{{ $noAvailable && !$isSelected ? '#aaa' : '#dc3545' }};">
+                                                <div style="font-size:2rem;font-weight:700;color:{{ (!$hasData || $noAvailable) && !$isSelected ? '#aaa' : '#dc3545' }};">
                                                     {{ $stats['occupied'] }}
                                                 </div>
                                                 <small style="color: {{ $subtitleColor }};">Occupied</small>
