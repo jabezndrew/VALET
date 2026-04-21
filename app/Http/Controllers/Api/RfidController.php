@@ -582,6 +582,30 @@ class RfidController extends Controller
         ]);
     }
 
+    // Get vehicles parked for more than 12 hours
+    public function longParked()
+    {
+        $threshold = Carbon::now()->subHours(12);
+
+        $vehicles = ParkingEntry::where('status', 'parked')
+            ->where('entry_time', '<', $threshold)
+            ->with(['user', 'rfidTag.vehicle'])
+            ->orderBy('entry_time', 'asc')
+            ->get()
+            ->map(fn($entry) => [
+                'plate'        => $entry->vehicle_plate,
+                'owner'        => $entry->user->name ?? 'Unknown',
+                'parked_since' => Carbon::parse($entry->entry_time)->toISOString(),
+                'hours_parked' => round(Carbon::parse($entry->entry_time)->diffInMinutes(now()) / 60, 1),
+            ]);
+
+        return response()->json([
+            'long_parked' => $vehicles,
+            'count'       => $vehicles->count(),
+            'threshold_hours' => 12,
+        ]);
+    }
+
     // Lookup-only vehicle verification for mobile staff (no side effects)
     // POST /public/verify-vehicle
     // Body: { mode: 'rfid'|'plate', value: string }

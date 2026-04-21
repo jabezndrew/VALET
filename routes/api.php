@@ -38,6 +38,7 @@ Route::prefix('public')->group(function () {
     Route::get('/rfid/tags', [RfidController::class, 'tags']);
     Route::post('/rfid/parked', [RfidController::class, 'markParked']);
     Route::post('/guest/verify', [RfidController::class, 'verifyGuest']);
+    Route::get('/rfid/long-parked', [RfidController::class, 'longParked']);
 
     // Mobile staff vehicle lookup (no side effects)
     Route::post('/verify-vehicle', [RfidController::class, 'lookupVehicle']);
