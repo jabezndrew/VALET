@@ -51,10 +51,14 @@ class OvernightParkingAlert extends Component
         $all = Cache::get('admin_override_notifications', []);
 
         // Filter by what each role should see
-        $filtered = array_values(array_filter($all, function ($n) use ($role) {
+        $filtered = array_values(array_filter($all, function ($n) use ($role, $userId) {
             $type = $n['type'] ?? '';
+            // Never show malfunction notifications to the person who reported/cleared them
+            if (in_array($type, ['malfunction_report', 'malfunction_cleared']) && ($n['reporter_id'] ?? null) == $userId) {
+                return false;
+            }
             return match ($role) {
-                'admin'    => true,  // admin sees everything
+                'admin'    => true,
                 'ssd'      => in_array($type, ['malfunction_report', 'malfunction_cleared', 'rfid_alert', 'guest_request']),
                 'security' => in_array($type, ['malfunction_cleared', 'rfid_alert', 'guest_request']),
                 default    => false,
