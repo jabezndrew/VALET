@@ -12,7 +12,7 @@ class ParkingDashboard extends Component
     public $allSpaces = [];
     public $floorFilter = 'all';
     public $lastUpdate;
-    
+
     // Statistics
     public $totalSpaces = 0;
     public $occupiedSpaces = 0;
@@ -27,7 +27,7 @@ class ParkingDashboard extends Component
     public $showModal = false;
     public $selectedFloor = '';
     public $selectedFloorData = [];
-    
+
     // Verify modal properties
     public $showVerifyModal = false;
     public $verifyRfid = '';
@@ -86,11 +86,16 @@ class ParkingDashboard extends Component
 
     public function goToFloor($floorLevel)
     {
+        $role = auth()->user()->role;
+        $isStaff = in_array($role, ['admin', 'ssd', 'security']);
+
         if (!$this->hasFloorData($floorLevel)) {
-            $this->dispatch('show-alert', type: 'info', message: "No data available for {$floorLevel} yet.");
-            return;
+            if (!$isStaff) {
+                $this->dispatch('show-alert', type: 'info', message: "No data available for {$floorLevel} yet.");
+                return;
+            }
         }
-        
+
         $this->selectFloor($floorLevel);
     }
 
@@ -279,10 +284,10 @@ class ParkingDashboard extends Component
     public function toggleAutoRefresh()
     {
         $this->isAutoRefreshEnabled = !$this->isAutoRefreshEnabled;
-        
+
         $action = $this->isAutoRefreshEnabled ? 'enable' : 'disable';
         $this->dispatch("{$action}-auto-refresh");
-        
+
         $status = $this->isAutoRefreshEnabled ? 'enabled' : 'disabled';
         $this->dispatch('show-alert', type: 'success', message: "Auto-refresh {$status}");
     }
@@ -293,7 +298,7 @@ class ParkingDashboard extends Component
         $this->allSpaces = collect();
         $this->floorStats = [];
         $this->resetStatistics();
-        
+
         $this->loadParkingData();
         $this->dispatch('show-alert', type: 'success', message: 'Dashboard refreshed successfully');
     }
@@ -304,7 +309,7 @@ class ParkingDashboard extends Component
         if ($this->floorFilter === 'all') {
             return $this->allSpaces;
         }
-        
+
         return $this->allSpaces->where('floor_level', $this->floorFilter);
     }
 
@@ -347,7 +352,7 @@ class ParkingDashboard extends Component
     private function handleDataLoadError($exception)
     {
         $this->dispatch('show-alert', type: 'error', message: 'Failed to load parking data: ' . $exception->getMessage());
-        
+
         $this->allSpaces = collect();
         $this->floorStats = [];
         $this->resetStatistics();
@@ -362,15 +367,15 @@ class ParkingDashboard extends Component
             return $space->is_occupied == 1 || $space->is_occupied === true;
         })->count();
         $this->availableSpaces = $this->totalSpaces - $this->occupiedSpaces;
-        $this->occupancyRate = $this->totalSpaces > 0 
-            ? round(($this->occupiedSpaces / $this->totalSpaces) * 100, 1) 
+        $this->occupancyRate = $this->totalSpaces > 0
+            ? round(($this->occupiedSpaces / $this->totalSpaces) * 100, 1)
             : 0;
     }
 
     private function updateFloorStats()
     {
         $allFloors = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
-        
+
         $this->floorStats = collect($allFloors)->map(function ($floorName) {
             return $this->calculateFloorStats($floorName);
         })->values()->toArray(); // Ensure array keys are sequential
@@ -378,23 +383,23 @@ class ParkingDashboard extends Component
 
     private function calculateFloorStats($floorName)
     {
-        // Since we're already filtering for spaces with sensor assignments,
-        // we just need to filter by floor
-        $floorSpaces = $this->allSpaces->where('floor_level', $floorName)->filter(fn($s) => !$s->malfunctioned);
+        $allFloorSpaces = $this->allSpaces->where('floor_level', $floorName);
+        $malfunctioned = $allFloorSpaces->filter(fn($s) => $s->malfunctioned)->count();
+        $floorSpaces = $allFloorSpaces->filter(fn($s) => !$s->malfunctioned);
         $total = $floorSpaces->count();
 
         if ($total === 0) {
             return [
-                'floor_level' => $floorName,
-                'total' => 0,
-                'occupied' => 0,
-                'available' => 0,
+                'floor_level'  => $floorName,
+                'total'        => 0,
+                'occupied'     => 0,
+                'available'    => 0,
                 'occupancy_rate' => 0,
-                'has_data' => false
+                'malfunctioned' => $malfunctioned,
+                'has_data'     => false,
             ];
         }
 
-        // Handle both boolean and integer values for is_occupied
         $occupied = $floorSpaces->filter(function ($space) {
             return $space->is_occupied == 1 || $space->is_occupied === true;
         })->count();
@@ -403,12 +408,13 @@ class ParkingDashboard extends Component
         $occupancyRate = round(($occupied / $total) * 100, 1);
 
         return [
-            'floor_level' => $floorName,
-            'total' => $total,
-            'occupied' => $occupied,
-            'available' => $available,
+            'floor_level'    => $floorName,
+            'total'          => $total,
+            'occupied'       => $occupied,
+            'available'      => $available,
             'occupancy_rate' => $occupancyRate,
-            'has_data' => true
+            'malfunctioned'  => $malfunctioned,
+            'has_data'       => true,
         ];
     }
 
@@ -481,21 +487,17 @@ class ParkingDashboard extends Component
         $this->occupancyRate = 0;
     }
 
-    public function grantGuestAccess()
-    {
+    public function grantGuestAccess(){
         if (!$this->canVerifyVehicles()) {
             $this->dispatch('show-alert', type: 'error', message: 'Access denied.');
-            return;
-        }
+            return;}
 
         if (!$this->verifyResult || $this->verifyResult['status'] !== 'GUEST_OK') {
             $this->dispatch('show-alert', type: 'error', message: 'Invalid guest verification.');
-            return;
-        }
+            return; }
 
         try {
             $plateNumber = $this->verifyResult['plate'];
-
             // Generate guest ID
             $year = date('Y');
             $lastGuest = \App\Models\GuestAccess::whereYear('created_at', $year)
@@ -503,7 +505,6 @@ class ParkingDashboard extends Component
                 ->first();
             $sequence = $lastGuest ? ((int) substr($lastGuest->guest_id, -4)) + 1 : 1;
             $guestId = "GUEST-{$year}-" . str_pad($sequence, 4, '0', STR_PAD_LEFT);
-
             // Create guest access pass (24 hours)
             \App\Models\GuestAccess::create([
                 'guest_id' => $guestId,
@@ -512,12 +513,9 @@ class ParkingDashboard extends Component
                 'valid_from' => Carbon::now(),
                 'valid_until' => Carbon::now()->addHours(24),
                 'status' => 'active',
-                'created_by' => auth()->id(),
-            ]);
-
+                'created_by' => auth()->id(), ]);
             $this->dispatch('show-alert', type: 'success', message: "Guest access granted! Pass ID: {$guestId}");
             $this->closeVerifyModal();
-
         } catch (\Exception $e) {
             $this->dispatch('show-alert', type: 'error', message: 'Failed to create guest pass: ' . $e->getMessage());
         }

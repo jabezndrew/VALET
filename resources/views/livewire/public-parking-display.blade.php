@@ -189,6 +189,10 @@
                                     "
                                     title="{{ !$hasData && $isAdminRole ? 'No sensors assigned — click to view floor map' : (!$hasData ? 'No data available for this floor' : ($noAvailable && !$isSelected ? 'No available spots on this floor' : 'View ' . $floor)) }}"
                                 >
+                                    @php
+                                        $floorMalfunctioned = $stats['malfunctioned'] ?? 0;
+                                        $allFloorMalfunctioned = $floorMalfunctioned > 0 && $stats['total'] === 0;
+                                    @endphp
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div style="flex: 1;">
                                             <div style="font-weight:700;font-size:1.3rem;color:{{ $titleColor }};">
@@ -199,21 +203,35 @@
                                             </small>
                                         </div>
 
-                                        <div class="d-flex gap-4">
+                                        @if($allFloorMalfunctioned)
                                             <div class="text-center">
-                                                <div style="font-size:2rem;font-weight:700;color:{{ (!$hasData || $noAvailable) && !$isSelected ? '#aaa' : '#28a745' }};">
-                                                    {{ $stats['available'] }}
+                                                <i class="fas fa-exclamation-triangle" style="font-size:1.8rem;color:{{ $isSelected ? 'rgba(255,255,255,0.9)' : '#e0a800' }};"></i>
+                                                <div style="font-size:0.7rem;font-weight:600;color:{{ $isSelected ? 'rgba(255,255,255,0.85)' : '#e0a800' }};margin-top:2px;">
+                                                    {{ $floorMalfunctioned }} MALFUNCTION{{ $floorMalfunctioned > 1 ? 'S' : '' }}
                                                 </div>
-                                                <small style="color: {{ $subtitleColor }};">Available</small>
                                             </div>
-                                            <div class="text-center">
-                                                <div style="font-size:2rem;font-weight:700;color:{{ (!$hasData || $noAvailable) && !$isSelected ? '#aaa' : '#dc3545' }};">
-                                                    {{ $stats['occupied'] }}
+                                        @else
+                                            <div class="d-flex gap-4">
+                                                <div class="text-center">
+                                                    <div style="font-size:2rem;font-weight:700;color:{{ (!$hasData || $noAvailable) && !$isSelected ? '#aaa' : '#28a745' }};">
+                                                        {{ $stats['available'] }}
+                                                    </div>
+                                                    <small style="color: {{ $subtitleColor }};">Available</small>
                                                 </div>
-                                                <small style="color: {{ $subtitleColor }};">Occupied</small>
+                                                <div class="text-center">
+                                                    <div style="font-size:2rem;font-weight:700;color:{{ (!$hasData || $noAvailable) && !$isSelected ? '#aaa' : '#dc3545' }};">
+                                                        {{ $stats['occupied'] }}
+                                                    </div>
+                                                    <small style="color: {{ $subtitleColor }};">Occupied</small>
+                                                </div>
                                             </div>
-                                        </div>
+                                        @endif
                                     </div>
+                                    @if(!$allFloorMalfunctioned && $floorMalfunctioned > 0)
+                                        <div style="margin-top:8px;font-size:0.75rem;font-weight:600;color:{{ $isSelected ? 'rgba(255,255,255,0.85)' : '#e0a800' }};">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>{{ $floorMalfunctioned }} spot(s) malfunctioned
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>

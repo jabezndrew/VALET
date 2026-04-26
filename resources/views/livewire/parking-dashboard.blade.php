@@ -91,13 +91,17 @@
                     @php
                         $availablePercentage = $floorStat['total'] > 0 ? ($floorStat['available'] / $floorStat['total']) * 100 : 0;
                         $occupiedPercentage = $floorStat['total'] > 0 ? ($floorStat['occupied'] / $floorStat['total']) * 100 : 0;
+                        $hasMalfunction = ($floorStat['malfunctioned'] ?? 0) > 0;
+                        $allMalfunctioned = !$floorStat['has_data'] && $hasMalfunction;
                         $badgeClass = match(true) {
+                            $allMalfunctioned => 'malfunction-badge',
                             !$floorStat['has_data'] => 'no-data-badge',
                             $floorStat['available'] == 0 => 'full-badge',
                             $availablePercentage <= 30 => 'limited-badge',
                             default => 'available-badge'
                         };
                         $badgeText = match(true) {
+                            $allMalfunctioned => 'MALFUNCTION',
                             !$floorStat['has_data'] => 'NO DATA',
                             $floorStat['available'] == 0 => 'FULL',
                             $availablePercentage <= 30 => 'LIMITED',
@@ -105,9 +109,13 @@
                         };
                     @endphp
 
+                    @php
+                        $isStaff = in_array(auth()->user()->role, ['admin', 'ssd', 'security']);
+                        $isCardClickable = $floorStat['has_data'] || ($isStaff && $allMalfunctioned);
+                    @endphp
                     <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="floor-card {{ $floorStat['has_data'] ? 'has-data' : 'no-data' }} {{ $floorStat['has_data'] && $floorStat['available'] == 0 ? 'full' : '' }}"
-                             @if($floorStat['has_data'])
+                        <div class="floor-card {{ $floorStat['has_data'] ? 'has-data' : 'no-data' }} {{ $floorStat['has_data'] && $floorStat['available'] == 0 ? 'full' : '' }} {{ $isCardClickable && $allMalfunctioned ? 'malfunction-clickable' : '' }}"
+                             @if($isCardClickable)
                                 wire:click="goToFloor('{{ $floorStat['floor_level'] }}')"
                                 style="cursor: pointer;"
                                 title="Click to view {{ $floorStat['floor_level'] }} details"
@@ -165,9 +173,21 @@
                                 </div>
                             @else
                                 <div class="text-center py-4">
-                                    <i class="fas fa-database text-muted mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
-                                    <p class="text-muted mb-1">No data available yet</p>
-                                    <small class="text-muted">Sensors not configured</small>
+                                    @if($allMalfunctioned)
+                                        <i class="fas fa-exclamation-triangle mb-2" style="font-size: 2rem; color: #e0a800;"></i>
+                                        <p class="mb-1 fw-semibold" style="color: #e0a800;">Sensor Malfunction</p>
+                                        <small class="text-muted">{{ $floorStat['malfunctioned'] }} spot(s) reported</small>
+                                    @else
+                                        <i class="fas fa-database text-muted mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+                                        <p class="text-muted mb-1">No data available yet</p>
+                                        <small class="text-muted">Sensors not configured</small>
+                                    @endif
+                                </div>
+                            @endif
+                            @if($floorStat['has_data'] && $hasMalfunction)
+                                <div class="mt-2" style="font-size: 0.78rem; color: #e0a800;">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    {{ $floorStat['malfunctioned'] }} spot(s) malfunctioned
                                 </div>
                             @endif
                         </div>
@@ -579,6 +599,15 @@
     opacity: 0.8;
 }
 
+.floor-card.malfunction-clickable {
+    cursor: pointer !important;
+}
+
+.floor-card.malfunction-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
 /* Full floor - no available spots */
 .floor-card.full {
     background: #e0e0e0;
@@ -682,6 +711,16 @@
 ============================================*/
 .no-data-badge {
     background: #6c757d;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.malfunction-badge {
+    background: #e0a800;
     color: white;
     padding: 4px 10px;
     border-radius: 12px;

@@ -42,10 +42,8 @@ class ParkingLog extends Component
         $this->resetPage();
     }
 
-    public function export()
-    {
+    public function export(){
         $entries = $this->getEntriesQuery()->get();
-
         $csvData = "Entry Type,User,Vehicle Plate,Entry Time,Exit Time,Duration (min),Status\n";
 
         foreach ($entries as $entry) {
@@ -58,12 +56,9 @@ class ParkingLog extends Component
                 $entry->entry_time->format('Y-m-d H:i:s'),
                 $entry->exit_time ? $entry->exit_time->format('Y-m-d H:i:s') : 'Still Parked',
                 $entry->duration_minutes ?? '-',
-                $entry->status
-            );
+                $entry->status );
         }
-
         $filename = 'parking_log_' . now()->format('Y-m-d_His') . '.csv';
-
         return response()->streamDownload(function () use ($csvData) {
             echo $csvData;
         }, $filename, [
@@ -104,8 +99,7 @@ class ParkingLog extends Component
         return $query;
     }
 
-    public function getStats()
-    {
+    public function getStats(){
         $today = now()->startOfDay();
 
         return [

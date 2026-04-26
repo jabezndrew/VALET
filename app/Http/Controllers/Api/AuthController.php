@@ -11,40 +11,29 @@ use Illuminate\Validation\ValidationException;
 
 class AuthController extends Controller
 {
-
      //Login and get API token (ALL ROLES)
-
-    public function login(Request $request): JsonResponse
-    {
+    public function login(Request $request): JsonResponse {
         try {
             $request->validate([
                 'email' => 'required|email',
                 'password' => 'required|string',
             ]);
-
             $user = SysUser::where('email', $request->email)->first();
-
             if (!$user || !Hash::check($request->password, $user->password)) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Invalid credentials'
                 ], 401);
             }
-
             if (!$user->is_active) {
                 return response()->json([
                     'success' => false,
                     'message' => 'Account deactivated'
                 ], 401);
             }
-
-            // Delete any existing tokens for this user to avoid duplicates
-            $user->tokens()->delete();
-
-            // Create new token with role-based abilities
-            $abilities = $this->getAbilitiesForRole($user->role);
+            $user->tokens()->delete(); // Delete any existing tokens for this user to avoid duplicates
+            $abilities = $this->getAbilitiesForRole($user->role);  // Create new token with role-based abilities
             $token = $user->createToken('valet-api', $abilities);
-
             return response()->json([
                 'success' => true,
                 'message' => 'Login successful',
@@ -57,11 +46,8 @@ class AuthController extends Controller
                     'role_display' => $user->getRoleDisplayName(),
                     'employee_id' => $user->employee_id,
                     'department' => $user->department,
-                    'is_active' => $user->is_active,
-                ],
-                'abilities' => $abilities,
-            ]);
-
+                    'is_active' => $user->is_active, ],
+                'abilities' => $abilities, ]);
         } catch (ValidationException $e) {
             return response()->json([
                 'success' => false,

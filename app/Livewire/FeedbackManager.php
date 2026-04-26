@@ -15,11 +15,11 @@ class FeedbackManager extends Component
     public $rating = null;
     public $email = '';
     public $issues = [];
-    
+
     // Filter properties
     public $statusFilter = 'all';
     public $typeFilter = 'all';
-    
+
     // Modal properties
     public $showModal = false;
     public $showResponseModal = false;
@@ -76,7 +76,7 @@ class FeedbackManager extends Component
             $this->dispatch('show-alert', type: 'error', message: 'Administrators cannot submit feedback.');
             return;
         }
-        
+
         $this->resetForm();
         $this->showModal = true;
     }
@@ -87,15 +87,12 @@ class FeedbackManager extends Component
         $this->resetForm();
     }
 
-    public function submitFeedback()
-    {
+    public function submitFeedback(){
         if (!$this->canSubmitFeedback) {
             $this->dispatch('show-alert', type: 'error', message: 'Administrators cannot submit feedback.');
             return;
         }
-
         $this->validate();
-
         try {
             Feedback::create([
                 'user_id' => auth()->id(),
@@ -116,24 +113,19 @@ class FeedbackManager extends Component
     }
 
     // Admin management methods
-    public function quickUpdateStatus($feedbackId, $status)
-    {
+    public function quickUpdateStatus($feedbackId, $status){
         if (!$this->canManageFeedback) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
-            return;
-        }
+            return; }
 
         if (!in_array($status, ['pending', 'reviewed', 'resolved'])) {
             $this->dispatch('show-alert', type: 'error', message: 'Invalid status.');
-            return;
-        }
-
+            return; }
         try {
             $feedback = Feedback::find($feedbackId);
             if ($feedback) {
                 $feedback->update(['status' => $status]);
             }
-
             $this->dispatch('show-alert', type: 'success', message: 'Feedback status updated successfully.');
         } catch (\Exception $e) {
             $this->dispatch('show-alert', type: 'error', message: 'Failed to update status.');
@@ -165,17 +157,13 @@ class FeedbackManager extends Component
         $this->reset(['showResponseModal', 'selectedFeedbackId', 'adminResponse', 'newStatus']);
     }
 
-    public function saveAdminResponse()
-    {
+    public function saveAdminResponse() {
         if (!$this->canManageFeedback || !$this->selectedFeedbackId) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
-            return;
-        }
-
+            return; }
         $this->validate([
             'newStatus' => 'required|in:pending,reviewed,resolved',
-            'adminResponse' => 'nullable|string|max:1000',
-        ]);
+            'adminResponse' => 'nullable|string|max:1000',]);
 
         try {
             $feedback = Feedback::find($this->selectedFeedbackId);
@@ -187,7 +175,6 @@ class FeedbackManager extends Component
                     'responded_at' => now(),
                 ]);
             }
-
             // Push notification + web bell for feedback owner
             if ($feedback && $feedback->user_id && $this->adminResponse) {
                 ExpoPushNotificationService::sendFeedbackReply(
@@ -207,7 +194,6 @@ class FeedbackManager extends Component
                 ];
                 Cache::put($cacheKey, array_slice($userNotifs, -20), now()->addDays(30));
             }
-
             $this->closeResponseModal();
             $this->dispatch('show-alert', type: 'success', message: 'Feedback updated successfully.');
         } catch (\Exception $e) {

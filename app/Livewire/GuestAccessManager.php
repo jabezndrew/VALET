@@ -183,8 +183,7 @@ class GuestAccessManager extends Component
     }
 
     // Quick create from plate number (called from dashboard verify modal)
-    public function quickCreate($plateNumber, $name = 'Guest')
-    {
+    public function quickCreate($plateNumber, $name = 'Guest'){
         $guestId = $this->generateGuestId();
         $validFrom = Carbon::now();
         $validUntil = Carbon::now()->addHours(24);

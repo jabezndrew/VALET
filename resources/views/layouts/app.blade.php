@@ -601,6 +601,12 @@ main, .container, .valet-header + * {
    cursor: not-allowed !important;
 }
 
+.floor-card.no-data.malfunction-clickable {
+   border: 2px solid #dee2e6;
+   cursor: pointer !important;
+   opacity: 0.9;
+}
+
 .no-data-badge {
    background: #A0A0A0;
    color: white;
