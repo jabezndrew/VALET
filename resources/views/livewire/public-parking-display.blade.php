@@ -583,18 +583,27 @@
                 @if($guardActionView === 'choice')
                     {{-- Choice screen --}}
                     <div style="display: flex; flex-direction: column; gap: 12px;">
-                        <button class="guard-action-submit" style="background: #28a745; color: #fff; font-size: 1rem; padding: 14px;"
-                                wire:click="showRouteFromModal">
-                            <i class="fas fa-route me-2"></i> Show Route to Spot
-                        </button>
+                            <button class="guard-action-submit" style="background: #28a745; color: #fff; font-size: 1rem; padding: 14px;"
+                                    wire:click="showRouteFromModal">
+                                <i class="fas fa-route me-2"></i> Show Route to Spot
+                            </button>
                         <button class="guard-action-submit" style="background: #fd7e14; color: #fff; font-size: 1rem; padding: 14px;"
                                 wire:click="$set('guardActionView', 'incident')">
                             <i class="fas fa-clipboard-list me-2"></i> Log Incident
                         </button>
-                        <button class="guard-action-submit" style="background: #B22020; color: #fff; font-size: 1rem; padding: 14px;"
-                                wire:click="$set('guardActionView', 'malfunction')">
-                            <i class="fas fa-exclamation-triangle me-2"></i> Report Malfunction
-                        </button>
+
+                        @if($this->selectedSpace->malfunctioned)
+                            <button class="guard-action-submit" style="background: #28a745; color: #fff; flex: 1;"
+                                wire:click="clearMalfunctionFromModal">
+                                <i class="fas fa-check-circle me-1"></i> Clear Malfunction
+                            </button>
+                        @else
+                            <button class="guard-action-submit" style="background: #B22020; color: #fff; font-size: 1rem; padding: 14px;"
+                                    wire:click="$set('guardActionView', 'malfunction')">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Report Malfunction
+                            </button>
+                        @endif
+
                         <button class="guard-action-submit" style="background: #6c757d; color: #fff;"
                                 wire:click="closeActionModal">
                             Cancel
