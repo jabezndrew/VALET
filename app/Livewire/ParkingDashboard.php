@@ -374,7 +374,7 @@ class ParkingDashboard extends Component
 
     private function updateFloorStats()
     {
-        $allFloors = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
+        $allFloors = config('parking.floors');
 
         $this->floorStats = collect($allFloors)->map(function ($floorName) {
             return $this->calculateFloorStats($floorName);

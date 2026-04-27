@@ -95,7 +95,7 @@ class PublicParkingDisplay extends Component
 
     public function loadAllFloorStats()
     {
-        $allFloors = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
+        $allFloors = config('parking.floors');
         $this->allFloorStats = [];
 
         foreach ($allFloors as $floor) {

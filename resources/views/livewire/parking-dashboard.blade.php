@@ -196,7 +196,7 @@
 
                 {{-- Fallback if no floor stats for some reason --}}
                 @if(empty($floorStats))
-                    @foreach(['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'] as $floor)
+                    @foreach(config('parking.floors') as $floor)
                     <div class="col-lg-3 col-md-6 mb-4">
                         <div class="floor-card no-data">
                             <div class="d-flex justify-content-between align-items-center mb-3">

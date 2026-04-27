@@ -267,7 +267,7 @@ class ParkingController extends Controller
                 ->get();
 
             // Calculate statistics for all floors
-            $allFloors = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
+            $allFloors = config('parking.floors');
             $allFloorStats = [];
 
             foreach ($allFloors as $floor) {
@@ -360,7 +360,7 @@ class ParkingController extends Controller
     public function getDashboardStats(): JsonResponse
     {
         try {
-            $allFloors = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
+            $allFloors = config('parking.floors');
             $floorStats = [];
             $totalSpaces = 0;
             $totalAvailable = 0;
