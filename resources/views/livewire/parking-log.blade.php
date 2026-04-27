@@ -3,9 +3,9 @@
         <div class="d-flex justify-content-between align-items-center mb-4">
             <h2>Parking Log</h2>
             <div class="d-flex gap-2">
-                <button class="btn btn-outline-primary" wire:click="openAnalytics">
+                <a href="{{ route('parking-analytics') }}" class="btn btn-outline-primary">
                     <i class="fas fa-chart-bar me-1"></i> Analytics
-                </button>
+                </a>
                 <button class="btn btn-success" wire:click="export">
                     <i class="fas fa-download me-1"></i> Export CSV
                 </button>
@@ -235,21 +235,9 @@
                 type: 'bar',
                 data: {
                     labels: data.daily.labels,
-                    datasets: [{
-                        label: 'Entries',
-                        data: data.daily.data,
-                        backgroundColor: 'rgba(59,130,246,0.7)',
-                        borderColor: 'rgba(59,130,246,1)',
-                        borderWidth: 1,
-                        borderRadius: 4,
-                    }]
+                    datasets: [{ label: 'Entries', data: data.daily.data, backgroundColor: 'rgba(59,130,246,0.7)', borderColor: 'rgba(59,130,246,1)', borderWidth: 1, borderRadius: 4 }]
                 },
-                options: {
-                    ...chartDefaults,
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } }
-                    }
-                }
+                options: { ...chartDefaults, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } } } }
             });
         }
 
@@ -259,22 +247,9 @@
                 type: 'bar',
                 data: {
                     labels: data.hourly.labels,
-                    datasets: [{
-                        label: 'Entries',
-                        data: data.hourly.data,
-                        backgroundColor: 'rgba(16,185,129,0.7)',
-                        borderColor: 'rgba(16,185,129,1)',
-                        borderWidth: 1,
-                        borderRadius: 3,
-                    }]
+                    datasets: [{ label: 'Entries', data: data.hourly.data, backgroundColor: 'rgba(16,185,129,0.7)', borderColor: 'rgba(16,185,129,1)', borderWidth: 1, borderRadius: 3 }]
                 },
-                options: {
-                    ...chartDefaults,
-                    scales: {
-                        y: { beginAtZero: true, ticks: { stepSize: 1 } },
-                        x: { ticks: { font: { size: 10 } } }
-                    }
-                }
+                options: { ...chartDefaults, scales: { y: { beginAtZero: true, ticks: { stepSize: 1 } }, x: { ticks: { font: { size: 10 } } } } }
             });
         }
 
@@ -284,31 +259,14 @@
                 type: 'doughnut',
                 data: {
                     labels: ['RFID', 'Guest'],
-                    datasets: [{
-                        data: [data.type.rfid, data.type.guest],
-                        backgroundColor: ['rgba(59,130,246,0.8)', 'rgba(107,114,128,0.8)'],
-                        borderWidth: 2,
-                    }]
+                    datasets: [{ data: [data.type.rfid, data.type.guest], backgroundColor: ['rgba(59,130,246,0.8)', 'rgba(107,114,128,0.8)'], borderWidth: 2 }]
                 },
-                options: {
-                    responsive: true,
-                    maintainAspectRatio: true,
-                    plugins: {
-                        legend: { display: false },
-                        tooltip: {
-                            callbacks: {
-                                label: ctx => ` ${ctx.label}: ${ctx.parsed}`
-                            }
-                        }
-                    }
-                }
+                options: { responsive: true, maintainAspectRatio: true, plugins: { legend: { display: false } } }
             });
         }
     }
 
-    // Render charts when analytics modal opens
     window.addEventListener('updateCharts', event => {
-        // Wait a tick for the modal DOM to render
         setTimeout(() => initCharts(event.detail.chartData), 50);
     });
 </script>

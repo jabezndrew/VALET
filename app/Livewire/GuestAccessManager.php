@@ -4,7 +4,9 @@ namespace App\Livewire;
 
 use Livewire\Component;
 use App\Models\GuestAccess;
+use App\Services\ExpoPushNotificationService;
 use Carbon\Carbon;
+use Illuminate\Support\Facades\Cache;
 
 class GuestAccessManager extends Component
 {
@@ -92,7 +94,7 @@ class GuestAccessManager extends Component
                 $guest = GuestAccess::find($this->editingId);
                 $guest->update([
                     'name' => $this->name,
-                    'vehicle_plate' => strtoupper($this->vehicle_plate),
+                    'vehicle_plate' => strtoupper(str_replace(' ', '', $this->vehicle_plate)),
                     'phone' => $this->phone,
                     'purpose' => $finalPurpose,
                     'valid_until' => $validUntil,
@@ -106,7 +108,7 @@ class GuestAccessManager extends Component
                 GuestAccess::create([
                     'guest_id' => $guestId,
                     'name' => $this->name,
-                    'vehicle_plate' => strtoupper($this->vehicle_plate),
+                    'vehicle_plate' => strtoupper(str_replace(' ', '', $this->vehicle_plate)),
                     'phone' => $this->phone,
                     'purpose' => $finalPurpose,
                     'valid_from' => $validFrom,
@@ -116,6 +118,24 @@ class GuestAccessManager extends Component
                     'notes' => $this->notes,
                 ]);
                 $message = "Guest access created. Pass ID: {$guestId}";
+
+                ExpoPushNotificationService::sendGuestRequest(
+                    $this->name,
+                    strtoupper(str_replace(' ', '', $this->vehicle_plate)),
+                    $finalPurpose
+                );
+
+                // Web bell notification
+                $webNotifs = Cache::get('admin_override_notifications', []);
+                $webNotifs[] = [
+                    'id'            => uniqid(),
+                    'type'          => 'guest_request',
+                    'guest_name'    => $this->name,
+                    'vehicle_plate' => strtoupper(str_replace(' ', '', $this->vehicle_plate)),
+                    'purpose'       => $finalPurpose,
+                    'created_at'    => now()->toISOString(),
+                ];
+                Cache::put('admin_override_notifications', array_slice($webNotifs, -50), now()->addDays(7));
             }
 
             $this->dispatch('show-alert', type: 'success', message: $message);
@@ -149,7 +169,7 @@ class GuestAccessManager extends Component
 
     public function delete($guestId)
     {
-        if (!auth()->user()->canManageCars()) {
+        if (!$this->canManageGuests()) {
             $this->dispatch('show-alert', type: 'error', message: 'Unauthorized action.');
             return;
         }
@@ -163,8 +183,7 @@ class GuestAccessManager extends Component
     }
 
     // Quick create from plate number (called from dashboard verify modal)
-    public function quickCreate($plateNumber, $name = 'Guest')
-    {
+    public function quickCreate($plateNumber, $name = 'Guest'){
         $guestId = $this->generateGuestId();
         $validFrom = Carbon::now();
         $validUntil = Carbon::now()->addHours(24);
@@ -172,7 +191,7 @@ class GuestAccessManager extends Component
         GuestAccess::create([
             'guest_id' => $guestId,
             'name' => $name,
-            'vehicle_plate' => strtoupper($plateNumber),
+            'vehicle_plate' => strtoupper(str_replace(' ', '', $plateNumber)),
             'valid_from' => $validFrom,
             'valid_until' => $validUntil,
             'status' => 'active',
@@ -244,7 +263,7 @@ class GuestAccessManager extends Component
 
     private function canManageGuests()
     {
-        return in_array(auth()->user()->role, ['admin', 'ssd']);
+        return in_array(auth()->user()->role, ['admin', 'ssd', 'security']);
     }
 
     public function getStatusBadge($guest)

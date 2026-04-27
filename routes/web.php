@@ -14,9 +14,7 @@ use App\Livewire\RfidManagement;
 use App\Livewire\IncidentLog;
 use App\Livewire\ParkingLog;
 use App\Livewire\GuestAccessManager;
-
-// Public routes - no authentication required
-Route::get('/parking-display', PublicParkingDisplay::class)->name('parking.display.public');
+use App\Livewire\ParkingAnalytics;
 
 Route::get('/', fn() => auth()->check() ? redirect('/dashboard') : redirect('/login'));
 
@@ -39,10 +37,11 @@ Route::middleware('auth')->group(function () {
         Route::get('/floor/{floor}', FloorDetail::class)->name('floor.detail');
         Route::get('/feedback', FeedbackManager::class)->name('feedback.index');
     });
-    
+
     Route::middleware('role:security')->group(function () {
         Route::get('/cars', VehicleManager::class)->name('cars.index');
         Route::get('/parking-log', ParkingLog::class)->name('parking-log');
+        Route::get('/parking-analytics', ParkingAnalytics::class)->name('parking-analytics');
         Route::get('/rfid-log', App\Livewire\RfidLog::class)->name('rfid-log');
     });
 
@@ -68,5 +67,5 @@ Route::middleware('auth')->group(function () {
 
     // Profile page
     Route::get('/profile', App\Livewire\Profile::class)->name('profile');
-    
+
 });

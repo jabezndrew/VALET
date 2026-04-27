@@ -3,6 +3,7 @@
 namespace App\Services;
 
 use App\Models\SysUser;
+use App\Models\ParkingEntry;
 use Illuminate\Support\Facades\Http;
 use Illuminate\Support\Facades\Log;
 
@@ -10,70 +11,199 @@ class ExpoPushNotificationService
 {
     private const EXPO_PUSH_URL = 'https://exp.host/--/api/v2/push/send';
 
-    // Send RFID alert to all security/SSD users
+    // ── 1. Spot Available ─────────────────────────────────────────────────────
+    public static function sendSpotAvailable(string $spaceCode, string $floorLevel): void
+    {
+        $activeUserIds = ParkingEntry::whereIn('status', ['parked', 'entered'])
+            ->whereNotNull('user_id')
+            ->pluck('user_id')
+            ->unique();
+
+        if ($activeUserIds->isEmpty()) return;
+
+        $users = SysUser::whereIn('id', $activeUserIds)
+            ->whereNotNull('expo_push_token')
+            ->where('is_active', true)
+            ->get();
+
+        if ($users->isEmpty()) return;
+
+        $messages = $users->map(fn($user) => [
+            'to'        => $user->expo_push_token,
+            'sound'     => 'default',
+            'title'     => 'Parking Spot Available',
+            'body'      => "Spot {$spaceCode} just became available on {$floorLevel}",
+            'data'      => [
+                'type'        => 'spot_available',
+                'space_code'  => $spaceCode,
+                'floor_level' => $floorLevel,
+                'timestamp'   => now()->toISOString(),
+            ],
+            'channelId' => 'spot-available',
+            'priority'  => 'high',
+            'color'     => '#2F623D',
+        ])->values()->all();
+
+        self::send($messages);
+        Log::info('Spot available notification sent', ['space_code' => $spaceCode, 'recipients' => $users->count()]);
+    }
+
+    // ── 2. Floor Update ───────────────────────────────────────────────────────
+    public static function sendFloorUpdate(string $floorLevel, int $available, int $total): void
+    {
+        $activeUserIds = ParkingEntry::whereIn('status', ['parked', 'entered'])
+            ->whereNotNull('user_id')
+            ->pluck('user_id')
+            ->unique();
+
+        if ($activeUserIds->isEmpty()) return;
+
+        $users = SysUser::whereIn('id', $activeUserIds)
+            ->whereNotNull('expo_push_token')
+            ->where('is_active', true)
+            ->get();
+
+        if ($users->isEmpty()) return;
+
+        $messages = $users->map(fn($user) => [
+            'to'        => $user->expo_push_token,
+            'sound'     => 'default',
+            'title'     => 'Floor Update',
+            'body'      => "{$floorLevel}: {$available} more spot(s) available ({$available}/{$total} total)",
+            'data'      => [
+                'type'        => 'floor_update',
+                'floor_level' => $floorLevel,
+                'available'   => $available,
+                'total'       => $total,
+                'timestamp'   => now()->toISOString(),
+            ],
+            'channelId' => 'floor-updates',
+            'priority'  => 'default',
+        ])->values()->all();
+
+        self::send($messages);
+        Log::info('Floor update notification sent', ['floor' => $floorLevel, 'available' => $available]);
+    }
+
+    // ── 3. Feedback Reply ─────────────────────────────────────────────────────
+    public static function sendFeedbackReply(int $userId, string $feedbackPreview, string $adminReply): void
+    {
+        $user = SysUser::find($userId);
+
+        if (!$user || !$user->expo_push_token || !$user->is_active) return;
+
+        $message = [[
+            'to'        => $user->expo_push_token,
+            'sound'     => 'default',
+            'title'     => 'Admin Replied to your Feedback',
+            'body'      => $adminReply,
+            'data'      => [
+                'type'             => 'feedback_reply',
+                'feedback_preview' => $feedbackPreview,
+                'reply'            => $adminReply,
+                'timestamp'        => now()->toISOString(),
+            ],
+            'channelId' => 'feedback-replies',
+            'priority'  => 'high',
+        ]];
+
+        self::send($message);
+        Log::info('Feedback reply notification sent', ['user_id' => $userId]);
+    }
+
+    // ── 4. RFID Alert ─────────────────────────────────────────────────────────
     public static function sendRfidAlert(string $alertType, array $data): void
     {
-        // Get all security and SSD users with push tokens
         $users = SysUser::whereIn('role', ['security', 'ssd', 'admin'])
             ->whereNotNull('expo_push_token')
             ->where('is_active', true)
             ->get();
 
-        if ($users->isEmpty()) {
-            Log::info('No users with push tokens found for RFID alert');
-            return;
-        }
+        if ($users->isEmpty()) return;
 
-        $title = self::getAlertTitle($alertType);
-        $body = self::getAlertBody($alertType, $data);
+        $uid      = $data['uid'] ?? 'Unknown';
+        $userName = $data['user_name'] ?? null;
+        $location = $data['gate_mac'] ?? 'Entrance Gate';
 
-        $messages = [];
-        foreach ($users as $user) {
-            $messages[] = [
-                'to' => $user->expo_push_token,
-                'sound' => 'default',
-                'title' => $title,
-                'body' => $body,
-                'data' => [
-                    'alert_type' => $alertType,
-                    'uid' => $data['uid'] ?? null,
-                    'user_name' => $data['user_name'] ?? 'Unknown',
-                    'vehicle_plate' => $data['vehicle_plate'] ?? 'N/A',
-                    'timestamp' => now()->toISOString(),
-                    'gate_mac' => $data['gate_mac'] ?? null,
-                ],
-                'channelId' => 'rfid-alerts',
-                'priority' => 'high',
-            ];
-        }
+        [$title, $body] = match ($alertType) {
+            'invalid'   => [
+                'Unregistered RFID Detected',
+                "Unregistered card {$uid} at {$location}",
+            ],
+            'expired'   => [
+                'Expired RFID Detected',
+                "Expired card {$uid} at {$location}" . ($userName ? " - {$userName}" : ''),
+            ],
+            'suspended' => [
+                'Suspended RFID Detected',
+                "Suspended card {$uid} at {$location}" . ($userName ? " - {$userName}" : ''),
+            ],
+            'lost'      => [
+                'Lost RFID Detected',
+                "Lost card {$uid} at {$location}" . ($userName ? " - {$userName}" : ''),
+            ],
+            default     => [
+                'Unknown Card Detected',
+                "Unknown card {$uid} scanned at {$location}",
+            ],
+        };
 
-        // Send in batches of 100 (Expo limit)
-        $chunks = array_chunk($messages, 100);
+        $messages = $users->map(fn($user) => [
+            'to'        => $user->expo_push_token,
+            'sound'     => 'default',
+            'title'     => $title,
+            'body'      => $body,
+            'data'      => [
+                'type'          => 'rfid_alert',
+                'alert_type'    => $alertType,
+                'uid'           => $uid,
+                'user_name'     => $userName,
+                'vehicle_plate' => $data['vehicle_plate'] ?? 'N/A',
+                'gate_mac'      => $data['gate_mac'] ?? null,
+                'timestamp'     => now()->toISOString(),
+            ],
+            'channelId'         => 'rfid-alerts',
+            'priority'          => 'high',
+            'color'             => '#B22020',
+            'vibrate'           => [0, 500, 200, 500],
+        ])->values()->all();
 
-        foreach ($chunks as $chunk) {
-            try {
-                $response = Http::post(self::EXPO_PUSH_URL, $chunk);
-
-                if ($response->failed()) {
-                    Log::error('Expo push notification failed', [
-                        'status' => $response->status(),
-                        'body' => $response->body()
-                    ]);
-                }
-            } catch (\Exception $e) {
-                Log::error('Expo push notification exception', [
-                    'message' => $e->getMessage()
-                ]);
-            }
-        }
-
-        Log::info('RFID alert sent', [
-            'alert_type' => $alertType,
-            'recipients' => $users->count()
-        ]);
+        self::send($messages);
+        Log::info('RFID alert sent', ['type' => $alertType, 'uid' => $uid, 'recipients' => $users->count()]);
     }
 
-    // Send malfunction report alert to admin/ssd users
+    // ── 5. Guest Request ──────────────────────────────────────────────────────
+    public static function sendGuestRequest(string $guestName, string $plate, string $purpose): void
+    {
+        $users = SysUser::whereIn('role', ['security', 'admin'])
+            ->whereNotNull('expo_push_token')
+            ->where('is_active', true)
+            ->get();
+
+        if ($users->isEmpty()) return;
+
+        $messages = $users->map(fn($user) => [
+            'to'        => $user->expo_push_token,
+            'sound'     => 'default',
+            'title'     => 'New Guest Access Request',
+            'body'      => "{$guestName} ({$plate}) - {$purpose}",
+            'data'      => [
+                'type'    => 'guest_request',
+                'name'    => $guestName,
+                'plate'   => $plate,
+                'purpose' => $purpose,
+                'timestamp' => now()->toISOString(),
+            ],
+            'channelId' => 'guest-requests',
+            'priority'  => 'high',
+            'color'     => '#fd7e14',
+        ])->values()->all();
+
+        self::send($messages);
+        Log::info('Guest request notification sent', ['name' => $guestName, 'plate' => $plate]);
+    }
+
+    // ── 6. Spot Malfunction ───────────────────────────────────────────────────
     public static function sendMalfunctionAlert(string $spaceCode, string $reportedBy, string $reporterRole, ?string $reason): void
     {
         $users = SysUser::whereIn('role', ['admin', 'ssd'])
@@ -81,9 +211,7 @@ class ExpoPushNotificationService
             ->where('is_active', true)
             ->get();
 
-        if ($users->isEmpty()) {
-            return;
-        }
+        if ($users->isEmpty()) return;
 
         $roleLabel = match ($reporterRole) {
             'security' => 'Security Guard',
@@ -92,65 +220,44 @@ class ExpoPushNotificationService
             default    => ucfirst($reporterRole),
         };
 
-        $body = "Spot {$spaceCode} flagged as malfunctioned by {$roleLabel} {$reportedBy}.";
-        if ($reason) {
-            $body .= " Reason: {$reason}";
-        }
+        $spaceObj = \App\Models\ParkingSpace::where('space_code', $spaceCode)->first();
+        $floorLevel = $spaceObj?->floor_level ?? 'Unknown Floor';
+
+        $body = "{$floorLevel} • Reported by {$roleLabel} {$reportedBy}" . ($reason ? " • {$reason}" : '');
 
         $messages = $users->map(fn($user) => [
             'to'        => $user->expo_push_token,
             'sound'     => 'default',
-            'title'     => '⚠️ Spot Malfunction Reported',
+            'title'     => "⚠️ Spot {$spaceCode} Malfunctioned",
             'body'      => $body,
             'data'      => [
-                'alert_type'  => 'spot_malfunction',
+                'type'        => 'spot_malfunction',
                 'space_code'  => $spaceCode,
+                'floor_level' => $floorLevel,
                 'reported_by' => $reportedBy,
                 'reason'      => $reason,
                 'timestamp'   => now()->toISOString(),
             ],
-            'channelId' => 'rfid-alerts',
+            'channelId' => 'malfunctions',
             'priority'  => 'high',
         ])->values()->all();
 
-        foreach (array_chunk($messages, 100) as $chunk) {
-            try {
-                Http::post(self::EXPO_PUSH_URL, $chunk);
-            } catch (\Exception $e) {
-                Log::error('Malfunction push notification failed', ['message' => $e->getMessage()]);
-            }
-        }
-
+        self::send($messages);
         Log::info('Malfunction alert sent', ['space_code' => $spaceCode, 'recipients' => $users->count()]);
     }
 
-    // Get alert title based on type
-    private static function getAlertTitle(string $alertType): string
+    // ── Internal batch sender ─────────────────────────────────────────────────
+    private static function send(array $messages): void
     {
-        return match ($alertType) {
-            'invalid' => 'Unregistered RFID Detected',
-            'expired' => 'Expired RFID Detected',
-            'suspended' => 'Suspended RFID Detected',
-            'lost' => 'Lost RFID Detected',
-            'unknown' => 'Unknown Card Detected',
-            default => 'RFID Alert'
-        };
-    }
-
-    // Get alert body based on type and data
-    private static function getAlertBody(string $alertType, array $data): string
-    {
-        $uid = $data['uid'] ?? 'Unknown';
-        $userName = $data['user_name'] ?? 'Unknown';
-        $vehiclePlate = $data['vehicle_plate'] ?? 'N/A';
-
-        return match ($alertType) {
-            'invalid' => "Unregistered RFID card ({$uid}) attempted access at entrance gate.",
-            'expired' => "Expired RFID for {$userName} ({$vehiclePlate}) attempted access.",
-            'suspended' => "Suspended RFID for {$userName} ({$vehiclePlate}) attempted access.",
-            'lost' => "Lost RFID for {$userName} ({$vehiclePlate}) attempted access.",
-            'unknown' => "Unknown card format detected at entrance gate.",
-            default => "RFID alert: {$uid}"
-        };
+        foreach (array_chunk($messages, 100) as $chunk) {
+            try {
+                $response = Http::post(self::EXPO_PUSH_URL, $chunk);
+                if ($response->failed()) {
+                    Log::error('Expo push failed', ['status' => $response->status(), 'body' => $response->body()]);
+                }
+            } catch (\Exception $e) {
+                Log::error('Expo push exception', ['message' => $e->getMessage()]);
+            }
+        }
     }
 }

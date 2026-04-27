@@ -111,7 +111,6 @@ class SensorManager extends Component
             'columnCode' => 'required|string|size:1|in:A,B,C,D,E,F,G,H,I,J',
             'slotNumber' => "required|integer|min:1|max:{$maxSlots}"
         ]);
-
         try {
             // Build space_code (e.g., "4B4")
             $spaceCode = "{$this->floorNumber}{$this->columnCode}{$this->slotNumber}";
@@ -139,9 +138,7 @@ class SensorManager extends Component
 
             if ($existingAssignment) {
                 session()->flash('error', "Parking space {$spaceCode} is already assigned to another sensor");
-                return;
-            }
-
+                return; }
             // If sensor was previously assigned, delete old temporary parking space
             if ($this->selectedSensor->space_code) {
                 $oldSpaceCode = $this->selectedSensor->space_code;
@@ -150,20 +147,15 @@ class SensorManager extends Component
                     ParkingSpace::where('space_code', $oldSpaceCode)->delete();
                 }
             }
-
             // Check if parking space exists, create if it doesn't
             $parkingSpace = ParkingSpace::firstOrCreate(
                 ['space_code' => $spaceCode],
-                [
-                    'floor_number' => $this->floorNumber,
+                ['floor_number' => $this->floorNumber,
                     'column_code' => $this->columnCode,
                     'slot_number' => $this->slotNumber,
                     'floor_level' => $floorLevel,
                     'is_occupied' => false,
-                    'distance_cm' => 0
-                ]
-            );
-
+                    'distance_cm' => 0 ] );
             // Always reset to available on (re)assignment, clear any stale flags
             $parkingSpace->update([
                 'is_occupied' => false,
@@ -176,12 +168,9 @@ class SensorManager extends Component
                 'malfunction_reported_by' => null,
                 'malfunctioned_at' => null,
             ]);
-
             $this->selectedSensor->update([
                 'space_code' => $spaceCode,
-                'status' => 'active'
-            ]);
-
+                'status' => 'active']);
             session()->flash('success', "Sensor assigned to {$spaceCode} successfully!");
             $this->closeAssignModal();
             $this->loadSensors();
@@ -230,7 +219,7 @@ class SensorManager extends Component
             $sensor = SensorAssignment::find($sensorId);
             $sensor->startIdentify();
 
-            session()->flash('success', 'Identify mode started! Blue LED should be blinking.');
+            session()->flash('success', 'Identify mode started! Yellow LED should be blinking.');
             $this->loadSensors();
 
         } catch (\Exception $e) {

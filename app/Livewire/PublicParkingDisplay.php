@@ -95,7 +95,7 @@ class PublicParkingDisplay extends Component
 
     public function loadAllFloorStats()
     {
-        $allFloors = ['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'];
+        $allFloors = config('parking.floors');
         $this->allFloorStats = [];
 
         foreach ($allFloors as $floor) {
@@ -106,14 +106,16 @@ class PublicParkingDisplay extends Component
             }
 
             $spacesWithSensors = $spaces->filter(fn($s) => $s->sensorAssignment !== null && !$s->malfunctioned);
+            $malfunctioned = $spaces->filter(fn($s) => $s->sensorAssignment !== null && $s->malfunctioned)->count();
             $total = $spacesWithSensors->count();
             $occupied = $spacesWithSensors->filter(fn($s) => $s->getEffectiveStatus() === 'occupied')->count();
             $available = $spacesWithSensors->filter(fn($s) => $s->getEffectiveStatus() === 'available')->count();
 
             $this->allFloorStats[$floor] = [
-                'total' => $total,
-                'available' => $available,
-                'occupied' => $occupied,
+                'total'        => $total,
+                'available'    => $available,
+                'occupied'     => $occupied,
+                'malfunctioned' => $malfunctioned,
             ];
         }
 
@@ -232,14 +234,7 @@ class PublicParkingDisplay extends Component
         $space = $this->selectedSpace;
         if (!$space) return;
 
-        // Security sees choice screen for available spots, goes straight to malfunction for others
-        $role = auth()->user()->role;
-        $effectiveStatus = $space->getEffectiveStatus();
-        if (in_array($role, ['security', 'admin', 'ssd']) && $effectiveStatus === 'available' && !$space->malfunctioned) {
-            $this->guardActionView = 'choice';
-        } else {
-            $this->guardActionView = 'malfunction';
-        }
+        $this->guardActionView = 'choice';
 
         $this->showActionModal = true;
     }
@@ -273,6 +268,7 @@ class PublicParkingDisplay extends Component
             'status'      => 'available',
             'reason'      => 'Malfunction report cleared',
             'guard_name'  => auth()->user()->name,
+            'reporter_id' => auth()->id(),
             'floor_level' => $this->selectedFloor,
             'created_at'  => now()->toISOString(),
             'read'        => false,
@@ -335,6 +331,7 @@ class PublicParkingDisplay extends Component
             'status' => 'malfunctioned',
             'reason' => $finalReason,
             'guard_name' => auth()->user()->name,
+            'reporter_id' => auth()->id(),
             'reporter_role' => 'security',
             'floor_level' => $this->selectedFloor,
             'created_at' => now()->toISOString(),
@@ -497,6 +494,7 @@ class PublicParkingDisplay extends Component
             ParkingSpace::where('space_code', $sensor->space_code)->update(['sensor_id' => null]);
         }
 
+        $sensor->stopIdentify();
         $sensor->update(['space_code' => $space->space_code, 'status' => 'active']);
         $space->update([
             'is_occupied'     => false,

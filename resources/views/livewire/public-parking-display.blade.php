@@ -130,8 +130,9 @@
                                     $noAvailable = $stats['available'] === 0;
                                     $isSelected = $selectedFloor === $floor;
                                     $isActionUserFloor = auth()->check() && in_array(auth()->user()->role, ['security', 'admin', 'ssd']);
-                                    // Regular users cannot click a floor with no available spots
-                                    $isClickable = $hasData && ($isActionUserFloor || !$noAvailable);
+                                    $isAdminRole = auth()->check() && auth()->user()->role === 'admin';
+                                    // Admins can click any floor (even with no sensors); regular users cannot click floors with no available spots
+                                    $isClickable = $isAdminRole ? true : ($hasData && ($isActionUserFloor || !$noAvailable));
 
                                     if ($isSelected) {
                                         $cardBg = 'linear-gradient(135deg, #B22020 0%, #8B0000 100%)';
@@ -139,18 +140,36 @@
                                         $cardShadow = '0 6px 18px rgba(178, 32, 32, 0.4)';
                                         $titleColor = 'white';
                                         $subtitleColor = 'rgba(255,255,255,0.85)';
+                                        $cardOpacity = '1';
+                                    } elseif (!$hasData && $isAdminRole) {
+                                        // No sensors assigned — gray but clickable for admin
+                                        $cardBg = '#f0f0f0';
+                                        $cardBorder = '#c8c8c8';
+                                        $cardShadow = '0 3px 10px rgba(0,0,0,0.08)';
+                                        $titleColor = '#888';
+                                        $subtitleColor = '#aaa';
+                                        $cardOpacity = '1';
+                                    } elseif (!$hasData) {
+                                        $cardBg = '#f0f0f0';
+                                        $cardBorder = '#c8c8c8';
+                                        $cardShadow = '0 3px 10px rgba(0,0,0,0.08)';
+                                        $titleColor = '#888';
+                                        $subtitleColor = '#aaa';
+                                        $cardOpacity = '0.4';
                                     } elseif ($noAvailable) {
                                         $cardBg = '#e0e0e0';
                                         $cardBorder = '#bdbdbd';
                                         $cardShadow = '0 3px 10px rgba(0,0,0,0.08)';
                                         $titleColor = '#999';
                                         $subtitleColor = '#bbb';
+                                        $cardOpacity = '1';
                                     } else {
                                         $cardBg = 'white';
                                         $cardBorder = '#e0e0e0';
                                         $cardShadow = '0 3px 10px rgba(0,0,0,0.15)';
                                         $titleColor = '#3A3A3C';
                                         $subtitleColor = '#999';
+                                        $cardOpacity = '1';
                                     }
                                 @endphp
 
@@ -162,14 +181,18 @@
                                         border: 3px solid {{ $cardBorder }};
                                         border-radius: 12px;
                                         padding: 20px;
-                                        opacity: {{ $hasData ? '1' : '0.4' }};
+                                        opacity: {{ $cardOpacity }};
                                         transition: all 0.3s ease;
                                         box-shadow: {{ $cardShadow }};
                                         cursor: {{ $isClickable ? 'pointer' : 'not-allowed' }};
                                         {{ !$isClickable ? 'pointer-events: none;' : '' }}
                                     "
-                                    title="{{ !$hasData ? 'No data available for this floor' : ($noAvailable && !$isSelected ? 'No available spots on this floor' : 'View ' . $floor) }}"
+                                    title="{{ !$hasData && $isAdminRole ? 'No sensors assigned — click to view floor map' : (!$hasData ? 'No data available for this floor' : ($noAvailable && !$isSelected ? 'No available spots on this floor' : 'View ' . $floor)) }}"
                                 >
+                                    @php
+                                        $floorMalfunctioned = $stats['malfunctioned'] ?? 0;
+                                        $allFloorMalfunctioned = $floorMalfunctioned > 0 && $stats['total'] === 0;
+                                    @endphp
                                     <div class="d-flex justify-content-between align-items-center">
                                         <div style="flex: 1;">
                                             <div style="font-weight:700;font-size:1.3rem;color:{{ $titleColor }};">
@@ -180,21 +203,35 @@
                                             </small>
                                         </div>
 
-                                        <div class="d-flex gap-4">
+                                        @if($allFloorMalfunctioned)
                                             <div class="text-center">
-                                                <div style="font-size:2rem;font-weight:700;color:{{ $noAvailable && !$isSelected ? '#aaa' : '#28a745' }};">
-                                                    {{ $stats['available'] }}
+                                                <i class="fas fa-exclamation-triangle" style="font-size:1.8rem;color:{{ $isSelected ? 'rgba(255,255,255,0.9)' : '#e0a800' }};"></i>
+                                                <div style="font-size:0.7rem;font-weight:600;color:{{ $isSelected ? 'rgba(255,255,255,0.85)' : '#e0a800' }};margin-top:2px;">
+                                                    {{ $floorMalfunctioned }} MALFUNCTION{{ $floorMalfunctioned > 1 ? 'S' : '' }}
                                                 </div>
-                                                <small style="color: {{ $subtitleColor }};">Available</small>
                                             </div>
-                                            <div class="text-center">
-                                                <div style="font-size:2rem;font-weight:700;color:{{ $noAvailable && !$isSelected ? '#aaa' : '#dc3545' }};">
-                                                    {{ $stats['occupied'] }}
+                                        @else
+                                            <div class="d-flex gap-4">
+                                                <div class="text-center">
+                                                    <div style="font-size:2rem;font-weight:700;color:{{ (!$hasData || $noAvailable) && !$isSelected ? '#aaa' : '#28a745' }};">
+                                                        {{ $stats['available'] }}
+                                                    </div>
+                                                    <small style="color: {{ $subtitleColor }};">Available</small>
                                                 </div>
-                                                <small style="color: {{ $subtitleColor }};">Occupied</small>
+                                                <div class="text-center">
+                                                    <div style="font-size:2rem;font-weight:700;color:{{ (!$hasData || $noAvailable) && !$isSelected ? '#aaa' : '#dc3545' }};">
+                                                        {{ $stats['occupied'] }}
+                                                    </div>
+                                                    <small style="color: {{ $subtitleColor }};">Occupied</small>
+                                                </div>
                                             </div>
-                                        </div>
+                                        @endif
                                     </div>
+                                    @if(!$allFloorMalfunctioned && $floorMalfunctioned > 0)
+                                        <div style="margin-top:8px;font-size:0.75rem;font-weight:600;color:{{ $isSelected ? 'rgba(255,255,255,0.85)' : '#e0a800' }};">
+                                            <i class="fas fa-exclamation-triangle me-1"></i>{{ $floorMalfunctioned }} spot(s) malfunctioned
+                                        </div>
+                                    @endif
                                 </div>
                             @endforeach
                         </div>
@@ -554,10 +591,17 @@
                                 wire:click="$set('guardActionView', 'incident')">
                             <i class="fas fa-clipboard-list me-2"></i> Log Incident
                         </button>
-                        <button class="guard-action-submit" style="background: #B22020; color: #fff; font-size: 1rem; padding: 14px;"
-                                wire:click="$set('guardActionView', 'malfunction')">
-                            <i class="fas fa-exclamation-triangle me-2"></i> Report Malfunction
-                        </button>
+                        @if($this->selectedSpace->malfunctioned)
+                            <button class="guard-action-submit" style="background: #28a745; color: #fff; font-size: 1rem; padding: 14px;"
+                                    wire:click="clearMalfunctionFromModal">
+                                <i class="fas fa-check-circle me-1"></i> Clear Malfunction
+                            </button>
+                        @else
+                            <button class="guard-action-submit" style="background: #B22020; color: #fff; font-size: 1rem; padding: 14px;"
+                                    wire:click="$set('guardActionView', 'malfunction')">
+                                <i class="fas fa-exclamation-triangle me-2"></i> Report Malfunction
+                            </button>
+                        @endif
                         <button class="guard-action-submit" style="background: #6c757d; color: #fff;"
                                 wire:click="closeActionModal">
                             Cancel

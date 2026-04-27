@@ -3,8 +3,9 @@
 
     <div class="container mt-4">
         <!-- Header -->
-        <div class="text-center mb-2">
-            <h2 class="fw-bold text-muted" style="font-size: 1.5rem; letter-spacing: 1px;">TOTAL AVAILABLE PARKING SPACE</h2>
+        <div class="text-center mb-1">
+            <h3 class="fw-bold" style="font-size: 1.7rem;">USJ-R Quadricentennial Campus</h3>
+            <h2 class="fw-bold text-muted" style="font-size: 1.3rem; letter-spacing: 1px;">TOTAL AVAILABLE PARKING SPACE</h2>
         </div>
 
         <div class="campus-section">
@@ -14,10 +15,8 @@
                     <!-- Empty space to balance the right button -->
                 </div>
 
-                <!-- Centered title column -->
-                <div class="col text-center">
-                    <h4 class="mb-0 fw-bold">USJ-R Quadricentennial Campus</h4>
-                </div>
+                <!-- Centered title column (now empty, heading moved above) -->
+                <div class="col text-center"></div>
 
                 <!-- Right button column -->
                 <div class="col-auto">
@@ -66,7 +65,7 @@
             <div class="text-center mb-4">
                 <span class="text-muted">Overall Occupancy</span>
                 <div class="h5 fw-bold">{{ $occupancyRate }}% Full</div>
-                @if($lastUpdate)
+                @if($lastUpdate && auth()->user()->role === 'admin')
                 <small class="text-muted">
                     <i class="fas fa-clock me-1"></i>Last updated: {{ $lastUpdate }}
                 </small>
@@ -92,13 +91,17 @@
                     @php
                         $availablePercentage = $floorStat['total'] > 0 ? ($floorStat['available'] / $floorStat['total']) * 100 : 0;
                         $occupiedPercentage = $floorStat['total'] > 0 ? ($floorStat['occupied'] / $floorStat['total']) * 100 : 0;
+                        $hasMalfunction = ($floorStat['malfunctioned'] ?? 0) > 0;
+                        $allMalfunctioned = !$floorStat['has_data'] && $hasMalfunction;
                         $badgeClass = match(true) {
+                            $allMalfunctioned => 'malfunction-badge',
                             !$floorStat['has_data'] => 'no-data-badge',
                             $floorStat['available'] == 0 => 'full-badge',
                             $availablePercentage <= 30 => 'limited-badge',
                             default => 'available-badge'
                         };
                         $badgeText = match(true) {
+                            $allMalfunctioned => 'MALFUNCTION',
                             !$floorStat['has_data'] => 'NO DATA',
                             $floorStat['available'] == 0 => 'FULL',
                             $availablePercentage <= 30 => 'LIMITED',
@@ -106,9 +109,13 @@
                         };
                     @endphp
 
+                    @php
+                        $isStaff = in_array(auth()->user()->role, ['admin', 'ssd', 'security']);
+                        $isCardClickable = $floorStat['has_data'] || ($isStaff && $allMalfunctioned);
+                    @endphp
                     <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="floor-card {{ $floorStat['has_data'] ? 'has-data' : 'no-data' }} {{ $floorStat['has_data'] && $floorStat['available'] == 0 ? 'full' : '' }}"
-                             @if($floorStat['has_data'])
+                        <div class="floor-card {{ $floorStat['has_data'] ? 'has-data' : 'no-data' }} {{ $floorStat['has_data'] && $floorStat['available'] == 0 ? 'full' : '' }} {{ $isCardClickable && $allMalfunctioned ? 'malfunction-clickable' : '' }}"
+                             @if($isCardClickable)
                                 wire:click="goToFloor('{{ $floorStat['floor_level'] }}')"
                                 style="cursor: pointer;"
                                 title="Click to view {{ $floorStat['floor_level'] }} details"
@@ -166,9 +173,21 @@
                                 </div>
                             @else
                                 <div class="text-center py-4">
-                                    <i class="fas fa-database text-muted mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
-                                    <p class="text-muted mb-1">No data available yet</p>
-                                    <small class="text-muted">Sensors not configured</small>
+                                    @if($allMalfunctioned)
+                                        <i class="fas fa-exclamation-triangle mb-2" style="font-size: 2rem; color: #e0a800;"></i>
+                                        <p class="mb-1 fw-semibold" style="color: #e0a800;">Sensor Malfunction</p>
+                                        <small class="text-muted">{{ $floorStat['malfunctioned'] }} spot(s) reported</small>
+                                    @else
+                                        <i class="fas fa-database text-muted mb-2" style="font-size: 2rem; opacity: 0.3;"></i>
+                                        <p class="text-muted mb-1">No data available yet</p>
+                                        <small class="text-muted">Sensors not configured</small>
+                                    @endif
+                                </div>
+                            @endif
+                            @if($floorStat['has_data'] && $hasMalfunction)
+                                <div class="mt-2" style="font-size: 0.78rem; color: #e0a800;">
+                                    <i class="fas fa-exclamation-triangle me-1"></i>
+                                    {{ $floorStat['malfunctioned'] }} spot(s) malfunctioned
                                 </div>
                             @endif
                         </div>
@@ -177,7 +196,7 @@
 
                 {{-- Fallback if no floor stats for some reason --}}
                 @if(empty($floorStats))
-                    @foreach(['1st Floor', '2nd Floor', '3rd Floor', '4th Floor'] as $floor)
+                    @foreach(config('parking.floors') as $floor)
                     <div class="col-lg-3 col-md-6 mb-4">
                         <div class="floor-card no-data">
                             <div class="d-flex justify-content-between align-items-center mb-3">
@@ -375,29 +394,49 @@
                             <div class="d-flex align-items-center">
                                 @php
                                     $icon = match($verifyResult['status']) {
-                                        'ACTIVE', 'Active' => 'check-circle',
+                                        'ACTIVE', 'Active', 'REGISTERED', 'GUEST_OK' => 'check-circle',
                                         'NOT_FOUND', 'NOT_REGISTERED' => 'times-circle',
-                                        'REGISTERED' => 'check-circle',
+                                        'GUEST_EXPIRED', 'INVALID', 'EXPIRED' => 'exclamation-circle',
                                         default => 'info-circle'
+                                    };
+                                    $label = match($verifyResult['status']) {
+                                        'GUEST_OK'       => 'Guest Pass Valid',
+                                        'GUEST_EXPIRED'  => 'Guest Pass Expired',
+                                        'NOT_REGISTERED' => 'Not Registered',
+                                        'REGISTERED'     => 'Registered Vehicle',
+                                        'NOT_FOUND'      => 'Not Found',
+                                        default          => $verifyResult['status']
                                     };
                                 @endphp
                                 <i class="fas fa-{{ $icon }} fa-2x me-3"></i>
                                 <div>
-                                    <strong>
-                                        @if($verifyResult['status'] === 'NOT_REGISTERED')
-                                            Not Registered
-                                        @elseif($verifyResult['status'] === 'REGISTERED')
-                                            Registered
-                                        @elseif($verifyResult['status'] === 'NOT_FOUND')
-                                            Not Found
-                                        @else
-                                            {{ $verifyResult['status'] }}
-                                        @endif
-                                    </strong>
+                                    <strong>{{ $label }}</strong>
                                     <div>{{ $verifyResult['message'] }}</div>
                                 </div>
                             </div>
 
+                            {{-- Guest Pass Details --}}
+                            @if(isset($verifyResult['guestPass']))
+                                <hr class="my-2">
+                                <div class="row">
+                                    <div class="col-6">
+                                        <small>
+                                            <strong>Guest ID:</strong> {{ $verifyResult['guestPass']->guest_id }}<br>
+                                            <strong>Name:</strong> {{ $verifyResult['guestPass']->name }}<br>
+                                            <strong>Plate:</strong> {{ $verifyResult['guestPass']->vehicle_plate }}
+                                        </small>
+                                    </div>
+                                    <div class="col-6">
+                                        <small>
+                                            <strong>Valid From:</strong> {{ $verifyResult['guestPass']->valid_from->format('M j, Y h:i A') }}<br>
+                                            <strong>Valid Until:</strong> {{ $verifyResult['guestPass']->valid_until->format('M j, Y h:i A') }}<br>
+                                            <strong>Status:</strong> <span class="badge bg-{{ $verifyResult['guestPass']->status === 'active' ? 'success' : 'secondary' }}">{{ ucfirst($verifyResult['guestPass']->status) }}</span>
+                                        </small>
+                                    </div>
+                                </div>
+                            @endif
+
+                            {{-- RFID Tag Details --}}
                             @if(isset($verifyResult['rfidTag']))
                                 <hr class="my-2">
                                 <div class="mb-2">
@@ -411,6 +450,7 @@
                                 </div>
                             @endif
 
+                            {{-- Registered Vehicle Details --}}
                             @if(isset($verifyResult['vehicle']))
                                 <hr class="my-2">
                                 <div class="row">
@@ -439,6 +479,7 @@
                                 </div>
                             @endif
 
+                            {{-- Plate display for not-found --}}
                             @if($verifyResult['status'] === 'NOT_REGISTERED' && isset($verifyResult['plate']))
                                 <hr class="my-2">
                                 <div class="text-center">
@@ -558,6 +599,15 @@
     opacity: 0.8;
 }
 
+.floor-card.malfunction-clickable {
+    cursor: pointer !important;
+}
+
+.floor-card.malfunction-clickable:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+}
+
 /* Full floor - no available spots */
 .floor-card.full {
     background: #e0e0e0;
@@ -661,6 +711,16 @@
 ============================================*/
 .no-data-badge {
     background: #6c757d;
+    color: white;
+    padding: 4px 10px;
+    border-radius: 12px;
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+.malfunction-badge {
+    background: #e0a800;
     color: white;
     padding: 4px 10px;
     border-radius: 12px;

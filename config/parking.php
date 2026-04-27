@@ -1,0 +1,11 @@
+<?php
+
+return [
+    'floors' => [
+        '1st Floor',
+        '2nd Floor',
+        '3rd Floor',
+        '4th Floor',
+        '5th Floor',
+    ],
+];

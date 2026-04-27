@@ -601,6 +601,12 @@ main, .container, .valet-header + * {
    cursor: not-allowed !important;
 }
 
+.floor-card.no-data.malfunction-clickable {
+   border: 2px solid #dee2e6;
+   cursor: pointer !important;
+   opacity: 0.9;
+}
+
 .no-data-badge {
    background: #A0A0A0;
    color: white;
@@ -936,11 +942,54 @@ main, .container, .valet-header + * {
            }, 5000);
        });
 
+       // Suppress Livewire's native "page has expired" confirm dialog — redirect to login instead
+       (function () {
+           const _originalConfirm = window.confirm;
+           window.confirm = function (message) {
+               if (typeof message === 'string' && message.toLowerCase().includes('expired')) {
+                   window.location.href = '/login';
+                   return false;
+               }
+               return _originalConfirm.apply(this, arguments);
+           };
+       })();
+
+       // Intercept logout — block all Livewire polls and cover page before form navigates
+       document.addEventListener('DOMContentLoaded', function () {
+           const logoutForm = document.getElementById('logout-form');
+           if (logoutForm) {
+               logoutForm.addEventListener('submit', function () {
+                   window._loggingOut = true;
+
+                   // Block all fetch requests (Livewire polls use fetch internally)
+                   const _origFetch = window.fetch;
+                   window.fetch = function () { return new Promise(() => {}); };
+
+                   // Cover the entire page so no 419 flash is visible
+                   const overlay = document.createElement('div');
+                   overlay.style.cssText = 'position:fixed;inset:0;background:#f8f9fa;z-index:99999;';
+                   document.body.appendChild(overlay);
+               });
+           }
+       });
+
        // Global Livewire configuration
        document.addEventListener('livewire:init', () => {
            setInterval(() => {
-               Livewire.dispatch('refresh-parking-data');
+               if (!window._loggingOut) {
+                   Livewire.dispatch('refresh-parking-data');
+               }
            }, 3000);
+
+           // Livewire v3 request hook — catch 419 and redirect cleanly
+           Livewire.hook('request', ({ fail }) => {
+               fail(({ status, preventDefault }) => {
+                   if (status === 419) {
+                       preventDefault();
+                       window.location.href = '/login';
+                   }
+               });
+           });
        });
 
        // Livewire navigation events for smooth transitions

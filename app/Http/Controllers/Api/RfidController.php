@@ -60,6 +60,20 @@ class RfidController extends Controller
                     'gate_mac' => $gateMac
                 ]);
 
+                // Web bell notification
+                $webNotifs = Cache::get('admin_override_notifications', []);
+                $webNotifs[] = [
+                    'id'          => uniqid(),
+                    'type'        => 'rfid_alert',
+                    'alert_type'  => 'invalid',
+                    'uid'         => $uid,
+                    'user_name'   => 'N/A',
+                    'vehicle_plate' => 'N/A',
+                    'message'     => 'RFID not registered',
+                    'created_at'  => now()->toISOString(),
+                ];
+                Cache::put('admin_override_notifications', array_slice($webNotifs, -50), now()->addDays(7));
+
                 return response()->json($scanData);
             }
 
@@ -97,6 +111,20 @@ class RfidController extends Controller
                     'gate_mac' => $gateMac
                 ]);
 
+                // Web bell notification
+                $webNotifs = Cache::get('admin_override_notifications', []);
+                $webNotifs[] = [
+                    'id'            => uniqid(),
+                    'type'          => 'rfid_alert',
+                    'alert_type'    => 'expired',
+                    'uid'           => $uid,
+                    'user_name'     => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'message'       => 'RFID expired',
+                    'created_at'    => now()->toISOString(),
+                ];
+                Cache::put('admin_override_notifications', array_slice($webNotifs, -50), now()->addDays(7));
+
                 return response()->json($scanData);
             }
 
@@ -131,6 +159,47 @@ class RfidController extends Controller
                     'user_name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                     'gate_mac' => $gateMac
+                ]);
+
+                // Web bell notification
+                $webNotifs = Cache::get('admin_override_notifications', []);
+                $webNotifs[] = [
+                    'id'            => uniqid(),
+                    'type'          => 'rfid_alert',
+                    'alert_type'    => $rfidTag->status,
+                    'uid'           => $uid,
+                    'user_name'     => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'message'       => 'RFID ' . $rfidTag->status,
+                    'created_at'    => now()->toISOString(),
+                ];
+                Cache::put('admin_override_notifications', array_slice($webNotifs, -50), now()->addDays(7));
+
+                return response()->json($scanData);
+            }
+
+            // Check if linked user is active
+            if ($rfidTag->user && !$rfidTag->user->is_active) {
+                $scanData = [
+                    'uid' => $uid,
+                    'valid' => false,
+                    'message' => 'Account is disabled. Please go to office.',
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'duration' => 10,
+                    'scan_time' => now()->timestamp . '.' . now()->micro
+                ];
+
+                Cache::put('rfid_scan_latest', $scanData, 15);
+
+                RfidScanLog::create([
+                    'uid' => $uid,
+                    'status' => 'invalid',
+                    'message' => 'Account disabled',
+                    'scan_type' => 'entry',
+                    'gate_mac' => $gateMac,
+                    'user_name' => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                 ]);
 
                 return response()->json($scanData);
@@ -512,6 +581,31 @@ class RfidController extends Controller
             'to' => now()->toISOString(),
         ]);
     }
+
+    // Get vehicles parked for more than 12 hours
+    public function longParked()
+    {
+        $threshold = Carbon::now()->subHours(12);
+
+        $vehicles = ParkingEntry::where('status', 'parked')
+            ->where('entry_time', '<', $threshold)
+            ->with(['user', 'rfidTag.vehicle'])
+            ->orderBy('entry_time', 'asc')
+            ->get()
+            ->map(fn($entry) => [
+                'plate'        => $entry->vehicle_plate,
+                'owner'        => $entry->user->name ?? 'Unknown',
+                'parked_since' => Carbon::parse($entry->entry_time)->toISOString(),
+                'hours_parked' => round(Carbon::parse($entry->entry_time)->diffInMinutes(now()) / 60, 1),
+            ]);
+
+        return response()->json([
+            'long_parked' => $vehicles,
+            'count'       => $vehicles->count(),
+            'threshold_hours' => 12,
+        ]);
+    }
+
 
     // Lookup-only vehicle verification for mobile staff (no side effects)
     // POST /public/verify-vehicle

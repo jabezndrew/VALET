@@ -9,6 +9,7 @@ use App\Http\Controllers\Api\AuthController;
 use App\Http\Controllers\Api\FeedbackController;
 use App\Http\Controllers\Api\GuardIncidentController;
 use App\Http\Controllers\Api\RfidController;
+use App\Http\Controllers\Api\GuestAccessController;
 
 Route::get('/health', fn() => response()->json(['status' => 'ok', 'service' => 'VALET API']));
 
@@ -37,6 +38,7 @@ Route::prefix('public')->group(function () {
     Route::get('/rfid/tags', [RfidController::class, 'tags']);
     Route::post('/rfid/parked', [RfidController::class, 'markParked']);
     Route::post('/guest/verify', [RfidController::class, 'verifyGuest']);
+    Route::get('/rfid/long-parked', [RfidController::class, 'longParked']);
 
     // Mobile staff vehicle lookup (no side effects)
     Route::post('/verify-vehicle', [RfidController::class, 'lookupVehicle']);
@@ -85,6 +87,16 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/stats', 'stats');
     });
 
+    // Guest Access CRUD
+    Route::controller(GuestAccessController::class)->prefix('guest-access')->group(function () {
+        Route::get('/',                    'index');          // List all passes
+        Route::post('/',                   'store');          // Create pass
+        Route::get('/verify/{plate}',      'verifyByPlate'); // Check plate
+        Route::get('/{id}',               'show');           // Get single pass
+        Route::put('/{id}',               'update');         // Update pass
+        Route::delete('/{id}',            'destroy');        // Delete pass
+    });
+
     // Guard Incident Log (security: create/view, admin/ssd: full manage)
     Route::controller(GuardIncidentController::class)->prefix('incidents')->group(function () {
         Route::get('/', 'index');
@@ -100,7 +112,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/unassigned', 'unassigned');           // Get unassigned sensors
         Route::post('/assign', 'assign');                  // Assign sensor to space
         Route::post('/unassign', 'unassign');              // Unassign sensor
-        Route::post('/identify/start', 'startIdentify');   // Start identify mode (blue LED)
+        Route::post('/identify/start', 'startIdentify');   // Start identify mode (yellow LED)
         Route::post('/identify/stop', 'stopIdentify');     // Stop identify mode
         Route::put('/{macAddress}', 'update');             // Update sensor details
         Route::delete('/{macAddress}', 'destroy');         // Delete sensor

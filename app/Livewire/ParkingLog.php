@@ -5,7 +5,6 @@ namespace App\Livewire;
 use Livewire\Component;
 use Livewire\WithPagination;
 use App\Models\ParkingEntry;
-use Carbon\Carbon;
 
 class ParkingLog extends Component
 {
@@ -17,6 +16,7 @@ class ParkingLog extends Component
     public $dateTo = '';
     public $entryTypeFilter = 'all';
     public $showAnalytics = false;
+
 
     protected $queryString = ['search', 'statusFilter', 'dateFrom', 'dateTo', 'entryTypeFilter'];
 
@@ -48,6 +48,7 @@ class ParkingLog extends Component
         $this->showAnalytics = false;
     }
 
+
     public function clearFilters()
     {
         $this->reset(['search', 'statusFilter', 'entryTypeFilter']);
@@ -56,10 +57,8 @@ class ParkingLog extends Component
         $this->resetPage();
     }
 
-    public function export()
-    {
+    public function export(){
         $entries = $this->getEntriesQuery()->get();
-
         $csvData = "Entry Type,User,Vehicle Plate,Entry Time,Exit Time,Duration (min),Status\n";
 
         foreach ($entries as $entry) {
@@ -72,12 +71,9 @@ class ParkingLog extends Component
                 $entry->entry_time->format('Y-m-d H:i:s'),
                 $entry->exit_time ? $entry->exit_time->format('Y-m-d H:i:s') : 'Still Parked',
                 $entry->duration_minutes ?? '-',
-                $entry->status
-            );
+                $entry->status );
         }
-
         $filename = 'parking_log_' . now()->format('Y-m-d_His') . '.csv';
-
         return response()->streamDownload(function () use ($csvData) {
             echo $csvData;
         }, $filename, [
@@ -118,8 +114,7 @@ class ParkingLog extends Component
         return $query;
     }
 
-    public function getStats()
-    {
+    public function getStats(){
         $today = now()->startOfDay();
 
         return [
@@ -134,7 +129,6 @@ class ParkingLog extends Component
 
     public function getChartData()
     {
-        // Last 7 days entries
         $dailyLabels = [];
         $dailyData = [];
         for ($i = 6; $i >= 0; $i--) {
@@ -143,7 +137,6 @@ class ParkingLog extends Component
             $dailyData[] = ParkingEntry::whereDate('entry_time', $date)->count();
         }
 
-        // Peak hours (6am–10pm) for selected date range
         $hourQuery = ParkingEntry::query();
         if ($this->dateFrom) {
             $hourQuery->whereDate('entry_time', '>=', $this->dateFrom);
@@ -163,7 +156,6 @@ class ParkingLog extends Component
             $hourData[] = $byHour[$h] ?? 0;
         }
 
-        // RFID vs Guest for selected date range
         $typeQuery = ParkingEntry::query();
         if ($this->dateFrom) {
             $typeQuery->whereDate('entry_time', '>=', $this->dateFrom);
