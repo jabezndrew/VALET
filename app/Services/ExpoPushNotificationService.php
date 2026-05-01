@@ -217,11 +217,12 @@ class ExpoPushNotificationService
     // ── 6. Spot Malfunction ───────────────────────────────────────────────────
     // Triggered when a parking spot sensor reports a malfunction.
     // Sent to admin/ssd roles.
-    public static function sendMalfunctionAlert(string $spaceCode, string $reportedBy, string $reporterRole, ?string $reason): void
+    public static function sendMalfunctionAlert(string $spaceCode, string $reportedBy, string $reporterRole, ?string $reason, ?int $reporterId = null): void
     {
-        $users = SysUser::whereIn('role', ['admin', 'ssd'])
+        $users = SysUser::whereIn('role', ['admin', 'ssd', 'security'])
             ->whereNotNull('expo_push_token')
             ->where('is_active', true)
+            ->when($reporterId, fn($q) => $q->where('id', '!=', $reporterId))
             ->get();
 
         if ($users->isEmpty()) return;

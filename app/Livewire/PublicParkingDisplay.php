@@ -8,6 +8,7 @@ use App\Models\ParkingEntry;
 use App\Models\SensorAssignment;
 use App\Models\GuardIncident;
 use Illuminate\Support\Facades\Cache;
+use App\Services\ExpoPushNotificationService;
 
 class PublicParkingDisplay extends Component
 {
@@ -322,22 +323,33 @@ class PublicParkingDisplay extends Component
 
         $this->selectedSpace->reportMalfunction(auth()->user()->name, $finalReason);
 
-        // Notify admin/SSD via cache
+        $reporterRole = auth()->user()->role;
+        $reporterId   = auth()->id();
+
+        // Notify others via cache (exclude reporter)
         $notifications = Cache::get('admin_override_notifications', []);
         $notifications[] = [
-            'id' => uniqid(),
-            'type' => 'malfunction_report',
-            'space_code' => $this->selectedSpace->space_code,
-            'status' => 'malfunctioned',
-            'reason' => $finalReason,
-            'guard_name' => auth()->user()->name,
-            'reporter_id' => auth()->id(),
-            'reporter_role' => 'security',
-            'floor_level' => $this->selectedFloor,
-            'created_at' => now()->toISOString(),
-            'read' => false,
+            'id'            => uniqid(),
+            'type'          => 'malfunction_report',
+            'space_code'    => $this->selectedSpace->space_code,
+            'status'        => 'malfunctioned',
+            'reason'        => $finalReason,
+            'guard_name'    => auth()->user()->name,
+            'reporter_id'   => $reporterId,
+            'reporter_role' => $reporterRole,
+            'floor_level'   => $this->selectedFloor,
+            'created_at'    => now()->toISOString(),
+            'read'          => false,
         ];
         Cache::put('admin_override_notifications', $notifications, now()->addDays(7));
+
+        ExpoPushNotificationService::sendMalfunctionAlert(
+            $this->selectedSpace->space_code,
+            auth()->user()->name,
+            $reporterRole,
+            $finalReason,
+            $reporterId
+        );
 
         session()->flash('success', "Spot {$this->selectedSpace->space_code} flagged as malfunctioned. Admin has been notified.");
         $this->closeActionModal();
@@ -497,9 +509,8 @@ class PublicParkingDisplay extends Component
         $sensor->stopIdentify();
         $sensor->update(['space_code' => $space->space_code, 'status' => 'active']);
         $space->update([
-            'is_occupied'     => false,
-            'manual_override' => false,
-            'malfunctioned'   => false,
+            'is_occupied'   => false,
+            'malfunctioned' => false,
         ]);
 
         session()->flash('success', "Sensor paired to spot {$space->space_code}.");

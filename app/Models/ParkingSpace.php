@@ -25,12 +25,6 @@ class ParkingSpace extends Model
         'y_position',
         'rotation',
         'is_active',
-        'manual_override',
-        'manual_status',
-        'manual_override_at',
-        'manual_override_expires',
-        'manual_override_by',
-        'override_reason',
         'malfunctioned',
         'malfunction_reason',
         'malfunction_reported_by',
@@ -45,9 +39,6 @@ class ParkingSpace extends Model
         'slot_number' => 'integer',
         'created_at' => 'datetime',
         'updated_at' => 'datetime',
-        'manual_override' => 'boolean',
-        'manual_override_at' => 'datetime',
-        'manual_override_expires' => 'datetime',
         'malfunctioned' => 'boolean',
         'malfunctioned_at' => 'datetime',
     ];
@@ -128,16 +119,9 @@ class ParkingSpace extends Model
         return $this->update(['is_occupied' => false]);
     }
 
-    public function isManualOverrideActive(): bool
-    {
-        return (bool) $this->manual_override;
-    }
-
-    // Returns effective status factoring in malfunction and manual override
     public function getEffectiveStatus(): string
     {
         if ($this->malfunctioned) return 'malfunctioned';
-        if ($this->isManualOverrideActive()) return $this->manual_status;
         return $this->is_occupied ? 'occupied' : 'available';
     }
 
@@ -150,33 +134,6 @@ class ParkingSpace extends Model
     public function incidents()
     {
         return $this->hasMany(GuardIncident::class, 'space_code', 'space_code');
-    }
-
-    // Manual override
-    public function setManualOverride(string $status, string $overrideBy = 'Guard', ?string $reason = null): bool
-    {
-        return $this->update([
-            'manual_override' => true,
-            'manual_status' => $status,
-            'is_occupied' => $status === 'occupied',
-            'manual_override_at' => now(),
-            'manual_override_expires' => null,
-            'manual_override_by' => $overrideBy,
-            'override_reason' => $reason,
-        ]);
-    }
-
-    public function clearManualOverride(): bool
-    {
-        return $this->update([
-            'manual_override' => false,
-            'manual_status' => null,
-            'is_occupied' => false,
-            'manual_override_at' => null,
-            'manual_override_expires' => null,
-            'manual_override_by' => null,
-            'override_reason' => null,
-        ]);
     }
 
     // Malfunction reporting
