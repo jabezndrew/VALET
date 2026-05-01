@@ -372,7 +372,7 @@ class PublicParkingDisplay extends Component
 
         GuardIncident::create([
             'space_code'     => $this->selectedSpace?->space_code,
-            'floor_level'    => $this->selectedFloor,
+            'floor_level'    => $this->selectedSpace?->floor_level ?? $this->selectedFloor,
             'incident_at'    => $this->incidentAt ?: now(),
             'category'       => $this->incidentCategory,
             'notes'          => $this->incidentNotes,
