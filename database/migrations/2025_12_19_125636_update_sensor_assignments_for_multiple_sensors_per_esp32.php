@@ -18,7 +18,7 @@ return new class extends Migration
             // Add sensor_index field (1-5 for the 5 sensors on one ESP32)
             $table->tinyInteger('sensor_index')->default(1)->after('mac_address');
 
-            // Add identify mode fields for blue LED feature
+            // Add identify mode fields for yellow LED feature
             $table->boolean('identify_mode')->default(false)->after('status');
             $table->timestamp('identify_started_at')->nullable()->after('identify_mode');
 

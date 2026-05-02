@@ -16,6 +16,7 @@ class GuestAccessManager extends Component
     public $phone = '';
     public $purpose = '';
     public $customPurpose = '';
+    public $valid_from_date = '';
     public $valid_hours = 24;
     public $notes = '';
 
@@ -33,16 +34,17 @@ class GuestAccessManager extends Component
         'phone' => 'nullable|string|max:20',
         'purpose' => 'required|string|max:255',
         'customPurpose' => 'nullable|required_if:purpose,other|string|max:255',
+        'valid_from_date' => 'required|date',
         'valid_hours' => 'required|integer|min:1|max:168',
         'notes' => 'nullable|string|max:500',
     ];
 
     public function mount()
     {
-        // Check if user has access
         if (!$this->canManageGuests()) {
             abort(403, 'Unauthorized');
         }
+        $this->valid_from_date = Carbon::today()->format('Y-m-d');
     }
 
     public function render()
@@ -66,8 +68,8 @@ class GuestAccessManager extends Component
                     'purpose' => $guest->purpose,
                     'notes' => $guest->notes,
                 ]);
-                // Calculate remaining hours
-                $this->valid_hours = max(1, Carbon::now()->diffInHours($guest->valid_until, false));
+                $this->valid_from_date = Carbon::parse($guest->valid_from)->format('Y-m-d');
+                $this->valid_hours = max(1, Carbon::parse($guest->valid_from)->diffInHours($guest->valid_until, false));
             }
         } else {
             $this->resetForm();
@@ -86,8 +88,8 @@ class GuestAccessManager extends Component
         $this->validate();
 
         try {
-            $validFrom = Carbon::now();
-            $validUntil = Carbon::now()->addHours((int) $this->valid_hours);
+            $validFrom = Carbon::parse($this->valid_from_date)->startOfDay();
+            $validUntil = $validFrom->copy()->addHours((int) $this->valid_hours);
             $finalPurpose = $this->purpose === 'other' ? $this->customPurpose : $this->purpose;
 
             if ($this->editingId) {
@@ -257,6 +259,7 @@ class GuestAccessManager extends Component
     private function resetForm()
     {
         $this->reset(['editingId', 'name', 'vehicle_plate', 'phone', 'purpose', 'customPurpose', 'notes']);
+        $this->valid_from_date = Carbon::today()->format('Y-m-d');
         $this->valid_hours = 24;
         $this->resetErrorBag();
     }
