@@ -245,7 +245,7 @@ class RfidController extends Controller
             if ($activeEntry) {
                 return response()->json([
                     'uid'           => $uid,
-                    'valid'         => false,
+                    'valid'         => true,
                     'status'        => 'already_inside',
                     'message'       => 'Vehicle is already inside.',
                     'user_name'     => $rfidTag->user->name ?? 'Unknown',
