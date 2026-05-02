@@ -171,12 +171,20 @@
 
                                 <!-- View Map Overlay - Slides up on hover -->
                                 <div class="floor-map-overlay">
-                                    <a href="{{ route('parking-display', ['floor' => $floorStat['floor_level']]) }}"
-                                       class="btn btn-view-floor-map btn-sm"
-                                       wire:navigate
-                                       onclick="event.stopPropagation();">
-                                        <i class="fas fa-map me-1"></i> View Map
-                                    </a>
+                                    @if($isUser && $isFull)
+                                        <span class="btn btn-view-floor-map btn-sm disabled"
+                                              style="opacity: 0.5; cursor: not-allowed; pointer-events: none;"
+                                              onclick="event.stopPropagation();">
+                                            <i class="fas fa-map me-1"></i> View Map
+                                        </span>
+                                    @else
+                                        <a href="{{ route('parking-display', ['floor' => $floorStat['floor_level']]) }}"
+                                           class="btn btn-view-floor-map btn-sm"
+                                           wire:navigate
+                                           onclick="event.stopPropagation();">
+                                            <i class="fas fa-map me-1"></i> View Map
+                                        </a>
+                                    @endif
                                 </div>
                             @else
                                 <div class="text-center py-4">
