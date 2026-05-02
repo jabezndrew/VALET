@@ -37,6 +37,7 @@ Route::prefix('public')->group(function () {
     Route::get('/rfid/scans', [RfidController::class, 'recentScans']);
     Route::get('/rfid/tags', [RfidController::class, 'tags']);
     Route::post('/rfid/parked', [RfidController::class, 'markParked']);
+    Route::get('/rfid/parked', [RfidController::class, 'parkedUsers']);
     Route::post('/guest/verify', [RfidController::class, 'verifyGuest']);
     Route::get('/rfid/long-parked', [RfidController::class, 'longParked']);
 

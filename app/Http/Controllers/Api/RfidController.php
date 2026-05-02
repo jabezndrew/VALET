@@ -606,6 +606,28 @@ class RfidController extends Controller
         ]);
     }
 
+    public function parkedUsers()
+    {
+        $entries = ParkingEntry::whereIn('status', ['parked', 'entered'])
+            ->with(['user', 'rfidTag.vehicle'])
+            ->orderBy('entry_time', 'desc')
+            ->get()
+            ->map(fn($entry) => [
+                'id'           => $entry->id,
+                'name'         => $entry->user->name ?? 'Guest',
+                'plate'        => $entry->vehicle_plate ?? 'N/A',
+                'entry_type'   => $entry->entry_type,
+                'status'       => $entry->status,
+                'entry_time'   => Carbon::parse($entry->entry_time)->toISOString(),
+                'minutes_parked' => Carbon::parse($entry->entry_time)->diffInMinutes(now()),
+            ]);
+
+        return response()->json([
+            'parked'  => $entries,
+            'count'   => $entries->count(),
+        ]);
+    }
+
     // Lookup-only vehicle verification for mobile staff (no side effects)
     // POST /public/verify-vehicle
     // Body: { mode: 'rfid'|'plate', value: string }
