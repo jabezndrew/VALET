@@ -217,7 +217,6 @@
                             <div class="col-md-6">
                                 <label class="form-label fw-bold">Start Date <span class="text-danger">*</span></label>
                                 <input type="date" wire:model="valid_from_date" class="form-control" min="{{ \Carbon\Carbon::today()->format('Y-m-d') }}">
-                                <small class="text-muted">Defaults to today</small>
                                 @error('valid_from_date') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
 
@@ -227,7 +226,6 @@
                                     <input type="number" wire:model="valid_hours" class="form-control" min="1" max="168">
                                     <span class="input-group-text">hours</span>
                                 </div>
-                                <small class="text-muted">Max: 168 hours (1 week)</small>
                                 @error('valid_hours') <div class="text-danger small">{{ $message }}</div> @enderror
                             </div>
 
