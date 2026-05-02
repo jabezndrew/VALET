@@ -121,7 +121,7 @@
                                 : ($floorStat['has_data'] && !$isFull));
                     @endphp
                     <div class="col-lg-3 col-md-6 mb-4">
-                        <div class="floor-card {{ $floorStat['has_data'] ? 'has-data' : 'no-data' }} {{ $floorStat['has_data'] && $floorStat['available'] == 0 ? 'full' : '' }} {{ $isCardClickable && $allMalfunctioned ? 'malfunction-clickable' : '' }}"
+                        <div class="floor-card {{ $floorStat['has_data'] ? 'has-data' : 'no-data' }} {{ $floorStat['has_data'] && $floorStat['available'] == 0 ? 'full' : '' }} {{ $isCardClickable && $allMalfunctioned ? 'malfunction-clickable' : '' }} {{ $isUser && $isFull ? 'no-hover' : '' }}"
                              @if($isCardClickable)
                                 wire:click="goToFloor('{{ $floorStat['floor_level'] }}')"
                                 style="cursor: pointer;"
@@ -637,6 +637,19 @@
 
 .floor-card.full .floor-number {
     color: #aaa !important;
+}
+
+.floor-card.no-hover {
+    cursor: default !important;
+}
+
+.floor-card.no-hover:hover {
+    transform: none !important;
+    box-shadow: none !important;
+}
+
+.floor-card.no-hover .floor-map-overlay {
+    display: none !important;
 }
 
 /*===========================================
