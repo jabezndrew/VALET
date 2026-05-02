@@ -53,7 +53,7 @@ class SensorManager extends Component
     public function loadSensors()
     {
         $query = SensorAssignment::with('parkingSpace')
-            ->orderBy('mac_address')
+            ->orderBy('mac_address', 'desc')
             ->orderBy('sensor_index');
 
         if ($this->filterStatus === 'assigned') {
