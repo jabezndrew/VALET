@@ -111,7 +111,14 @@
 
                     @php
                         $isStaff = in_array(auth()->user()->role, ['admin', 'ssd', 'security']);
-                        $isCardClickable = $floorStat['has_data'] || ($isStaff && $allMalfunctioned);
+                        $isAdmin = auth()->user()->role === 'admin';
+                        $isUser  = auth()->user()->role === 'user';
+                        $isFull  = $floorStat['has_data'] && $floorStat['available'] == 0;
+                        $isCardClickable = $isAdmin
+                            ? ($floorStat['has_data'] || $allMalfunctioned)
+                            : ($isStaff
+                                ? ($floorStat['has_data'] || $allMalfunctioned)
+                                : ($floorStat['has_data'] && !$isFull));
                     @endphp
                     <div class="col-lg-3 col-md-6 mb-4">
                         <div class="floor-card {{ $floorStat['has_data'] ? 'has-data' : 'no-data' }} {{ $floorStat['has_data'] && $floorStat['available'] == 0 ? 'full' : '' }} {{ $isCardClickable && $allMalfunctioned ? 'malfunction-clickable' : '' }}"

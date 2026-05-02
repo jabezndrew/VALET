@@ -131,8 +131,12 @@
                                     $isSelected = $selectedFloor === $floor;
                                     $isActionUserFloor = auth()->check() && in_array(auth()->user()->role, ['security', 'admin', 'ssd']);
                                     $isAdminRole = auth()->check() && auth()->user()->role === 'admin';
-                                    // Admins can click any floor (even with no sensors); regular users cannot click floors with no available spots
-                                    $isClickable = $isAdminRole ? true : ($hasData && ($isActionUserFloor || !$noAvailable));
+                                    // Admin: always clickable; staff: clickable if has data; user: only if has data and not full
+                                    $isClickable = $isAdminRole
+                                        ? true
+                                        : ($isActionUserFloor
+                                            ? $hasData
+                                            : ($hasData && !$noAvailable));
 
                                     if ($isSelected) {
                                         $cardBg = 'linear-gradient(135deg, #B22020 0%, #8B0000 100%)';
