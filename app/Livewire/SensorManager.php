@@ -67,7 +67,7 @@ class SensorManager extends Component
         $this->sensors = $query->get();
         $this->unassignedSensors = SensorAssignment::where('status', 'unassigned')
             ->orWhereNull('space_code')
-            ->orderBy('mac_address')
+            ->orderBy('mac_address', 'desc')
             ->orderBy('sensor_index')
             ->get();
     }

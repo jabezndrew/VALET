@@ -104,8 +104,6 @@ class SensorAssignmentController extends Controller
         }
     }
 
-
-    // Get sensor configuration by MAC address (for Arduino to fetch assignment)
     // Returns all 5 sensors for this ESP32
     public function getAssignment(Request $request): JsonResponse
     {
@@ -129,8 +127,6 @@ class SensorAssignmentController extends Controller
                     'mac_address' => $validated['mac_address']
                 ], 200);
             }
-
-            // Format sensor data
             $sensorData = $sensors->map(function($sensor) {
                 return [
                     'sensor_index' => $sensor->sensor_index,

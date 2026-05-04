@@ -454,7 +454,7 @@ class PublicParkingDisplay extends Component
         $this->selectedSensorKey = '';
         $this->unassignedSensors = SensorAssignment::where(function ($q) {
             $q->where('status', 'unassigned')->orWhereNull('space_code');
-        })->orderBy('mac_address')->orderBy('sensor_index')->get()->toArray();
+        })->orderBy('mac_address', 'desc')->orderBy('sensor_index')->get()->toArray();
         $this->showSensorModal = true;
     }
 
