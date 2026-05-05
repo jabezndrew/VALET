@@ -35,7 +35,7 @@ class RfidController extends Controller
                 $scanData = [
                     'uid' => $uid,
                     'valid' => false,
-                    'message' => 'RFID not registered. Please go to office.',
+                    'message' => 'RFID not registered. Please go to the USJ-R S.S.D. office.',
                     'user_name' => 'N/A',
                     'vehicle_plate' => 'N/A',
                     'duration' => 10,
@@ -83,7 +83,7 @@ class RfidController extends Controller
                 $scanData = [
                     'uid' => $uid,
                     'valid' => false,
-                    'message' => 'RFID expired. Please go to office.',
+                    'message' => 'RFID expired. Please go to the USJ-R S.S.D. office.',
                     'user_name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                     'duration' => 10,
@@ -133,7 +133,7 @@ class RfidController extends Controller
                 $scanData = [
                     'uid' => $uid,
                     'valid' => false,
-                    'message' => 'RFID ' . $rfidTag->status . '. Please go to office.',
+                    'message' => 'RFID ' . $rfidTag->status . '. Please go to the USJ-R S.S.D. office.',
                     'user_name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                     'duration' => 10,
@@ -183,7 +183,7 @@ class RfidController extends Controller
                 $scanData = [
                     'uid' => $uid,
                     'valid' => false,
-                    'message' => 'Account is disabled. Please go to office.',
+                    'message' => 'Account is disabled. Please go to the USJ-R S.S.D. office.',
                     'user_name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                     'duration' => 10,
