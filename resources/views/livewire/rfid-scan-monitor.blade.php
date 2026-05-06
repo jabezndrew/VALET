@@ -16,10 +16,10 @@
             <div class="modal fade show d-block" tabindex="-1" style="background: rgba(0,0,0,0.7); z-index: 1050;" wire:click.self="closeModal">
                 <div class="modal-dialog modal-dialog-centered">
                     <div class="modal-content border-0 shadow-lg">
-                        <div class="modal-header bg-{{ $lastScan['valid'] ? 'success' : 'danger' }} text-white">
+                        <div class="modal-header bg-{{ $lastScan['valid'] ? ($lastScan['status'] === 'exit' ? 'secondary' : 'success') : 'danger' }} text-white">
                             <h5 class="modal-title">
-                                <i class="fas fa-{{ $lastScan['valid'] ? 'check-circle' : 'times-circle' }} me-2"></i>
-                                RFID Scan Detected
+                                <i class="fas fa-{{ $lastScan['status'] === 'exit' ? 'sign-out-alt' : ($lastScan['valid'] ? 'check-circle' : 'times-circle') }} me-2"></i>
+                                RFID {{ $lastScan['status'] === 'exit' ? 'Exit' : 'Entry' }} Detected
                             </h5>
                             <button type="button" class="btn-close btn-close-white" wire:click="closeModal"></button>
                         </div>

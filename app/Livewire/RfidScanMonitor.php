@@ -50,6 +50,7 @@ class RfidScanMonitor extends Component
                 $this->lastScan = [
                     'uid' => $scanData['uid'] ?? 'Unknown',
                     'valid' => $scanData['valid'] ?? false,
+                    'status' => $scanData['status'] ?? 'entry',
                     'message' => $scanData['message'] ?? '',
                     'user_name' => $scanData['user_name'] ?? 'N/A',
                     'vehicle_plate' => $scanData['vehicle_plate'] ?? 'N/A',

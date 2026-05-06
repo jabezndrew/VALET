@@ -237,15 +237,16 @@ class RfidController extends Controller
                 return response()->json($scanData);
             }
 
-            // Check if vehicle is already inside — skip silently, do not log
-            // (bypass for offline-replayed events since the entry may not exist yet)
+            // Check if vehicle is already inside (only entries in last 24h to avoid stale data blocking re-entry)
+            // Bypass for offline-replayed events since the entry may not exist yet
             $isOfflineReplay = (bool) $request->input('offline', false);
             $activeEntry = ParkingEntry::where('rfid_tag_id', $rfidTag->id)
                 ->whereIn('status', ['entered', 'parked'])
+                ->where('entry_time', '>=', now()->subHours(24))
                 ->exists();
 
             if ($activeEntry && !$isOfflineReplay) {
-                return response()->json([
+                $scanData = [
                     'uid'           => $uid,
                     'valid'         => true,
                     'status'        => 'already_inside',
@@ -254,7 +255,21 @@ class RfidController extends Controller
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                     'duration'      => 3,
                     'scan_time'     => now()->timestamp . '.' . now()->micro,
+                ];
+
+                Cache::put('rfid_scan_latest', $scanData, 15);
+
+                RfidScanLog::create([
+                    'uid'           => $uid,
+                    'status'        => 'valid',
+                    'message'       => 'Already inside',
+                    'scan_type'     => 'entry',
+                    'gate_mac'      => $gateMac,
+                    'user_name'     => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                 ]);
+
+                return response()->json($scanData);
             }
 
             // Valid RFID - Log entry
@@ -359,6 +374,18 @@ class RfidController extends Controller
                     'user_name' => $rfidTag->user->name ?? 'Unknown',
                     'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
                 ]);
+
+                // Update monitor cache so exit events appear in the RFID monitor
+                Cache::put('rfid_scan_latest', [
+                    'uid'           => $uid,
+                    'valid'         => true,
+                    'status'        => 'exit',
+                    'message'       => 'Exit logged',
+                    'user_name'     => $rfidTag->user->name ?? 'Unknown',
+                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                    'duration'      => 5,
+                    'scan_time'     => now()->timestamp . '.' . now()->micro,
+                ], 15);
 
                 return response()->json([
                     'success' => true,
