@@ -34,13 +34,13 @@ Route::prefix('public')->group(function () {
     // RFID endpoints (for ESP32 gate controllers)
     Route::post('/rfid/verify', [RfidController::class, 'verify']);
     Route::post('/rfid/exit', [RfidController::class, 'exit']);
+    Route::get('/rfid/registered', [RfidController::class, 'registeredUids']);
     Route::get('/rfid/scans', [RfidController::class, 'recentScans']);
     Route::get('/rfid/tags', [RfidController::class, 'tags']);
     Route::post('/rfid/parked', [RfidController::class, 'markParked']);
     Route::get('/rfid/parked', [RfidController::class, 'parkedUsers']);
     Route::post('/guest/verify', [RfidController::class, 'verifyGuest']);
     Route::get('/rfid/long-parked', [RfidController::class, 'longParked']);
-    Route::get('/rfid/registered', [RfidController::class, 'registeredUids']);
 
     // Mobile staff vehicle lookup (no side effects)
     Route::post('/verify-vehicle', [RfidController::class, 'lookupVehicle']);

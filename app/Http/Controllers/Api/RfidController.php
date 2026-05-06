@@ -518,6 +518,31 @@ class RfidController extends Controller
         return response()->json(['success' => true, 'message' => 'Status updated to parked.']);
     }
 
+    // Return UIDs that would pass entrance verification — used by ESP32 offline UID cache
+    public function registeredUids(Request $request)
+    {
+        $uids = RfidTag::with(['user', 'vehicle'])
+            ->where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('expiry_date')
+                  ->orWhere('expiry_date', '>', now());
+            })
+            ->get()
+            ->filter(function ($tag) {
+                if (!$tag->user || !$tag->user->is_active) return false;
+                if ($tag->vehicle && !$tag->vehicle->isValid()) return false;
+                return true;
+            })
+            ->pluck('uid')
+            ->values();
+
+        return response()->json([
+            'uids'      => $uids,
+            'count'     => $uids->count(),
+            'synced_at' => now()->toISOString(),
+        ]);
+    }
+
     // Get all RFID tags with linked user and vehicle
     public function tags(Request $request)
     {
