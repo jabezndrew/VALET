@@ -237,13 +237,15 @@ class RfidController extends Controller
                 return response()->json($scanData);
             }
 
-            // Check if vehicle is already inside (only entries in last 24h to avoid stale data blocking re-entry)
-            // Bypass for offline-replayed events since the entry may not exist yet
+            // Check if vehicle is already inside — only look at the latest entry so a stale
+            // old 'entered' record doesn't block re-entry after a valid exit
             $isOfflineReplay = (bool) $request->input('offline', false);
-            $activeEntry = ParkingEntry::where('rfid_tag_id', $rfidTag->id)
-                ->whereIn('status', ['entered', 'parked'])
+            $latestEntry = ParkingEntry::where('rfid_tag_id', $rfidTag->id)
                 ->where('entry_time', '>=', now()->subHours(24))
-                ->exists();
+                ->orderBy('entry_time', 'desc')
+                ->first();
+
+            $activeEntry = $latestEntry && in_array($latestEntry->status, ['entered', 'parked']);
 
             if ($activeEntry && !$isOfflineReplay) {
                 $scanData = [
