@@ -24,7 +24,7 @@ class RfidLog extends Component
         if(!in_array(auth()->user()->role, $allowedRoles)){
             abort(403, 'Unauthorized');
         }
-        $this->dateFrom = now()->format('Y-m-d');
+        $this->dateFrom = now()->subDays(7)->format('Y-m-d');
         $this->dateTo = now()->format('Y-m-d');
     }
 
@@ -35,7 +35,7 @@ class RfidLog extends Component
     public function clearFilters()
     {
         $this->reset(['search', 'statusFilter', 'typeFilter']);
-        $this->dateFrom = now()->format('Y-m-d');
+        $this->dateFrom = now()->subDays(7)->format('Y-m-d');
         $this->dateTo = now()->format('Y-m-d');
         $this->resetPage();
     }

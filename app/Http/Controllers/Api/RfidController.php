@@ -42,8 +42,8 @@ class RfidController extends Controller
                     'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
-                // Store in cache for real-time monitoring
-                Cache::put('rfid_scan_latest', $scanData, 15);
+                // Store in cache for real-time monitoring (non-fatal if cache table missing)
+                try { Cache::put('rfid_scan_latest', $scanData, 15); } catch (\Throwable $e) {}
 
                 // Log scan event
                 RfidScanLog::create([
@@ -90,7 +90,7 @@ class RfidController extends Controller
                     'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
-                Cache::put('rfid_scan_latest', $scanData, 15);
+                try { Cache::put('rfid_scan_latest', $scanData, 15); } catch (\Throwable $e) {}
 
                 // Log scan event
                 RfidScanLog::create([
@@ -140,7 +140,7 @@ class RfidController extends Controller
                     'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
-                Cache::put('rfid_scan_latest', $scanData, 15);
+                try { Cache::put('rfid_scan_latest', $scanData, 15); } catch (\Throwable $e) {}
 
                 // Log scan event
                 RfidScanLog::create([
@@ -190,7 +190,7 @@ class RfidController extends Controller
                     'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
-                Cache::put('rfid_scan_latest', $scanData, 15);
+                try { Cache::put('rfid_scan_latest', $scanData, 15); } catch (\Throwable $e) {}
 
                 RfidScanLog::create([
                     'uid' => $uid,
@@ -222,7 +222,7 @@ class RfidController extends Controller
                     'scan_time' => now()->timestamp . '.' . now()->micro
                 ];
 
-                Cache::put('rfid_scan_latest', $scanData, 15);
+                try { Cache::put('rfid_scan_latest', $scanData, 15); } catch (\Throwable $e) {}
 
                 RfidScanLog::create([
                     'uid' => $uid,
@@ -257,7 +257,7 @@ class RfidController extends Controller
                     'scan_time'     => now()->timestamp . '.' . now()->micro,
                 ];
 
-                Cache::put('rfid_scan_latest', $scanData, 15);
+                try { Cache::put('rfid_scan_latest', $scanData, 15); } catch (\Throwable $e) {}
 
                 RfidScanLog::create([
                     'uid'           => $uid,
@@ -298,8 +298,7 @@ class RfidController extends Controller
                 ]
             ];
 
-            // Store in cache for real-time monitoring
-            Cache::put('rfid_scan_latest', $scanData, 15);
+            try { Cache::put('rfid_scan_latest', $scanData, 15); } catch (\Throwable $e) {}
 
             // Log scan event
             RfidScanLog::create([
@@ -376,16 +375,18 @@ class RfidController extends Controller
                 ]);
 
                 // Update monitor cache so exit events appear in the RFID monitor
-                Cache::put('rfid_scan_latest', [
-                    'uid'           => $uid,
-                    'valid'         => true,
-                    'status'        => 'exit',
-                    'message'       => 'Exit logged',
-                    'user_name'     => $rfidTag->user->name ?? 'Unknown',
-                    'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
-                    'duration'      => 5,
-                    'scan_time'     => now()->timestamp . '.' . now()->micro,
-                ], 15);
+                try {
+                    Cache::put('rfid_scan_latest', [
+                        'uid'           => $uid,
+                        'valid'         => true,
+                        'status'        => 'exit',
+                        'message'       => 'Exit logged',
+                        'user_name'     => $rfidTag->user->name ?? 'Unknown',
+                        'vehicle_plate' => $rfidTag->vehicle->plate_number ?? 'N/A',
+                        'duration'      => 5,
+                        'scan_time'     => now()->timestamp . '.' . now()->micro,
+                    ], 15);
+                } catch (\Throwable $e) {}
 
                 return response()->json([
                     'success' => true,
@@ -653,19 +654,6 @@ class RfidController extends Controller
             'count'       => $vehicles->count(),
             'threshold_hours' => 12,
         ]);
-    }
-
-    // Return all active RFID UIDs for ESP32 offline cache
-    public function registeredUids(Request $request)
-    {
-        $uids = RfidTag::where('status', 'active')
-            ->where(function ($q) {
-                $q->whereNull('expiry_date')
-                  ->orWhere('expiry_date', '>=', now());
-            })
-            ->pluck('uid');
-
-        return response()->json(['uids' => $uids, 'count' => $uids->count()]);
     }
 
     public function parkedUsers()
