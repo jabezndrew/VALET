@@ -238,11 +238,13 @@ class RfidController extends Controller
             }
 
             // Check if vehicle is already inside — skip silently, do not log
+            // (bypass for offline-replayed events since the entry may not exist yet)
+            $isOfflineReplay = (bool) $request->input('offline', false);
             $activeEntry = ParkingEntry::where('rfid_tag_id', $rfidTag->id)
                 ->whereIn('status', ['entered', 'parked'])
                 ->exists();
 
-            if ($activeEntry) {
+            if ($activeEntry && !$isOfflineReplay) {
                 return response()->json([
                     'uid'           => $uid,
                     'valid'         => true,
@@ -591,6 +593,19 @@ class RfidController extends Controller
             'count'       => $vehicles->count(),
             'threshold_hours' => 12,
         ]);
+    }
+
+    // Return all active RFID UIDs for ESP32 offline cache
+    public function registeredUids(Request $request)
+    {
+        $uids = RfidTag::where('status', 'active')
+            ->where(function ($q) {
+                $q->whereNull('expiry_date')
+                  ->orWhere('expiry_date', '>=', now());
+            })
+            ->pluck('uid');
+
+        return response()->json(['uids' => $uids, 'count' => $uids->count()]);
     }
 
     public function parkedUsers()
