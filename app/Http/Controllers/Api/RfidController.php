@@ -548,26 +548,34 @@ class RfidController extends Controller
     // Return UIDs that would pass entrance verification — used by ESP32 offline UID cache
     public function registeredUids(Request $request)
     {
-        $uids = RfidTag::with(['user', 'vehicle'])
-            ->where('status', 'active')
-            ->where(function ($q) {
-                $q->whereNull('expiry_date')
-                  ->orWhere('expiry_date', '>', now());
-            })
-            ->get()
-            ->filter(function ($tag) {
-                if (!$tag->user || !$tag->user->is_active) return false;
-                if ($tag->vehicle && !$tag->vehicle->isValid()) return false;
-                return true;
-            })
-            ->pluck('uid')
-            ->values();
+        try {
+            $uids = RfidTag::with(['user', 'vehicle'])
+                ->where('status', 'active')
+                ->where(function ($q) {
+                    $q->whereNull('expiry_date')
+                      ->orWhere('expiry_date', '>', now());
+                })
+                ->get()
+                ->filter(function ($tag) {
+                    if (!$tag->user || !$tag->user->is_active) { return false; }
+                    if ($tag->vehicle && !$tag->vehicle->isValid()) { return false; }
+                    return true;
+                })
+                ->pluck('uid')
+                ->values();
 
-        return response()->json([
-            'uids'      => $uids,
-            'count'     => $uids->count(),
-            'synced_at' => now()->toISOString(),
-        ]);
+            return response()->json([
+                'uids'      => $uids,
+                'count'     => $uids->count(),
+                'synced_at' => now()->toISOString(),
+            ]);
+        } catch (\Exception $e) {
+            return response()->json([
+                'uids'    => [],
+                'count'   => 0,
+                'error'   => $e->getMessage(),
+            ], 500);
+        }
     }
 
     // Get all RFID tags with linked user and vehicle

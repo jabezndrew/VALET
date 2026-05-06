@@ -68,6 +68,10 @@ String gateMacAddress = "";
 unsigned long servoCloseTime = 0;
 bool          servoIsOpen    = false;
 
+// Entrance scan cooldown
+unsigned long lastEntranceScanTime = 0;
+String        lastEntranceUid      = "";
+
 // Exit scan cooldown
 unsigned long lastExitScanTime = 0;
 String        lastExitUid      = "";
@@ -208,6 +212,13 @@ void loop() {
     String uid = readUID(rfidEntrance);
     rfidEntrance.PICC_HaltA();
     rfidEntrance.PCD_StopCrypto1();
+    if (uid == lastEntranceUid && (now - lastEntranceScanTime < SAME_CARD_COOLDOWN)) {
+      rfidEntrance.PCD_Init();
+      rfidEntrance.PCD_SetAntennaGain(rfidEntrance.RxGain_max);
+      return;
+    }
+    lastEntranceUid      = uid;
+    lastEntranceScanTime = now;
     Serial.print("ENTRANCE UID: "); Serial.println(uid);
     verifyRFID(uid);
     rfidEntrance.PCD_Init();
